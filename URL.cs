@@ -1,0 +1,183 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace DotStd
+{
+    public static class URL
+    {
+        // Helper for URLs always use "/" as path separators.
+        // similar to System.Uri or System.UriBuilder
+
+        public const string kHttps = "https://";
+        public const string kHttp = "http://";
+
+        public static bool IsHttpX(string sURL)
+        {
+            // is Http* Scheme ?
+            return sURL.StartsWith(kHttps) || sURL.StartsWith(kHttp);
+        }
+        public static bool IsHttpSecure(string sURL)
+        {
+            // is Https Scheme ?
+            return sURL.StartsWith(kHttps);
+        }
+
+        static Regex _regexURL = null;
+        public static bool IsValidURL(string url)
+        {
+            // Stricter version of URL
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+            if (_regexURL == null)
+            {
+                _regexURL = new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$");
+            }
+            return _regexURL.IsMatch(url);
+        }
+
+        static Regex _regexURL2 = null;
+        public static bool IsValidURL2(string url)
+        {
+            // More forgiving version of URL
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+            if (_regexURL2 == null)
+            {
+                _regexURL2 = new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$");
+            }
+            return _regexURL2.IsMatch(url);
+        }
+
+        public static string MakeHttpX(string sURL, bool bSetHttps)
+        {
+            // Make sure the URL has the proper prefix. http or https
+            if (sURL.StartsWith(kHttps))
+            {
+                if ( ! bSetHttps)
+                    return kHttp + sURL.Substring(8);
+            }
+            else if (sURL.StartsWith(kHttp))
+            {
+                if (bSetHttps)
+                    return kHttps + sURL.Substring(7);
+            }
+            else
+            {
+                return (bSetHttps ? kHttps : kHttp) + sURL;
+            }
+            return sURL;
+        }
+
+        public static string MakeHttpProper(string sURL)
+        {
+            // Make sure the URL has a prefix. default to https if it does not.
+            if (!sURL.StartsWith(kHttp) && !sURL.StartsWith(kHttps))    // make sure it has prefix.
+                sURL = kHttps + sURL;
+            if (!sURL.EndsWith("/") && !sURL.Contains("?"))    // not sure why i have to do this.
+                sURL += "/";
+            return sURL;
+        }
+
+        public static string Combine(params string[] array)
+        {
+            // Like Path.Combine but for URLs
+            var sb = new StringBuilder();
+            int i = 0;
+            bool endSep = false;
+            foreach (string a in array)
+            {
+                if (string.IsNullOrWhiteSpace(a))    // doesnt count
+                    continue;
+                bool startSep = a.StartsWith("/");
+                if (i > 0 && endSep && startSep)
+                {
+                    sb.Append(a.Substring(1));
+                }
+                else if (i > 0 && !endSep && !startSep)
+                {
+                    sb.Append("/");
+                    sb.Append(a);
+                }
+                else
+                {
+                    sb.Append(a);
+                }
+
+                endSep = a.EndsWith("/");
+                i++;
+            }
+
+            return sb.ToString();
+        }
+
+        public static string GetFileName(string sURL)
+        {
+            // Extract just the filename from the URL. Clip args after '?' or '#'
+            try
+            {
+                int i = sURL.LastIndexOf("/");
+                if (i >= 0)
+                {
+                    sURL = sURL.Substring(sURL.LastIndexOf("/") + 1);
+                }
+                i = sURL.IndexOf("?");  // '#'
+                if (i >= 0)
+                {
+                    sURL = sURL.Substring(0,i);
+                }
+                return sURL;
+            }
+            catch
+            {
+                return sURL;
+            }
+        }
+
+        public static string Make(string sPage, params string[] sArgs)
+        {
+            // build a local URL link with "Query" args. sPage can be empty.
+            // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode()
+
+            if (sPage == null)
+                sPage = "";
+            int i = 0;
+            foreach (string x in sArgs)
+            {
+                if (i == 0)
+                {
+                    sPage += "?";
+                }
+                else
+                {
+                    sPage += "&"; // arg usually in the form "X=Y"
+                }
+                sPage += x;
+                i ++;
+            }
+            return sPage;
+        }
+
+        public static string Make2(string sPage, params string[] sArgs)
+        {
+            // build a local URL link with paired "Query" args. sPage can be empty.
+            if (sPage == null)
+                sPage = "";
+            for (int i = 0; i < sArgs.Length; i += 2)
+            {
+                if (i == 0)
+                {
+                    sPage += "?";
+                }
+                else
+                {
+                    sPage += "&"; 
+                }
+                sPage += sArgs[i] + "=" + sArgs[i+1];
+            }
+            return sPage;
+        }
+    }
+}
