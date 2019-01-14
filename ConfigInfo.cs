@@ -129,8 +129,7 @@ namespace DotStd
             var o = GetPropertyValue(name);
             return o?.ToString();
         }
-
-     }
+    }
 
     public class ConfigInfoCore : ConfigInfoBase
     {

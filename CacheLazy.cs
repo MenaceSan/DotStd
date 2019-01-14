@@ -53,6 +53,9 @@ namespace DotStd
             // Find this object in the cache. Load it if it isn't present.
             // T creator(int)
 
+            if (!ValidState.IsValidId(id))  // can't do anything about this.
+                return null;
+
             string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
             var cache = MemoryCache.Default;
 
