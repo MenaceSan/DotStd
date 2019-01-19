@@ -233,7 +233,7 @@ namespace DotStd
         public static string ToLower1(string s)
         {
             // Opposite of ToTitleCase()
-            // make sure the first letter is lower case char.
+            // make sure the first letter is lower case char. Javascript names like this.
             if (s == null || s.Length <= 0)
                 return s;
             if (!IsUpper(s[0]))

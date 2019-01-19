@@ -8,6 +8,7 @@ namespace DotStd
     public static class CacheLazy<T> where T : class
     {
         // Build on MemoryCache.Default with Type
+        // Maybe rename this to "CacheUnique" ??
         // This is a cache like CacheData that also has a weak reference to tell if the object might still be referenced some place.
         // The data stays around for cache time with the hard reference.
         // The data also has a weak reference count which makes sure the object is the same for all callers. 
@@ -48,10 +49,10 @@ namespace DotStd
             FlushDead();
         }
 
-        public static T Get(int id, int decaysec, Func<int, T> creator)
+        public static T Get(int id, int decaysec, Func<int, T> loader)
         {
             // Find this object in the cache. Load it if it isn't present.
-            // T creator(int)
+            // T loader(int)
 
             if (!ValidState.IsValidId(id))  // can't do anything about this.
                 return null;
@@ -81,12 +82,16 @@ namespace DotStd
 
                 // lastly load it.
                 // NOTE: await Task<T> cant be done inside lock !
-                T objLoad = creator.Invoke(id);
-                ValidateArgument.EnsureNotNull(objLoad,nameof(objLoad));
+                T objLoad = loader.Invoke(id);
+                ValidateArgument.EnsureNotNull(objLoad, nameof(objLoad));
 
                 if (obj == null)
                 {
                     obj = objLoad;  // Fresh load.
+                    if (wr != null)
+                    {
+                        _WeakRefs.Remove(cacheKey);
+                    }
                     _WeakRefs.Add(cacheKey, new WeakReference(obj));
                 }
                 else

@@ -57,7 +57,10 @@ namespace DotStd
     {
         // Response set for a data page.
         // Some Service returns the set of data i want. from DataPageReq
+
+        // TODO: try to avoid a second round trip to populate RowsTotal !
         public int RowsTotal { get; set; }          // Total rows in the request. All pages. RowsTotal >= Rows.Length
+
         public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
     }
 

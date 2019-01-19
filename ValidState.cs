@@ -4,6 +4,15 @@ using System.Text;
 
 namespace DotStd
 {
+    public interface IValidatable<T>
+    {
+        // This class is used to validate some other type. AKA Validator
+        // Filter for valid strings/objects?
+        // like System.Web.UI.IValidator
+
+        bool IsValid(T s);
+    }
+
     public enum ValidLevel
     {
         // What sort of validation do i have for some object or property.
@@ -23,16 +32,7 @@ namespace DotStd
         public string Description;      // Why did we validate it this way ? null or "" = ok.
     }
 
-    public interface IValidatable<T>
-    {
-        // This class is used to validate some other type. AKA Validator
-        // Filter for valid strings/objects?
-        // like System.Web.UI.IValidator
-
-        bool IsValid(T s);
-    }
-
-    public class ValidState // : System.ComponentModel.IDataErrorInfo
+    public class ValidState : System.ComponentModel.IDataErrorInfo
     {
         // Hold the validation state for some object.
         // helper class for general validation of some object.
@@ -42,11 +42,40 @@ namespace DotStd
 
         public const int kInvalidId = 0;    // This is never a valid id in the db. ValidState.IsValidId()
 
-        public ValidLevel ValidLevel;       // aggregate state for Fields
+        public ValidLevel ValidLevel;       // aggregate state for all Fields
 
         public bool IsValid { get { return this.ValidLevel == ValidLevel.OK; } }
 
         public Dictionary<string, ValidField> Fields = new Dictionary<string, ValidField>();    // details
+
+        // implement IDataErrorInfo
+        public string this[string columnName]
+        {
+            get
+            {
+                return Fields[columnName].Description;
+            }
+            set
+            {
+                Fields[columnName] = new ValidField { MemberName = columnName, Description = value };
+            }
+        }
+
+        // implement IDataErrorInfo. Whole object error not specific to a single field.
+        public string Error
+        {
+            get
+            {
+                ValidField val;
+                if (!Fields.TryGetValue(string.Empty, out val))
+                    return "";
+                return val.Description;
+            }
+            set
+            {
+                Fields[string.Empty] = new ValidField { MemberName = string.Empty, Description = value };
+            }
+        }
 
         //**********************
 
