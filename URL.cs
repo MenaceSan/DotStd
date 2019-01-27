@@ -10,9 +10,11 @@ namespace DotStd
     {
         // Helper for URLs always use "/" as path separators.
         // similar to System.Uri or System.UriBuilder
+        // in Core use: WebUtility.UrlEncode()
 
         public const string kHttps = "https://";
         public const string kHttp = "http://";
+        public const string kSep = "/";
 
         public static bool IsHttpX(string sURL)
         {

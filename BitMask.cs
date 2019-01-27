@@ -7,11 +7,11 @@ namespace DotStd
         // A potentially unlimited large bit mask stored as a base64 string, defining options on/off.
         // Similar to System.Collections.BitArray
 
-        public const int kBitsPer = 8;          // bits per char/byte stored.
-        public const int kFirstBit = 1;         // 1 based index
+        public const int kBitsPer = 8;          // bits per char/byte stored in _binary.
+        public const int kFirstBit = 1;         // 1 based bit index for API calls. SetBit(),
         public const int kDefaultSize = 128;    // n bits.
 
-        private byte[] _binary;    // The raw bytes of the bitmap of unlimited length.
+        protected byte[] _binary;    // The raw bytes of the bitmap of unlimited length.
 
         public BitMask(string base64String)
         {
@@ -50,6 +50,7 @@ namespace DotStd
 
         public void SetBitMask(int maxBits = kDefaultSize, bool defaultValue = false)
         {
+            // Set/Init the bitmask with an int. (obviously limited range)
             int count = GetByteCount(maxBits);
             byte bdef = (byte)(defaultValue ? 0xff : 0x0);
             _binary = new byte[count];  // Is this right ??
@@ -152,6 +153,26 @@ namespace DotStd
             // bitPos = bit position in the base64String
             var t = new BitMask(base64String);
             return t.IsSet(bitPos);
+        }
+
+        public void OpOr(BitMask bits)
+        {
+            // Combine these bits. Or bits.
+            if (bits._binary == null)
+                return;
+            int bytes1 = bits._binary.Length;
+            int bytes2 = _binary.Length;
+            int bytes = (bytes1 < bytes2) ? bytes1 : bytes2;
+            for (int i = 0; i < bytes; i++)
+            {
+                _binary[i] |= bits._binary[i];
+            }
+        }
+
+        public void OpAndNot(BitMask bits)
+        {
+            // Turn off bits that are indicated.
+            // TODO
         }
     }
 }

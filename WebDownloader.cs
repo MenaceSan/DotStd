@@ -9,18 +9,15 @@ namespace DotStd
         // helper to pull a file from some HTTP server.
         // Progress similar to System.IProgress<float>.Report
 
-        public event ProgressEventHandler ProgressEvent;
+        public string SrcURL { get; set; }
+        public string DestPath { get; set; }    // local dest file path.
+        public string UserString { get; set; }  // User can store any string value here for context.
+
+        public event ProgressEventHandler ProgressEvent;        // Called as the download progresses.
         public delegate void ProgressEventHandler(long nSizeCurrent, long nSizeTotal);
 
         public event FailedEventHandler FailedEvent;
         public delegate void FailedEventHandler(Exception ex);
-
-        public string SrcURL
-        { get; set; }
-        public string DestPath      // local dest file path.
-        { get; set; }
-        public string UserString    // User can store any string value here for context.
-        { get; set; }
 
         public WebDownloader()
         {
@@ -32,14 +29,22 @@ namespace DotStd
             UserString = sUserString;
         }
 
-        public bool DownloadFile(bool bRaiseEvent)
+        public void DownloadFileRaw()
         {
+            // Dont call Any events. no protection from throw.
+            DirUtil.DirCreateForFile(DestPath);
+            var WC = new WebClient();
+            WC.DownloadFile(SrcURL, DestPath);
+        }
+
+        public bool DownloadFile()
+        {
+            // Use this method as target of Thread
+            // No ProgressEvent called.
             try
             {
-                DirUtil.DirCreateForFile(DestPath);
-                var WC = new WebClient();
-                WC.DownloadFile(SrcURL, DestPath);
-                if (bRaiseEvent && ProgressEvent != null)
+                DownloadFileRaw();
+                if (ProgressEvent != null)
                 {
                     ProgressEvent(100, 100);    // done "100%"
                 }
@@ -47,22 +52,12 @@ namespace DotStd
             }
             catch (Exception ex)
             {
-                if (bRaiseEvent)
+                if (FailedEvent != null)
                 {
-                    if (FailedEvent != null)
-                    {
-                        FailedEvent(ex);
-                    }
-                    return false;
+                    FailedEvent(ex);
                 }
-                throw;
+                return false;
             }
-        }
-
-        public void DownloadFile()
-        {
-            // Use this method as target of Thread
-            DownloadFile(true);
         }
 
         public bool DownloadFileWithProgress()
@@ -79,7 +74,7 @@ namespace DotStd
                     var bBuffer = new byte[nChunkSize + 1];
                     using (Stream sChunks = myWebResponse.GetResponseStream())
                     {
-                        for(;;)
+                        for (; ; )
                         {
                             if (ProgressEvent != null)
                             {
@@ -95,7 +90,7 @@ namespace DotStd
                             }
                             oFS.Write(bBuffer, 0, iBytesRead);
                             iTotalBytesRead += iBytesRead;
-                        } 
+                        }
                     }
                 }
                 return true;

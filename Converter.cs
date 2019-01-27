@@ -115,6 +115,25 @@ namespace DotStd
             return val;
         }
 
+        public static int ToIntSloppy(string s)
+        {
+            // try to read a string. End on any non digit. skip leading spaces.
+            if (s == null)
+                return 0;
+            int val = 0;
+            bool leadSpace = true;
+            foreach (char ch in s)
+            {
+                if (leadSpace && char.IsWhiteSpace(ch))
+                    continue;
+                if (ch < '0' || ch > '9')
+                    break;
+                leadSpace = false;
+                val = val * 10 + (ch - '0');
+            }
+            return val;
+        }
+
         public static long ToLong(object o)
         {
             // Used for NPI
@@ -293,6 +312,11 @@ namespace DotStd
             if (conversionType.BaseType == typeof(System.Enum))
             {
                 return Enum.ToObject(conversionType, Converter.ToInt(value));
+            }
+
+            if (conversionType == typeof(bool))   // Be more forgiving converting to bool. "1" = true.
+            {
+                return ToBool(value);
             }
 
             // Now that we've guaranteed conversionType is something Convert.ChangeType can handle (i.e. not a

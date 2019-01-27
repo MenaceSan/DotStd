@@ -11,6 +11,14 @@ namespace DotStd
     {
         // String and char util functions.
 
+        public static string IIf(bool b, string s, string sDef = "")
+        {
+            // https://en.wikipedia.org/wiki/IIf
+            if (b)
+                return s;
+            return sDef;
+        }
+
         public static bool IsDigit(char ch)
         {
             // is this char a number? 

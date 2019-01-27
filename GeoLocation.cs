@@ -125,19 +125,21 @@ namespace DotStd
         VI,
 
         // State/Province in other countries
-        [Description("Ontario")]
-        AB,
+        [Description("Alberta")]
+        AB = 60,
         [Description("British Columbia")]
         BC,
         [Description("Manitoba")]
         MB,
         [Description("New Brunswick")]
         NB,
+        [Description("Newfoundland and Labrador")]
         NL,
         [Description("Nova Scotia")]
         NS,
         [Description("Northwest Territories")]
         NT,
+        [Description("Nunavut")]
         NU,
         [Description("Ontario")]
         ON,
@@ -145,16 +147,21 @@ namespace DotStd
         PE,
         [Description("Quebec")]
         QC,
+
+#if false
+        [Description("Saskatchewan")]
         SK,
         [Description("Yukon")]
         YT,
+#endif
 
-        // More ... in other countries.
+        // More ... in other countries. Manually added.
     }
 
     public enum TimeZoneId
     {
         // Difference in minutes from GMT if between (-12*60 and 12*60).
+        // ASSUME all zones round down to 15 minute chunks.
         // ASSUME All values between (-12*60 and 12*60) observe US daylight savings time rules.
         // Create new time zones outside this range if the client does not use DST.
         // Name = Delta from east coast time to some target/client time.
@@ -174,6 +181,10 @@ namespace DotStd
         EST = -(5 * 60),        // -300 = Eastern Time.  Observes normal DST rules. 
         [Description("Atlantic Time (UTC-4:00)")]
         AST = -(4 * 60),       // -240 = +1 hour from EST
+
+        UTC = 1,        // No DST.
+        GMT = 2,        // uses DST.
+        ChunkSize = 15,     // ASSUME all zones are in this chunk size.
 
         [Description("Australian Western Standard Time (UTC+8:00)")]
         AWST = (8 * 60),        // 480

@@ -49,6 +49,10 @@ namespace DotStd
             FlushDead();
         }
 
+        public static void FlushObj(int id)
+        {
+        }
+
         public static T Get(int id, int decaysec, Func<int, T> loader)
         {
             // Find this object in the cache. Load it if it isn't present.

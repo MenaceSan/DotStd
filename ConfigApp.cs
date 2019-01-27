@@ -10,7 +10,7 @@ namespace DotStd
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static int AppId { get; set; }         // int Id for log.
+        public static int AppId { get; set; }         // int Id for log. enum these in app space.
 
         private static string _AppName;
         public static string AppName
@@ -115,7 +115,6 @@ namespace DotStd
             ConfigInfo = cfgInfo;
             AppId = appId;
             _AppName = appName;
-            cfgInfo.Logger.LogEntry(AppName + " is starting in " + cfgInfo.ConfigMode + " mode.", LogLevel.Information);
         }
 
         public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace DotStd
 {
@@ -11,9 +7,27 @@ namespace DotStd
         // what sort of phone number is this ?
 
         Unknown = 0,  // unknown.
-        Cell = 1,
-        Home = 2,
-        Work = 3,
+        Mobile = 1,       // Avail any time. Personal mobile.
+        Home = 2,       // Avail home hours. maybe shared.
+        Work = 3,       // Avail work hours. maybe shared.
+    }
+
+    public enum PhoneCarrierId
+    {
+        // Can i send SMS to this phone ?
+        // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
+
+        Unknown = 0,  // unknown.
+        LandLine,       // No SMS
+        ATT,
+        Boost,
+        Cricket,
+        Sprint,
+        TMobile,
+        USCellular,
+        Verizon,
+        VirginMobile,
+        OtherCarrier = 255,
     }
 
     public static class PhoneUtil

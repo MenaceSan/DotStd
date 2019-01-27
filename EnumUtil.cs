@@ -55,19 +55,19 @@ namespace DotStd
         /// <summary>
         ///  Converts the <see cref="Enum"/> type to an <see cref="IList"/> compatible object.
         /// </summary>
-        /// <param name="type">The <see cref="Enum"/> type.</param>
+        /// <param name="enumType">The <see cref="Enum"/> type.</param>
         /// <returns>An <see cref="IList"/> containing the enumerated type value and description.</returns>
-        public static IEnumerable<TupleIdValue> ToEnumList(this Type type)
+        public static IEnumerable<TupleIdValue> ToEnumList(this Type enumType)
         {
-            ValidateArgument.EnsureNotNull(type, type.Name);
+            ValidateArgument.EnsureNotNull(enumType, enumType.Name);
 
-            if (!type.IsEnum)
+            if (!enumType.IsEnum)
             {
-                throw new ArgumentException(type.Name);
+                throw new ArgumentException(enumType.Name);
             }
 
             var list = new List<TupleIdValue>();
-            Array enumValues = Enum.GetValues(type);
+            Array enumValues = Enum.GetValues(enumType);
 
             foreach (Enum value in enumValues)
             {

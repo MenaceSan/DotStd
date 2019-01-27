@@ -22,22 +22,21 @@ namespace DotStd
         public string PropName { get; set; }        // Reflection property name of some object.
 
         public SortDirection SortDir { get; set; }
-    }
 
-    public class ComparerSimple : ComparerDef, System.Collections.IComparer
-    {
-        // Compare based on a reflected property (string field name) of some object.
-
-        protected System.Reflection.PropertyInfo _oProp;
-
-        public ComparerSimple(string _PropName, SortDirection _SortDir = SortDirection.Ascending)
+#if true
+        public static int CompareBytes(byte[] a1, byte[] a2)
         {
-            PropName = _PropName;
-            SortDir = _SortDir;
-        }
+            if (a1.Length != a2.Length)
+                return a1.Length - a2.Length;
 
-#if false
-        public static unsafe int CompareFast(byte[] a1, byte[] a2)
+            for (int i = 0; i < a1.Length; i++)
+                if (a1[i] != a2[i])
+                    return a1[i] - a2[i];
+
+            return 0;
+        }
+#else
+        public static unsafe int CompareBytes(byte[] a1, byte[] a2)
         {
             // ASSUME a1 != a2 and both are not null.
             fixed (byte* p1 = a1, p2 = a2)
@@ -137,6 +136,19 @@ namespace DotStd
             }
             // diff types! compare as strings.
             return CompareType(ox.ToString(), oy.ToString(), TypeCode.String);
+        }
+    }
+
+    public class ComparerSimple : ComparerDef, System.Collections.IComparer
+    {
+        // Compare based on a reflected property (string field name) of some object.
+
+        protected System.Reflection.PropertyInfo _oProp;
+
+        public ComparerSimple(string _PropName, SortDirection _SortDir = SortDirection.Ascending)
+        {
+            PropName = _PropName;
+            SortDir = _SortDir;
         }
 
         public virtual int Compare(object x, object y)

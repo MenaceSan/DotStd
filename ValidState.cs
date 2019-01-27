@@ -19,7 +19,7 @@ namespace DotStd
         OK = 0,
         Warning,        // We may still save this object but it looks odd.
         WarningManager, // This needs a managers approval.
-        WarningAdmin,
+        WarningAdmin,   // This needs a Admin approval.
         Fail,        // This object is not valid because this property is not valid.
     }
 
@@ -134,11 +134,11 @@ namespace DotStd
             // is this a valid db id ? db convention says all id must be > 0
             if (!id.HasValue)
                 return false;
-            return id.Value > kInvalidId;
+            return id.Value != kInvalidId;
         }
         public static bool IsValidId(Enum id)
         {
-            return id.ToInt() > kInvalidId;
+            return id.ToInt() != kInvalidId;
         }
 
         public static bool IsValidUnique(string s)

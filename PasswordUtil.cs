@@ -16,7 +16,7 @@ namespace DotStd
         Digit = 4,      // Numbers. RequireDigit
         NonAlphanumeric = 8,    // must have special char.  RequireNonAlphanumeric
         UniqueChars = 16,       // needs unique chars 
-        Def = Lowercase | Uppercase | Digit ,
+        Def = Lowercase | Uppercase | Digit,
     }
 
     public class PasswordUtil
@@ -25,7 +25,9 @@ namespace DotStd
 
         public static readonly PasswordUtil Def = new PasswordUtil(8, 16, PasswordReq.Def);
 
-        public readonly int MinLength = 8;    
+        public const int kMinLength = 8;
+
+        public readonly int MinLength = kMinLength;
         public readonly int MaxLength = 16;     // Why not allow longer?
         public readonly PasswordReq ReqFlags = PasswordReq.Def;
 
@@ -37,6 +39,7 @@ namespace DotStd
 
         // For auto generated passwords.
         // Remove "iloILO01" from use since they can get confused by users? (26+26+10)-8 = 54
+        // TODO remove case ?
         public static readonly char[] _BasicAlnumChars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789".ToCharArray();
 
         public PasswordUtil()
@@ -89,6 +92,21 @@ namespace DotStd
             return CreatePassword(maxSize, _BasicAlnumChars);
         }
 
+        public static bool IsRandomish(string s)
+        {
+            // Is this in general a valid password/ bearer token ? 
+            // When the client sends us a token. This makes sure its at least moderately likely to be safe.
+
+            if (s == null)
+                return false;
+            if (s.Length < kMinLength)
+                return false;
+
+            // TODO
+
+            return true;
+        }
+
         public static bool HasValidSpecial(string password)
         {
             int indexOf = password.IndexOfAny(_SpecialChars);
@@ -116,7 +134,7 @@ namespace DotStd
             return false;
         }
 
-        public  List<string> GetPasswordErrorMessages(string password, string excludeToken = null)
+        public List<string> GetPasswordErrorMessages(string password, string excludeToken = null)
         {
             // Match a password against password policy.
             // Second entry of the password to see if it matches the first does not need to come here.
@@ -124,7 +142,7 @@ namespace DotStd
             var errors = new List<string>();
 
             if (password == null)
-                password = "";  
+                password = "";
 
             if (password.Length < MinLength)
             {
@@ -155,7 +173,7 @@ namespace DotStd
                 errors.Add("Must have special characters '" + _SpecialChars + "'");
             }
 
-            if ( PasswordUtil.HasInvalidChars(password))
+            if (PasswordUtil.HasInvalidChars(password))
             {
                 errors.Add("Has invalid characters");
             }
@@ -168,7 +186,7 @@ namespace DotStd
                 errors.Add("Contains text that is not allowed");
             }
 
-            return errors;    
+            return errors;
         }
     }
 }

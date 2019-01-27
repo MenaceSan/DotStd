@@ -93,5 +93,11 @@ namespace DotStd
         {
             Set(id.ToString(), obj, seconds);
         }
+
+        public static void FlushObj(string id)
+        {
+            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
+            CacheData.FlushObj(cacheKey);
+        }
     }
 }

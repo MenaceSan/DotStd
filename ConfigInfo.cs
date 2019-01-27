@@ -76,7 +76,8 @@ namespace DotStd
         public void SetService<T>(T service) where T : class
         {
             // Configure a service by its interface .
-            Services.Add(typeof(T).GetHashCode(), service);
+            int hashCode = typeof(T).GetHashCode();
+            Services.Add(hashCode, service);
         }
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
