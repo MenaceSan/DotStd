@@ -262,8 +262,8 @@ namespace DotStd
 
         public static Dictionary<string, object> DiffProps<T>(T objNew, T objOld)
         {
-            // Diff these objects. What props changed (is New)? 
-            // NOTE: Does not compare fields. JUST props.
+            // What props changed (is New) in these objects? 
+            // NOTE: Does not compare fields JUST props.
             // null values are ok.
             // return dictionary of changes. null = nothing changed.
 

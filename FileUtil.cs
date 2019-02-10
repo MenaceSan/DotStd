@@ -57,17 +57,17 @@ namespace DotStd
             Delete,
         }
 
-        public static string GetVirtualStoreName(string sFilePath)
+        public static string GetVirtualStoreName(string filePath)
         {
             // Windows File can be translated from "C:\Program Files\DirName\config.ini" to
             // "C:\Users\<account>\AppData\Local\VirtualStore\Program Files\DirName\config.ini
 
             string sProgFiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);    // can get moved to VirtualStoreRoot
-            if (!sFilePath.Contains(sProgFiles))    // only stuff in the programfiles folder is part of the virtual store.
+            if (!filePath.Contains(sProgFiles))    // only stuff in the programfiles folder is part of the virtual store.
                 return null;
             string sAppData = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string sVirtualStore = Path.Combine(sAppData, kVirtualStore);   // M$ has a localized version of "VirtualStore" !?
-            return Path.Combine(sVirtualStore, sFilePath.Substring(Path.GetPathRoot(sFilePath).Length));  // skip root info "c:" etc.
+            return Path.Combine(sVirtualStore, filePath.Substring(Path.GetPathRoot(filePath).Length));  // skip root info "c:" etc.
         }
 
         public static bool IsFileNameBasic(char ch)
@@ -99,6 +99,9 @@ namespace DotStd
             // https://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
             // NEVER take chars away from here. we may add them in the future.
 
+            if (fileName == null)
+                return null;
+
             var sb = new StringBuilder();
             int iLen = fileName.Length;
             if (iLen > 255)
@@ -112,7 +115,7 @@ namespace DotStd
                 {
                     lastEncode = false;
                 }
-                else 
+                else
                 {
                     if (lastEncode)
                         continue;
@@ -178,53 +181,70 @@ namespace DotStd
             return true;
         }
 
-        public static bool IsReadOnly(string sFilePath)
+        public static bool IsReadOnly(string filePath)
         {
             // Assume file exists. is it read only?
-            var info = new FileInfo(sFilePath);
+            var info = new FileInfo(filePath);
             return info.IsReadOnly;
         }
 
-        public static void RemoveAttributes(string sFilePath, FileAttributes attributesToRemove)
+        public static void RemoveAttributes(string filePath, FileAttributes attributesToRemove)
         {
             // Used to remove read only flag.
-            FileAttributes attributes = File.GetAttributes(sFilePath);
+            FileAttributes attributes = File.GetAttributes(filePath);
             attributes = attributes & ~attributesToRemove;
-            File.SetAttributes(sFilePath, attributes);
+            File.SetAttributes(filePath, attributes);
         }
-        public static void RemoveReadOnlyFlag(string sFilePath)
+        public static void RemoveReadOnlyFlag(string filePath)
         {
             // Used to remove read only flag.
-            RemoveAttributes(sFilePath, FileAttributes.ReadOnly);
+            RemoveAttributes(filePath, FileAttributes.ReadOnly);
         }
 
-        public static void FileDelete(string sFilePath)
+        public static void FileDelete(string filePath)
         {
             // Use this for setting a common breakpoint for file deletes.
             // replace VB Computer.FileSystem.DeleteFile
-            // if ( System.IO.File.Exists(sFilePath)) is not needed.
-            System.IO.File.Delete(sFilePath);
+            // if ( System.IO.File.Exists(filePath)) is not needed.
+            System.IO.File.Delete(filePath);
         }
 
-        public static void FileReplace(string sFilePathSrc, string sFilePathDest, bool bMove = true)
+        public static void FileReplace(string filePathSrc, string filePathDest, bool bMove = true)
         {
             // Move/Copy and silently replace any file if it exists.
-            // Assume Dir for sFilePathDest exists.
+            // Assume Dir for filePathDest exists.
 
-            if (sFilePathSrc == sFilePathDest)
+            if (filePathSrc == filePathDest)
                 return;
-            if (!DirUtil.DirCreateForFile(sFilePathDest))
+            if (!DirUtil.DirCreateForFile(filePathDest))
             {
-                FileDelete(sFilePathDest);
+                FileDelete(filePathDest);
             }
             if (bMove)
-                System.IO.File.Move(sFilePathSrc, sFilePathDest);
+                System.IO.File.Move(filePathSrc, filePathDest);
             else
-                System.IO.File.Copy(sFilePathSrc, sFilePathDest, true);
+                System.IO.File.Copy(filePathSrc, filePathDest, true);
+        }
+
+        public static bool IsImageType(DocumentType docType)
+        {
+            // For things that only make sense as images. Avatar etc.
+            switch (docType)
+            {
+                case DocumentType.JPEG:
+                case DocumentType.GIF:
+                case DocumentType.PNG:
+                case DocumentType.BMP:
+                case DocumentType.ICO:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         public static DocumentType GetDocumentTypeIdExt(string fileExtension)
         {
+            // Convert Extension to enum.
             // like Mime type. MimeMapping.GetMimeMapping()
             // Dont allow EXE types.
 
@@ -294,6 +314,6 @@ namespace DotStd
             // like MimeMapping.GetMimeMapping()
 
             return GetContentTypeExt(Path.GetExtension(fileName));
-        } 
+        }
     }
 }

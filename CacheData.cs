@@ -80,7 +80,7 @@ namespace DotStd
         }
         public static T Get(int id)
         {
-            ValidateArgument.EnsureIsValidId(id, nameof(id));       // should check this before now.
+            ValidState.ThrowIfBadId(id, nameof(id));       // should check this before now.
             return Get(id.ToString());
         }
 

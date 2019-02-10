@@ -26,15 +26,29 @@ namespace DotStd
             December = 12
         };
 
-        public static DateTime kDateExtremeMin = new DateTime(1800, 1, 1);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
-        public static DateTime kDateExtremeMax = new DateTime(2179, 1, 1);  // reasonably inclusive max date that can be held by most db's.
+        public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
+        public static readonly DateTime kUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+        public static readonly DateTime kExtremeMax = new DateTime(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's.
         public const int kHoursInWeek = 168;
 
         public static bool IsExtremeDate(DateTime dt)
         {
             // Is this probably a useless date? NOTE: DateTime is not nullable so use this as null.
             // e.g. Year <= 1
-            return dt <= kDateExtremeMin || dt >= kDateExtremeMax;
+            return dt <= kExtremeMin || dt >= kExtremeMax;
+        }
+
+        public static double ToJavaTime(DateTime dt)
+        {
+            // Java timestamp is milliseconds past epoch
+            if (IsExtremeDate(dt))
+                return 0;
+            return (dt - kUnixEpoch).TotalMilliseconds;
+        }
+        public static DateTime FromJavaTime(double javaTimeStamp)
+        {
+            // Java timestamp is milliseconds past epoch
+            return kUnixEpoch.AddMilliseconds(javaTimeStamp);
         }
 
         public static string TimeAgoStr(TimeSpan ts)

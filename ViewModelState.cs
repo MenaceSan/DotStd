@@ -185,7 +185,7 @@ namespace DotStd
             // List all props that have changed.
             // NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
 
-            ValidateArgument.EnsureNotNull(_aOrigValues,nameof(_aOrigValues));
+            ValidState.ThrowIfNull(_aOrigValues,nameof(_aOrigValues));
 
             var aChanged = new List<string>();
             int i = 0;

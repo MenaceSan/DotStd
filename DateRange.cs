@@ -120,8 +120,8 @@ namespace DotStd
             if (inclusiveDefault)
             {
                 // Default = include more if we get null values
-                if (isStartEx) Start = DateUtil.kDateExtremeMin;
-                if (isEndEx) End = DateUtil.kDateExtremeMax;
+                if (isStartEx) Start = DateUtil.kExtremeMin;
+                if (isEndEx) End = DateUtil.kExtremeMax;
             }
             else if (isStartEx && isEndEx)
             {

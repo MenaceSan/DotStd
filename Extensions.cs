@@ -80,7 +80,7 @@ namespace DotStd
         /// <returns>A formatted string</returns>
         public static string FormatCurrent(this string format, params object[] parameters)
         {
-            ValidateArgument.EnsureNotNull(format, nameof(format));
+            ValidState.ThrowIfNull(format, nameof(format));
             return string.Format(CultureInfo.CurrentCulture, format, parameters);
         }
 
@@ -92,7 +92,7 @@ namespace DotStd
         /// <returns>A formatter string</returns>
         public static string FormatInvariant(this string format, params object[] parameters)
         {
-            ValidateArgument.EnsureNotNull(format, nameof(format));
+            ValidState.ThrowIfNull(format, nameof(format));
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, format, parameters);
         }
 
@@ -132,7 +132,7 @@ namespace DotStd
         public static string ToSafeDateString(this DateTime obj, string def = null, string format = null)
         {
             // If this is a bad date just display nothing. otherwise like ToShortDateString()
-            // e.g format = "M/d/yyyy"
+            // e.g format = "M/d/yyyy" or 'yyyy-MM-dd' (for Javascript)
             if (def == null)
                 def = string.Empty;
             if (obj.IsExtremeDate())    // Const.dateExtremeMin

@@ -24,6 +24,8 @@ namespace DotStd
     public class PropertyBagObj : IPropertyGetter, IPropertySetter
     {
         // Just use reflection to get a properties value from an object. IPropertyGetter
+        // Assume i CANNOT just add new props on the fly.
+
         public object Obj { get; set; }
         public Type Type { get; set; }  // Maybe not the same as GetType().
 
@@ -56,6 +58,8 @@ namespace DotStd
         public virtual void SetPropertyValue(string name, object val)
         {
             // MUST set Obj first!
+            // Throw if Obj is null or name prop does not exist
+
             if (Type == null)
             {
                 Type = Obj.GetType();
@@ -72,6 +76,8 @@ namespace DotStd
     public class PropertyBagDic : IPropertyGetter, IPropertySetter
     {
         // a IPropertyGetter implemented as a Dictionary
+        // Assume i CAN add new props on the fly.
+
         public Dictionary<string, object> Props { get; set; }
 
         public PropertyBagDic()
@@ -80,6 +86,29 @@ namespace DotStd
         public PropertyBagDic(Dictionary<string, object> _Props)
         {
             Props = _Props;
+        }
+
+        private void CheckProps()
+        {
+            // if the dictionary doesn't yet exist then create it.
+            if (Props == null)
+            {
+                Props = new Dictionary<string, object>();
+            }
+        }
+
+        public void AddProperties(object obj)
+        {
+            // add all properties from object to the bag.
+            Type toType = obj.GetType();
+            CheckProps();
+            foreach (PropertyInfo propTo in toType.GetProperties())
+            {
+                if (!propTo.CanRead)
+                    continue;
+                object val = propTo.GetValue(obj, null);
+                Props[propTo.Name] = val; 
+            }
         }
 
         public virtual object GetPropertyValue(string name) // IPropertyGetter
@@ -96,10 +125,7 @@ namespace DotStd
 
         public virtual void SetPropertyValue(string name, object val) // IPropertySetter
         {
-            if (Props == null)
-            {
-                Props = new Dictionary<string, object>();
-            }
+            CheckProps();
             Props[name] = val;
         }
     }
@@ -107,6 +133,7 @@ namespace DotStd
     public class PropertyBagRow : IPropertyGetter
     {
         // a IPropertyGetter implemented as a DataRow
+
         DataRow Row { get; set; }
 
         public PropertyBagRow()

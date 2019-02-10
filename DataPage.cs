@@ -18,7 +18,7 @@ namespace DotStd
             // if (string.IsNullOrEmpty(propertyName)) // do nothing?
             //    return source;
             ParameterExpression param = Expression.Parameter(typeof(T), string.Empty); // I don't care about some naming
-            MemberExpression property = Expression.PropertyOrField(param, propertyName);
+            MemberExpression property = Expression.PropertyOrField(param, propertyName);    // case not sensitive.
             LambdaExpression sort = Expression.Lambda(property, param);
             MethodCallExpression call = Expression.Call(
                 typeof(Queryable),
@@ -44,7 +44,7 @@ namespace DotStd
             // Order by some named property(s).
             IOrderedQueryable<T> ret2 = null;
             bool thenByLevel = false;
-            foreach( var sort in sorts)
+            foreach (var sort in sorts)
             {
                 ret2 = OrderingHelper(ret2 ?? source, sort.PropName, sort.SortDir == SortDirection.Ascending, thenByLevel);
                 thenByLevel = true;
@@ -53,15 +53,18 @@ namespace DotStd
         }
     }
 
-    public class DataPageRsp 
+    public class DataPageRsp
     {
         // Response set for a data page.
         // Some Service returns the set of data i want. from DataPageReq
 
-        // TODO: try to avoid a second round trip to populate RowsTotal !
+        public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
         public int RowsTotal { get; set; }          // Total rows in the request. All pages. RowsTotal >= Rows.Length
 
-        public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
+        public void UpdateRowsTotal()
+        {
+            this.RowsTotal = this.Rows.Count;
+        }
     }
 
     public class DataPageRsp<T> : DataPageRsp
@@ -72,30 +75,44 @@ namespace DotStd
         public T GetRow(int i)
         {
             // default(T)
-            return (T) Rows[i];
+            return (T)Rows[i];
+        }
+
+        public void SetRowsTotal(DataPageReq req, IQueryable<T> q)
+        {
+            if (this.Rows.Count < req.PageSize || req.PageSize <= 0)    // can we infer total? not enough for PageSize = end.
+            {
+                this.RowsTotal = req.GetSkip() + this.Rows.Count;
+            }
+            else
+            {
+                // TODO: try to avoid a second round trip to populate RowsTotal !
+                this.RowsTotal = q.Count();     //  2 trips to db ??? TODO FIXME
+            }
         }
     }
 
     public class DataPageReq
     {
         // Params to Request a page of data.
-        public int CurrentPage { get; set; }        // Which page do i want? 0 based.
+        public int StartOfPage { get; set; }    // start of the current page. 0 based.
         public int PageSize { get; set; }       // Max number of rows on page.
         public List<ComparerDef> SortFields { get; set; }   // How to sort fields.
 
-        public DataPageReq(int currentPage, int pageSize, List<ComparerDef> sortFields)
+        public DataPageReq(int startOfPage, int pageSize, List<ComparerDef> sortFields)
         {
-            CurrentPage = currentPage;
+            StartOfPage = startOfPage;      // Make sure this is 0 based !
             PageSize = pageSize;
             SortFields = sortFields;
         }
 
         public int GetSkip()
         {
-            return CurrentPage * PageSize;
+            ValidState.ThrowIf(StartOfPage < 0 || PageSize<=0);
+            return StartOfPage;
         }
 
-        public int GetPagesTotal(int rowsTotal)
+        public int GetPagesTotal(int rowsTotal) // not used.
         {
             // How many total pages to fit this many total rows?
 
@@ -108,20 +125,29 @@ namespace DotStd
                 pagesTotal++;
             return pagesTotal;
         }
- 
-        public DataPageRsp<T> GetRsp<T>(IQueryable<T> source)
+
+        public IQueryable<T> GetQuery<T>(IQueryable<T> q)
+        {
+            // q = IOrderedQueryable<T>
+            // NOTE: The method 'Skip' is only supported for sorted input in LINQ to Entities. The method 'OrderBy' must be called before the method 'Skip'.
+
+            if (this.SortFields.Count > 0)
+            {
+                q = q.OrderByList(this.SortFields);
+            }
+            if (this.PageSize > 0)
+            {
+                q = q.Skip(this.GetSkip()).Take(this.PageSize);
+            }
+            return q;
+        }
+
+        public DataPageRsp<T> GetRsp<T>(IQueryable<T> q)
         {
             // Query and return the rows for the current page.
-            // source = IOrderedQueryable<T>
-            // NOTE: The method 'Skip' is only supported for sorted input in LINQ to Entities. The method 'OrderBy' must be called before the method 'Skip'.
             var rsp = new DataPageRsp<T>();
-            var lst = source
-                .OrderByList(this.SortFields)
-                .Skip(CurrentPage * PageSize)
-                .Take(PageSize)
-                .ToList();
-            rsp.Rows = lst; // Lose type <T>.
-            rsp.RowsTotal = source.Count();     //  2 trips to db ??? TODO FIXME
+            rsp.Rows = GetQuery(q).ToList(); // Lose type <T>.
+            rsp.SetRowsTotal(this, q);
             return rsp;
         }
     }
@@ -129,16 +155,16 @@ namespace DotStd
     public class DataPageSearch : DataPageReq
     {
         // SearchFilter = Search / filter based on some text.
+        // a data page with extra search/filter params imposed.
 
-        public string SearchFilter { get; set; }    // Filter on some important field(s). Which ???
+        public string SearchFilter { get; set; }    // Filter on some important field(s). Which ?? 
+        public int FilterId { get; set; }           // A selection of predefined filters. enum. 0 = unused.
 
-        public DataPageSearch(int currentPage, int pageSize, List<ComparerDef> sortFields, string searchFilter)
-            :base(currentPage, pageSize, sortFields)
+        public DataPageSearch(int startOfPage, int pageSize, List<ComparerDef> sortFields, string searchFilter, int filterId = 0)
+            : base(startOfPage, pageSize, sortFields)
         {
-            CurrentPage = currentPage;
-            PageSize = pageSize;
-            SortFields = sortFields;
             SearchFilter = searchFilter;
+            FilterId = filterId;
         }
     }
 }

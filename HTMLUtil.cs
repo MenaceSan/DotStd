@@ -17,6 +17,7 @@ namespace DotStd
 
         public static string GetOptStr(string value, string desc, bool selected = false)
         {
+            // for <select>
             // construct HTML "<option value='1'>Main</option>");
             // like TupleKeyValue
             return string.Concat("<option ", selected ? "selected " : string.Empty, "value='", value, "'>", desc, "</option>");

@@ -16,7 +16,7 @@ namespace DotStd
         public string Zip { get; set; } // PK ? Zip can have multiple cities!
         public string City { get; set; }        // Maybe all caps ? "ALLSTON"
         public string State { get; set; }           // 2 letter code "MA" (can be added to cache dynamically)
-        public string CountryCode { get; set; }     // 3 letter code. "USA" (MUST exist in country db)
+        public string CountryCode { get; set; }     // 3 letter code. "USA" (MUST exist in geo_country db)
     }
 
     [DataContract]

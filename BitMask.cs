@@ -78,6 +78,7 @@ namespace DotStd
             if (_binary == null || position < 0 || position >= _binary.Length)
             {
                 // If bitPos length is greater then the max length throw exception.  
+                // NO Auto grow.
                 throw new ArgumentOutOfRangeException(nameof(bitPos), bitPos, "BitMask bitPos too large");
             }
 
@@ -161,9 +162,14 @@ namespace DotStd
             if (bits._binary == null)
                 return;
             int bytes1 = bits._binary.Length;
-            int bytes2 = _binary.Length;
-            int bytes = (bytes1 < bytes2) ? bytes1 : bytes2;
-            for (int i = 0; i < bytes; i++)
+            if (bytes1 <= 0)
+                return;
+            int bytes2 = (_binary == null) ? 0 : _binary.Length;
+            if (bytes2 < bytes1)
+            {
+                Array.Resize(ref _binary, bytes1);
+            }
+            for (int i = 0; i < bytes1; i++)
             {
                 _binary[i] |= bits._binary[i];
             }
@@ -176,3 +182,4 @@ namespace DotStd
         }
     }
 }
+

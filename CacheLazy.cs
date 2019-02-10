@@ -87,7 +87,7 @@ namespace DotStd
                 // lastly load it.
                 // NOTE: await Task<T> cant be done inside lock !
                 T objLoad = loader.Invoke(id);
-                ValidateArgument.EnsureNotNull(objLoad, nameof(objLoad));
+                ValidState.ThrowIfNull(objLoad, nameof(objLoad));
 
                 if (obj == null)
                 {

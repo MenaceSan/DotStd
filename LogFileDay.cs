@@ -81,7 +81,7 @@ namespace DotStd
             return base.IsEnabled(level) && _sFilePathPrefix != null; // Log this?
         }
 
-        public override void LogEntry(string message, LogLevel level = LogLevel.Information, object attached = null)
+        public override void LogEntry(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
         {
             // Override this
             if (!IsEnabled(level))   // ignore this?

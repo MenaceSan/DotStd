@@ -57,7 +57,9 @@ namespace DotStd
         // similar to Microsoft.Extensions.Logging.ILogger
 
         bool IsEnabled(LogLevel eLevel = LogLevel.Information);
-        void LogEntry(string sMessage, LogLevel eLevel = LogLevel.Information, object attached = null);
+
+        // userId = thread of work. maybe userId ?
+        void LogEntry(string sMessage, LogLevel eLevel = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null);
     }
 
     public class LoggerBase : ILogger
@@ -93,40 +95,55 @@ namespace DotStd
             }
         }
 
-        public virtual void LogEntry(string message, LogLevel level = LogLevel.Information, object attached = null)
+        public virtual void LogEntry(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
         {
-            // Override this
+            // ILogger Override this
             if (!IsEnabled(level))   // ignore this?
                 return;
+
+            if (ValidState.IsValidId(userId))
+            {
+            }
+            if (detail!=null)
+            {
+
+            }
+
             System.Diagnostics.Debug.WriteLine(GetSeparator(level) + message);
         }
 
-        public void info(string message, object attached = null)
+        public void info(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Information, attached);
+            LogEntry(message, LogLevel.Information, userId, detail);
         }
-        public void warn(string message, object attached = null)
+        public void warn(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Warning, attached);
+            LogEntry(message, LogLevel.Warning, userId, detail);
         }
-        public void debug(string message, object attached = null)
+        public void debug(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Debug, attached);
+            LogEntry(message, LogLevel.Debug, userId, detail);
         }
-        public void trace(string message, object attached = null)
+        public void trace(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Trace, attached);
+            LogEntry(message, LogLevel.Trace, userId, detail);
         }
-        public void error(string message, object attached = null)
+        public void error(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Error, attached);
+            LogEntry(message, LogLevel.Error, userId, detail);
         }
-        public void fatal(string message, object attached = null)
+        public void fatal(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
-            LogEntry(message, LogLevel.Critical, attached);
+            LogEntry(message, LogLevel.Critical, userId, detail);
         }
 
-        public static void DebugException(string subject, Exception ex)
+        public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
+        {
+            System.Diagnostics.Debug.WriteLine("Debug " + message);
+            // System.Diagnostics.Trace.WriteLine();
+        }
+
+        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
         {
             // an exception that I don't do anything about! NOT going to call LogException
             // set a break point here if we want.
@@ -135,7 +152,7 @@ namespace DotStd
             // System.Diagnostics.Trace.WriteLine();
         }
 
-        public virtual void LogException(Exception oEx, LogLevel level = LogLevel.Error, bool bReRaise = true)
+        public virtual void LogException(Exception oEx, LogLevel level = LogLevel.Error, int userId = ValidState.kInvalidId, bool bWrapAndReRaise = false)
         {
             // Special logging for exceptions.
             string strMessage;
@@ -148,24 +165,24 @@ namespace DotStd
                 case LogLevel.Error:
                     // If in errors level we'll keep the error message
                     strMessage = oEx.Message;
-                    LogEntry(strMessage, LogLevel.Error);
+                    LogEntry(strMessage, LogLevel.Error, userId);
                     break;
                 case LogLevel.Critical:
                     // If in debug build full error string
                     strMessage = oEx.ToString();
-                    LogEntry(strMessage, LogLevel.Critical);
+                    LogEntry(strMessage, LogLevel.Critical, userId);
                     break;
                 case LogLevel.Trace:
                 case LogLevel.Warning:
                 default:
                     // If in debug build full error string
                     strMessage = oEx.ToString();
-                    LogEntry(strMessage, LogLevel.Error);
+                    LogEntry(strMessage, LogLevel.Error, userId);
                     break;
             }
 
-            // Should we re-raise the error?
-            if (bReRaise)
+            // Should we wrap and re-raise the Exception?
+            if (bWrapAndReRaise)
             {
                 // So that we see the actual error based on the Error Level create a new
                 // exception object and fill it.

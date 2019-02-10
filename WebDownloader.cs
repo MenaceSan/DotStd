@@ -31,10 +31,34 @@ namespace DotStd
 
         public void DownloadFileRaw()
         {
-            // Dont call Any events. no protection from throw.
+            // Synchronous get file. Doesnt call any events. no protection from throw.
             DirUtil.DirCreateForFile(DestPath);
-            var WC = new WebClient();
-            WC.DownloadFile(SrcURL, DestPath);
+
+#if true // true
+            var wc = new WebClient();
+            wc.DownloadFile(SrcURL, DestPath);
+#else
+            // https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-request-data-using-the-webrequest-class
+            var req = WebRequest.Create(SrcURL);
+            var reqH = ((HttpWebRequest)req);
+
+            reqH.Credentials = CredentialCache.DefaultCredentials;
+            reqH.UseDefaultCredentials = true;
+            reqH.Date = DateTime.Now;
+
+            // Pretend to be a browser.
+            reqH.UserAgent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36";
+
+            // Send the 'WebRequest' and wait for response.
+            using (var rsp = req.GetResponse())
+            {
+                using (var dst = File.Create(DestPath))
+                {
+                    rsp.GetResponseStream().CopyTo(dst);
+                }
+                rsp.Close();
+            }
+#endif
         }
 
         public bool DownloadFile()

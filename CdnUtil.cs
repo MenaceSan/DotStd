@@ -7,14 +7,14 @@ namespace DotStd
 {
     public static class CdnUtil
     {
-        // Pull .js and .css files from a CDN and make local copies for failover and dev purposes.
+        // Sync/Pull .js and .css files from a CDN and make local copies for failover and dev purposes.
         // Read a file called 'CdnAll.html' that contains all the links to my CDN files.
         // pull local version of these. to "asp-fallback-src" or "asp-fallback-href"
         // Similar function to Bower but centered on the CDN not the FULL dev packages.
         // TODO read the 'libman.json' file to build this ?! Since libman doesnt contain 'integrity' at this time we can just use libman directly. (2018)
 
         public const string kAll = "CdnAll.html";
-        public const string kDataLibPath = "data-fallback-lib";      // If i pulled the lib from Bower
+        public const string kDataLibAttr = "data-lib-";      // If i pulled the lib from Bower
         public const string kMin = ".min.";
         public const string kMin2 = "-min.";    // alternate style.
 
@@ -32,15 +32,16 @@ namespace DotStd
             return w;
         }
 
-        public static void SyncCdn(string cdnAllFilePath, string outDir)
+        public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
             // Read the HTML/XML file kAll from Resource.
             // Pull all files from the CDN that we want locally as backups.
             // Write out the local stuff to outDir. e.g. "wwwroot/cdn"
             if (!File.Exists(cdnAllFilePath))
-                return;
+                return 0;
 
-            XDocument doc = XDocument.Load(cdnAllFilePath);     // Use HTML agility pack to deal with proper encoding.
+            int downloadCount = 0;
+            XDocument doc = XDocument.Load(cdnAllFilePath);     // Use HTML agility pack to deal with proper encoding??
 
             // pull all 'link' and 'script' elements
             foreach (XNode node in doc.DescendantNodes())
@@ -56,6 +57,10 @@ namespace DotStd
                 XAttribute integrity = xl.Attribute("integrity");
                 XAttribute dst = xl.Attribute("asp-fallback-" + typeExt);
                 XAttribute dstDev = xl.Attribute("data-dev-" + typeExt);    // Allow null default.
+                if (integrity == null)
+                {
+                    continue;       // Not supported. It should ?!?
+                }
 
                 // test hash e.g. "sha256-", "sha384-"
                 int i = integrity.Value.IndexOf('-');
@@ -79,7 +84,9 @@ namespace DotStd
                     hasher.Init();
                 }
 
-                // Pull the file.
+                // Pull/Get the file. 
+                downloadCount++;
+                LoggerBase.DebugEntry("Get " + src.Value);
                 var dl = new WebDownloader(src.Value, dstPath);
                 dl.DownloadFileRaw();  // Assume dir is created on demand.
 
@@ -88,7 +95,7 @@ namespace DotStd
                 // debugHash2 = Convert.ToBase64String(hashCode2);
                 if (ComparerDef.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
                 {
-                    throw new Exception("CDN hash does not match for " + dstPath);
+                    throw new Exception("CDN integrity hash does not match for " + dstPath);
                 }
 
                 if (src.Value.Contains(kMin) || src.Value.Contains(kMin2))
@@ -96,14 +103,16 @@ namespace DotStd
                     // Pull the non-minified (Dev) version as well.
                     if (dstDev == null || dstDev.Value != dst.Value)
                     {
-                        dstPath = (dstDev != null) ? GetPhysPathFromWeb(dstDev.Value) : 
-                            dstPath.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/","/");
+                        dstPath = (dstDev != null) ? GetPhysPathFromWeb(dstDev.Value) :
+                            dstPath.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
                         string srcPath = src.Value.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
                         var dl2 = new WebDownloader(srcPath, dstPath);
                         dl2.DownloadFileRaw();
                     }
                 }
             }
+
+            return downloadCount;
         }
     }
 }

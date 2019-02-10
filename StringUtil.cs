@@ -179,7 +179,7 @@ namespace DotStd
             // Left len chars.
             // Take X chars and lose the rest. No padding.
             // AKA Left() in Strings (VB)
-            ValidateArgument.EnsureZeroOrGreater(size, nameof(size));
+            ValidState.ThrowIfNegative(size, nameof(size));
             if (s == null)
                 return null;
             else if (s.Length > size)
@@ -189,7 +189,9 @@ namespace DotStd
 
         public static string Ellipsis(this string s, int lenMax = 0x400)
         {
-            ValidateArgument.EnsureZeroOrGreater(lenMax, nameof(lenMax));
+            // Truncate string with ellipsis.
+
+            ValidState.ThrowIfNegative(lenMax, nameof(lenMax));
             if (s == null)
                 return s;
             if (s.Length > lenMax)
@@ -202,7 +204,7 @@ namespace DotStd
             // right len chars.
             // Take X chars and lose the rest. No padding.
             // AKA Right() in Strings (VB)
-            ValidateArgument.EnsureZeroOrGreater(size, nameof(size));
+            ValidState.ThrowIfNegative(size, nameof(size));
             if (s == null)
                 return null;
             if (s.Length > size)
@@ -229,7 +231,7 @@ namespace DotStd
             else if (s.Length > size)
                 return s.Substring(s.Length - size, size);
             else
-                return s.PadLeft(size, paddingChar);    // PadLeft doesnt truncate 
+                return s.PadLeft(size, paddingChar);    // PadLeft doesn't truncate 
         }
 
         public static string LeadZero(string s, int size)
@@ -241,7 +243,7 @@ namespace DotStd
         public static string ToLower1(string s)
         {
             // Opposite of ToTitleCase()
-            // make sure the first letter is lower case char. Javascript names like this.
+            // make sure the first letter is lower case char. JavaScript names like this.
             if (s == null || s.Length <= 0)
                 return s;
             if (!IsUpper(s[0]))

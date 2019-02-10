@@ -253,9 +253,8 @@ namespace DotStd
         public static string ToUnique(string id)
         {
             // A string FK to some other table.
-            // We use "" as null sometimes from the db . convert it back to null for storage in the db.
             if (!ValidState.IsValidUnique(id))
-                return null;
+                return null;        // was not valid!
             return id;
         }
 
@@ -281,7 +280,7 @@ namespace DotStd
             // Note: This if block was taken from Convert.ChangeType as is, and is needed here since we're
             // checking properties on conversionType below.
 
-            ValidateArgument.EnsureNotNull(conversionType, nameof(conversionType));
+            ValidState.ThrowIfNull(conversionType, nameof(conversionType));
             if (ValidState.IsNull(value))  // NULL or DBNull is always null.
                 return null;
 

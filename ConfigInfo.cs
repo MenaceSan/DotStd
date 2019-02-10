@@ -15,25 +15,52 @@ namespace DotStd
         PROD,       // prod server seen by customers. AKA "Production" in Core
     }
 
-    public abstract class ConfigInfoBase : IPropertyGetter, IServiceProvider
+    public class ConfigInfoCore : IPropertyGetter
+    {
+        // Support for the new .NET core JSON config file style.
+        // Wrapper for .NET Core IConfiguration
+
+        public static Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
+
+        public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config)
+        {
+            // config may be IConfigurationRoot or IConfigurationSection
+            _Configuration = config;
+        }
+
+        public virtual object GetPropertyValue(string name)
+        {
+            // sName = "Sec:child" IPropertyGetter
+            if (_Configuration != null)
+            {
+                var sec = _Configuration.GetSection(name);
+                return sec?.Value;
+            }
+            return null;
+        }
+    }
+
+    public class ConfigInfoBase : IPropertyGetter, IServiceProvider
     {
         // Common config files stuff. Regardless of where the config info comes from.
-        // Might be .NET core or framework.
+        // _ConfigSource Might be .NET core JSON or framework XML.
         // Similar to IConfiguration
 
         public const string kApps = "Apps:";    // AKA appSettings
-        public const string kConnectionStrings = "ConnectionStrings:";      // ConnectionStrings
+        public const string kConnectionStrings = "ConnectionStrings:";      // ConnectionStrings to db.
+        public const string kSmtp = "Smtp:";    // configure how to send emails.
 
         public const string kAppsConfigMode = "Apps:ConfigMode";       // What mode is this app running? Tag in appSettings. AKA EnvironmentName
         public const string kAppsLogFileDir = "Apps:LogFileDir";       // Where to put my local log files.
-
-        // ConnectionString, MainUrl, AdminUrl, etc.
 
         // ConfigMode = Is this app running in Dev, Test or Prod mode ?  kAppsConfigMode 
         // Equiv to IHostingEnvironment.EnvironmentName
         public string ConfigMode { get; protected set; }    // What kAppsConfigMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
+        private IPropertyGetter _ConfigSource { get; set; }     // Get my config info from here.
         private Dictionary<int, object> Services = new Dictionary<int, object>();
+
+        public string ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
 
         public object GetService(Type serviceType)  // IServiceProvider
         {
@@ -82,47 +109,33 @@ namespace DotStd
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
 
-        public bool isConfigModeLike(ConfigMode eConfigMode)
+        public bool isConfigModeLike(ConfigMode configMode)
         {
             // Prefix match ConfigMode.
             // match ConfigMode but allow extension. e.g. Dev1 is the same as Dev
-            return ConfigMode.ToUpper().StartsWith(eConfigMode.ToString());
+            return ConfigMode.ToUpper().StartsWith(configMode.ToString());
         }
-        public bool isConfigMode(string s)
+        public bool isConfigMode(string configMode)
         {
             // Exact match ConfigMode
-            return String.Compare(ConfigMode, s, StringComparison.OrdinalIgnoreCase) == 0;
+            return String.Compare(ConfigMode, configMode, StringComparison.OrdinalIgnoreCase) == 0;
         }
-        public bool isConfigMode(ConfigMode eConfigMode)
+        public bool isConfigMode(ConfigMode configMode)
         {
             // Exact match ConfigMode
-            return isConfigMode(eConfigMode.ToString());
+            return isConfigMode(configMode.ToString());
         }
         public bool isConfigModeProd()
         {
             return isConfigMode(DotStd.ConfigMode.PROD);
         }
 
-        public static string GetConfigModeFolder(string sConfigMode)
+        public virtual object GetPropertyValue(string name)
         {
-            // use a special folder for a given config mode.
-            // Use ConfigMode as a folder Name only if not Prod mode.
-            if (string.IsNullOrWhiteSpace(sConfigMode))
-                return "";  // FAIL!!
-            sConfigMode = sConfigMode.ToUpper();
-            if (sConfigMode == DotStd.ConfigMode.PROD.ToString())
-                return "";
-            return sConfigMode;
+            // IPropertyGetter
+            // Maybe prefixed with "Apps" or "ConnectionStrings"
+            return _ConfigSource.GetPropertyValue(name);
         }
-
-        public string ConfigModeFolder
-        {
-            // Used for Mode display.
-            get { return GetConfigModeFolder(this.ConfigMode); }
-        }
-
-        // Maybe prefixed with "Apps" or "ConnectionStrings"
-        public abstract object GetPropertyValue(string name);
 
         public string GetSetting(string name)
         {
@@ -130,33 +143,18 @@ namespace DotStd
             var o = GetPropertyValue(name);
             return o?.ToString();
         }
-    }
 
-    public class ConfigInfoCore : ConfigInfoBase
-    {
-        // Support for the new JSON .NET core config style.
-        // Wrapper for .NET Core IConfiguration
-
-        public static Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
-
-        public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config)
+        public ConfigInfoBase(IPropertyGetter configSource, string connectionStringName=null)
         {
-            // config may be IConfigurationRoot or IConfigurationSection
-            _Configuration = config;
-            var sec = config.GetSection(kAppsConfigMode);
-            ConfigMode = sec?.Value;
-            ValidateArgument.EnsureNotNullOrWhiteSpace(ConfigMode, nameof(ConfigMode));  // MUSt have ConfigMode
-        }
+            // Assign my config source. (file?)
+            _ConfigSource = configSource;
+            ConfigMode = GetSetting(kAppsConfigMode);
+            ValidState.ThrowIfNullOrWhiteSpace(ConfigMode, nameof(ConfigMode));  // MUST have ConfigMode
 
-        public override object GetPropertyValue(string name)
-        {
-            // sName = "Sec:child"
-            if (_Configuration != null)
+            if (connectionStringName != null)
             {
-                var sec = _Configuration.GetSection(name);
-                return sec?.Value;
+                ConnectionStringDef = "";
             }
-            return null;
         }
     }
 }

@@ -8,10 +8,13 @@ namespace DotStd
     {
         // Db Vendors i might support.
         Unknown = 0,        // ODBC Connection ?
-        SqlServer = 1,  // Microsoft,  MsSQL
-        MySQL = 2,
+        SqlServer = 1,  // Microsoft,  MsSQL, M$
+        MySQL = 2,      // Or Aurora.
         Oracle = 3,
         SQLite = 4,
+
+        // PostgreSQL
+        // Mongo ?
     }
 
     public class DbTableUtil

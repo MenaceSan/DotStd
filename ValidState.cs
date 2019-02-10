@@ -141,19 +141,33 @@ namespace DotStd
             return id.ToInt() != kInvalidId;
         }
 
+        public const string kUniqueX = "_@.-+";
+
         public static bool IsValidUnique(string s)
         {
             // Is unique string valid ? might be email ?
-            // This should be a unique string for InvoiceNo, EmployeeNo, ClientNo, ClaimNo, etc. 
-            // AlphNumeric + "_@.-+"   NOT "," 
+            // This should be a proper unique string for Uid. 
+            // Can be used to detect proper property/field names from untrusted sources. e.g. Grid column sort.
+            // AlphNumeric + "_@.-+" ONLY NOT "," 
+            // MUST NOT CONTAIN WHITESPACE 
+            // Use Converter.ToUnique(s)
 
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             string sl = s.ToLower();
-            if (sl == "none" || sl == "null" || sl == "-none")      // StripeCustomerId = none ?
+            if (sl == "none" || sl == "null" || sl == "-none") 
                 return false;
-            // if (sl == "0") return false;
-            // TODO MUST NOT CONTAIN WHITESPACE !!! 
+
+            foreach (char ch in s)
+            {
+                if (ch >= 'a' && ch <= 'z')
+                    continue;
+                if (ch >= '0' && ch <= '9')
+                    continue;
+                if (kUniqueX.IndexOf(ch) >= 0)
+                    continue;
+                return false;   // bad char.
+            }
             return s.Length > 2;
         }
 
@@ -180,6 +194,89 @@ namespace DotStd
                 }
             }
             return sb.ToString();
+        }
+
+        //*********************
+        // Internal assertions for code.
+
+        public static void ThrowIf(bool isBad, string msg = null)
+        {
+            // Assert that this is true. throe if not.
+            // like Trace.Assert()
+            // like Debug.Assert() but also works for release code. 
+            // The Assert methods are not available for Windows Store apps.
+
+            if (isBad) // ok?
+            {
+                if (msg == null)
+                    msg = "Internal Check Failed";
+                throw new ArgumentException(msg);
+            }
+        }
+
+        /// <summary>
+        /// verify that the argument is not null. use nameof(Property).
+        /// </summary>
+        /// <param name="argument">The object that will be validated.</param>
+        /// <param name="name">The name of the <i>argument</i> that will be used to identify it should an exception be thrown. use nameof(Property)</param>
+        /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
+        public static void ThrowIfNull(object argument, string name)
+        {
+            if (null == argument)
+            {
+                throw new ArgumentNullException(name);
+            }
+        }
+
+        /// <summary>
+        /// Throw if arguments are out of range. use nameof(Property)
+        /// </summary>
+        public static void ThrowIfNegative(int n, string name)
+        {
+            // 0 or positive int.
+            if (n < 0)
+            {
+                throw new ArgumentOutOfRangeException(name, "argument must be >= 0");
+            }
+        }
+
+        /// <summary>
+        /// Throw if arguments are out of range.
+        /// </summary>
+        public static void ThrowIfBadId(int argument, string name)
+        {
+            if (!IsValidId(argument))
+            {
+                throw new ArgumentException("The argument must be greater than zero.", name);
+            }
+        }
+
+        /// <summary>
+        /// verify that the string is not null or zero length.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <i>argument</i> is an empty string.</exception>
+        public static void ThrowIfNullOrEmpty(string argument, string name)
+        {
+            ThrowIfNull(argument, name);
+            if (string.IsNullOrEmpty(argument))
+            {
+                throw new ArgumentException("The argument cannot be an empty string.", name);
+            }
+        }
+
+        /// <summary>
+        /// verify that the string is not null and that it doesn't contain only white space.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <i>argument</i> is either an empty string or contains only white space.</exception>
+        public static void ThrowIfNullOrWhiteSpace(string argument, string name)
+        {
+            ThrowIfNull(argument, name);
+            if (string.IsNullOrWhiteSpace(argument))
+            {
+                throw new ArgumentException("The value cannot be an empty string or contain only whitespace.", name);
+            }
         }
     }
 

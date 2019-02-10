@@ -11,6 +11,22 @@ namespace DotStd
     {
         // helper for dealing with assemblies.
 
+        public static Assembly FindLoadedAssembly(string name)
+        {
+            // Is this already loaded?
+            // e.g. name = "System.Web". ignores version ?
+            // Assembly oAsm = Assembly.Load("System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+
+            Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (Assembly asm in asms)
+            {
+                var n = asm.GetName();
+                if (n.Name == name)
+                    return asm;
+            }
+            return null;
+        }
+
         public static Assembly GetAssemblySafe(Assembly assembly = null)
         {
             if (assembly == null)
@@ -66,8 +82,7 @@ namespace DotStd
                 }
                 else
                 {
-                    var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                    DateTime linkTimeUtc = epoch.AddSeconds(secondsSince1970);
+                    DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
                     TimeZoneInfo tz = target ?? TimeZoneInfo.Local;
                     DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, tz);
                     return localTime;

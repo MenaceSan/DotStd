@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Reflection;
 
 namespace DotStd
@@ -59,7 +57,7 @@ namespace DotStd
         /// <returns>An <see cref="IList"/> containing the enumerated type value and description.</returns>
         public static IEnumerable<TupleIdValue> ToEnumList(this Type enumType)
         {
-            ValidateArgument.EnsureNotNull(enumType, enumType.Name);
+            ValidState.ThrowIfNull(enumType, enumType.Name);
 
             if (!enumType.IsEnum)
             {

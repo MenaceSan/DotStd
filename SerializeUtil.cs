@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DotStd
@@ -9,29 +10,8 @@ namespace DotStd
     public static class SerializeUtil
     {
         // Helper for Generic object serialization.
-        // Don't include Newtonsoft JSON here.
 
-        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values.
-        public const string kTrue = "true";     // JSON bool    
-
-        public static string ToJSON(bool b)
-        {
-            // Get JSON bool string.
-            // .NET bool is "True" not "true"
-            return b ? kTrue : kFalse;
-        }
-
-        public static int ToBase64Len(int lenBin)
-        {
-            // get base64 string len from binary len.
-            return (((lenBin + 2) / 3) * 4); // round up to allow padding it out with ='s
-             
-        }
-        public static int FromBase64Len(int lenBase64)
-        {
-            // get binary len from base64 len.
-            return ((lenBase64 * 3) / 4);
-        }
+        // Base64 *******************
 
         static Regex _regexBase64 = null;
         public static bool IsValidBase64(string s)
@@ -50,6 +30,18 @@ namespace DotStd
             return (s.Length % 4 == 0) && _regexBase64.IsMatch(s);
         }
 
+        public static int ToBase64Len(int lenBin)
+        {
+            // get base64 string len from binary len.
+            return (((lenBin + 2) / 3) * 4); // round up to allow padding it out with ='s
+
+        }
+        public static int FromBase64Len(int lenBase64)
+        {
+            // get binary len from base64 len.
+            return ((lenBase64 * 3) / 4);
+        }
+
         public static string ToBase64String(Stream InputStream, int ContentLength)
         {
             // might be from HttpPostedFileBase
@@ -58,7 +50,11 @@ namespace DotStd
             return System.Convert.ToBase64String(b, 0, b.Length);
         }
 
-        public static bool isJSON(string sValue)
+        // JSON *******************
+        // Don't include Newtonsoft JSON here.
+        // e.g. s = JsonConvert.SerializeObject(o, Formatting.None)
+
+        public static bool IsJSON(string sValue)
         {
             if (string.IsNullOrWhiteSpace(sValue))
                 return false;
@@ -67,19 +63,50 @@ namespace DotStd
             return sValue.StartsWith("[") || sValue.StartsWith("{");
         }
 
-        public static bool isXML(string sValue)
+        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values.
+        public const string kTrue = "true";     // JSON bool    
+
+        public static string ToJSON(bool b)
         {
-            // What about XML file which has UTF-8 BOM marker(EF BB BF) at the beginning ??
-            if (string.IsNullOrWhiteSpace(sValue))
-                return false;
-            return sValue.StartsWith("<");
+            // Get JSON bool string.
+            // .NET bool is "True" not "true"
+            return b ? kTrue : kFalse;
         }
 
-        public static Dictionary<string, object> ParseJSONToDictionary(string json)
+        public static string ToJSONObj(params string[] tuples)
+        {
+            // Create a JSON string object from a list of fields and values.
+            // value strings are JSON encoded ! for quotes use \"
+            // A JSON string must be double-quoted, according to the specs, so you don't need to escape single ' . 
+
+            if (tuples == null)
+                return null;
+            if (tuples.Length == 0)
+                return "";
+            var sb = new StringBuilder();
+            sb.Append('{');
+            for (int i = 0; i < tuples.Length; i += 2)
+            {
+                if (i > 0)
+                    sb.Append(",\"");
+                else
+                    sb.Append('"');
+                sb.Append(tuples[i]);
+                sb.Append("\":\"");
+                sb.Append(tuples[i + 1].Replace("\"", "\\\""));
+                sb.Append('"');
+            }
+            sb.Append('}');
+            return sb.ToString();
+        }
+
+        public static Dictionary<string, object> FromJSONToDictionary(string json)
         {
             // Parse JSON to a dictionary. like Newtonsoft?
             // like JSON.NET JsonConvert.DeserializeObject<Dictionary<string, string>>
-            // System.Web.Script.Serialization.JavaScriptSerializer is buggy?
+            // ? System.Web.Script.Serialization.JavaScriptSerializer is buggy?
+
+            // TODO Does this deal with encoded " ??
 
             var d = new Dictionary<string, object>();
 
@@ -154,7 +181,7 @@ namespace DotStd
                 else if (value.StartsWith("{") && value.EndsWith("}"))
                 {
                     // JSON Value
-                    d.Add(name, ParseJSONToDictionary(value));
+                    d.Add(name, FromJSONToDictionary(value));
                 }
                 else if (double.TryParse(value, out valueNumberCheck))
                 {
@@ -168,7 +195,17 @@ namespace DotStd
             return d;
         }
 
-        public static string SerializeXML(object obj)
+        // XML *******************
+
+        public static bool IsXML(string sValue)
+        {
+            // What about XML file which has UTF-8 BOM marker(EF BB BF) at the beginning ??
+            if (string.IsNullOrWhiteSpace(sValue))
+                return false;
+            return sValue.StartsWith("<");
+        }
+
+        public static string ToXML(object obj)
         {
             // Create XML string for some object.
 
@@ -182,7 +219,7 @@ namespace DotStd
             }
         }
 
-        public static object DeserializeXML(string xml, Type toType)
+        public static object FromXML(string xml, Type toType)
         {
             // Create object from XML string.
             using (var stream = new MemoryStream())
