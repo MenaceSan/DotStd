@@ -27,7 +27,7 @@ namespace DotStd
             return string.Concat(type, kSep, KeyArgs);    // ??? reverse this string to make it more evenly distributed ?
         }
 
-        public static void FlushObj(string cacheKey)
+        public static void ClearObj(string cacheKey)
         {
             // Force clear the cache for some object.
             var cache = MemoryCache.Default;
@@ -94,10 +94,15 @@ namespace DotStd
             Set(id.ToString(), obj, seconds);
         }
 
-        public static void FlushObj(string id)
+        public static void ClearObj(string id)
         {
             string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
-            CacheData.FlushObj(cacheKey);
+            CacheData.ClearObj(cacheKey);
         }
+        public static void ClearObj(int id)
+        {
+            ClearObj(id.ToString());
+        }
+
     }
 }

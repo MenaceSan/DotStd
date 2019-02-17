@@ -42,6 +42,8 @@ namespace DotStd
 
         public const int kInvalidId = 0;    // This is never a valid id in the db. ValidState.IsValidId()
 
+        public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
+
         public ValidLevel ValidLevel;       // aggregate state for all Fields
 
         public bool IsValid { get { return this.ValidLevel == ValidLevel.OK; } }
@@ -244,6 +246,13 @@ namespace DotStd
         /// Throw if arguments are out of range.
         /// </summary>
         public static void ThrowIfBadId(int argument, string name)
+        {
+            if (!IsValidId(argument))
+            {
+                throw new ArgumentException("The argument must be greater than zero.", name);
+            }
+        }
+        public static void ThrowIfBadId(Enum argument, string name)
         {
             if (!IsValidId(argument))
             {

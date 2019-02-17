@@ -6,7 +6,7 @@ namespace DotStd
 {
     public class EmailGatewaySettings
     {
-        // my settings from the config file ConfigInfo used to populate SmtpClient.
+        // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
         // https://developer.telerik.com/featured/new-configuration-model-asp-net-core/
         // Similar to System.Net.Configuration.SmtpNetworkElement from MailSettingsSectionGroup, 
         // like .NET framework <system.net> GetMailSettings as default for SmtpClient. no action required.
@@ -17,7 +17,7 @@ namespace DotStd
         public string Username { get; set; }    // AKA userName
         public string Password { get; set; }    // AKA password. might be encrypted??
 
-        public IValidatable<string> AllowedFilter = null;    // Filter who we can and cannot send emails to.
+        public IValidatable<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
 
         public void Init(IPropertyGetter config)
         {
@@ -35,7 +35,7 @@ namespace DotStd
                 config = ConfigApp.ConfigInfo;
             }
 
-            AllowedFilter = config.isConfigModeProd() ? null : allowedFilter;     // Can we send email to anybody ?
+            AllowedFilter = config.isConfigModeProd() ? null : allowedFilter;     // Can we send email to anybody ? ignore white list in prod mode.
 
             // Search for email config in AppSettings.json for .NET Core.
             if (config.GetSetting("Smtp:Host") != null)

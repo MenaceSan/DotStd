@@ -58,7 +58,7 @@ namespace DotStd
                 _binary[i] = bdef;
         }
 
-        public void SetBit(int bitPos, bool bitValue)
+        public void SetBit(int bitPos, bool bitValue = true)
         {
             // Set state of a single bit.
             // bitPos = bit position in the _binary - kFirstBit

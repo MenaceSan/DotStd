@@ -11,6 +11,7 @@ namespace DotStd
         public static string GetValidDriversLicense(string sDLNum, StateId stateId, out string sFailure)
         {
             // Is this a generally validate Drivers license format ? Is it valid for a particular issuing state ?
+            // Mostly for the US and Canada.
             // RETURN: null = cant make this valid.
             // Assume All DLNums are greater than 2 chars, and less than k_DLNum_MaxLen chars. (1 digit is technically allowed in some states. ignore this)
             // All contain digits and letters. WA can contain *.
@@ -266,7 +267,7 @@ namespace DotStd
                     break;
                 case StateId.OH:  // Ohio
                     break;
-                case StateId.ON:
+                case StateId.ON:    // Ontario
                     // 15 positions.    1st position alpha.    2-15 positions numeric 
                     // May contain 2*'-' chars which we strip.
                     bMustStartWithAlpha = true;

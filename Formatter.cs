@@ -56,6 +56,11 @@ namespace DotStd
             return ti.ToTitleCase(str).Trim();
         }
 
+        public static string Join(string separator, params string[] array)
+        {
+            // separator = ","
+            return string.Join(separator, array.Where(s => !string.IsNullOrWhiteSpace(s)));
+        }
         public static string JoinTitles(string separator, params string[] array)
         {
             // separator = ","

@@ -135,7 +135,7 @@ namespace DotStd
             {
                 q = q.OrderByList(this.SortFields);
             }
-            if (this.PageSize > 0)
+            if (this.PageSize > 0)  // paging.
             {
                 q = q.Skip(this.GetSkip()).Take(this.PageSize);
             }

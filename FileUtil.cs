@@ -21,7 +21,7 @@ namespace DotStd
         [Description(@"application/vnd.ms-powerpoint")]
         PPT = 4,        // pptx
         [Description(@"image/jpeg")]
-        JPEG = 5,       // AKA JPG
+        JPG = 5,       // AKA JEPG
         [Description(@"image/png")]
         PNG = 6,
         [Description(@"image/gif")]
@@ -231,7 +231,7 @@ namespace DotStd
             // For things that only make sense as images. Avatar etc.
             switch (docType)
             {
-                case DocumentType.JPEG:
+                case DocumentType.JPG:
                 case DocumentType.GIF:
                 case DocumentType.PNG:
                 case DocumentType.BMP:
@@ -250,9 +250,9 @@ namespace DotStd
 
             switch (fileExtension.ToLower())
             {
-                case ".jpg":
+                case ".jpg":    // more commonly used than .jpeg ext.
                 case ".jpeg":
-                    return DocumentType.JPEG;
+                    return DocumentType.JPG;
                 case ".gif":
                     return DocumentType.GIF;
                 case ".png":

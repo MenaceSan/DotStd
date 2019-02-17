@@ -10,7 +10,7 @@ namespace DotStd
         // helper to support System.Net.Mail.MailAddress
         // parse the email to get First and Last Names, display names.
 
-        public const int k_EMail_MaxLen = 128;   // there are no valid emails > k_EMail_MaxLen
+        public const int kMaxLen = 128;   // there are no valid email addresses > kMaxLen
 
         public static bool IsEmailAddress(string email)
         {
@@ -20,8 +20,9 @@ namespace DotStd
             // Sample valid emails:
             //  jim+somecoolshop22@example.com
 
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(email) || email.Length > kMaxLen)
                 return false;
+
             // "^[_a-z0-9-]+(.[a-z0-9-]+)@[a-z0-9-]+(.[a-z0-9-]+)*(.[a-z]{2,4})$"
             // "^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$"
             // @"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$"

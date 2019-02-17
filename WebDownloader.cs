@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.IO;
+using System.Net.Security;
 
 namespace DotStd
 {
@@ -22,43 +23,70 @@ namespace DotStd
         public WebDownloader()
         {
         }
-        public WebDownloader(string sSrcURL, string sDestPath, string sUserString = "")
+        public WebDownloader(string srcUrl, string dstPath, string sUserString = "")
         {
-            SrcURL = sSrcURL;
-            DestPath = sDestPath;
+            SrcURL = srcUrl;
+            DestPath = dstPath;
             UserString = sUserString;
         }
 
-        public void DownloadFileRaw()
+        public void DownloadFileRaw(bool allowRedirect = false)
         {
             // Synchronous get file. Doesnt call any events. no protection from throw.
             DirUtil.DirCreateForFile(DestPath);
 
-#if true // true
-            var wc = new WebClient();
-            wc.DownloadFile(SrcURL, DestPath);
-#else
-            // https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-request-data-using-the-webrequest-class
-            var req = WebRequest.Create(SrcURL);
-            var reqH = ((HttpWebRequest)req);
-
-            reqH.Credentials = CredentialCache.DefaultCredentials;
-            reqH.UseDefaultCredentials = true;
-            reqH.Date = DateTime.Now;
-
-            // Pretend to be a browser.
-            reqH.UserAgent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36";
-
-            // Send the 'WebRequest' and wait for response.
-            using (var rsp = req.GetResponse())
+            if (!allowRedirect)
             {
-                using (var dst = File.Create(DestPath))
-                {
-                    rsp.GetResponseStream().CopyTo(dst);
-                }
-                rsp.Close();
+                var wc = new WebClient();
+                wc.DownloadFile(SrcURL, DestPath);
             }
-#endif
+            else
+            {
+                // Make sure we allow redirects and such.
+                // https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-request-data-using-the-webrequest-class
+                var req = WebRequest.Create(SrcURL);
+                HttpWebRequest reqH = ((HttpWebRequest)req);
+
+                // reqH.AuthenticationLevel = AuthenticationLevel.None;
+                // reqH.AllowAutoRedirect = true;
+                reqH.KeepAlive = false;
+                reqH.Proxy = null;      // makes it slow.
+                // reqH.ServicePoint.ConnectionLeaseTimeout = 0;
+                // reqH.ReadWriteTimeout = System.Threading.Timeout.Infinite;
+                reqH.ServicePoint.Expect100Continue = false;
+                reqH.ProtocolVersion = HttpVersion.Version10;
+
+                reqH.Credentials = CredentialCache.DefaultCredentials;
+                reqH.UseDefaultCredentials = true;
+                reqH.Date = DateTime.Now;
+
+                // reqH.Timeout = 5000;
+                reqH.Method = "GET";
+                reqH.Headers.Set(HttpRequestHeader.CacheControl, "max-age=0, no-cache, no-store");
+
+                //ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls;
+                //ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
+                //var cookieJar = new CookieContainer();
+                //reqH.CookieContainer = cookieJar;
+
+                // Pretend to be a browser.
+                reqH.UserAgent = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0";
+                // reqH.Accept = "*/*";
+                // reqH.Headers.Add("Accept-Encoding: gzip, deflate");
+                // reqH.Headers.Add("Accept-Language: en-US");
+
+                // Send the 'WebRequest' and wait for response.
+                // WebRequest HttpWebRequest timeout timed out at Associating Connection
+                using (var rsp = req.GetResponse())
+                {
+                    using (var dst = File.Create(DestPath))
+                    {
+                        rsp.GetResponseStream().CopyTo(dst);
+                    }
+                    rsp.Close();
+                }
+            }
         }
 
         public bool DownloadFile()

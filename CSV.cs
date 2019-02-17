@@ -16,6 +16,8 @@ namespace DotStd
         //! rfc4180 = https://tools.ietf.org/html/rfc4180
         //! NOTE: No way to put comments here. Maybe use convention of # or ; ?
 
+        public const string kHeaderBad = "CSV header is not in correct format";
+
         public static bool IsQuoteNeeded(string value, char q = '\"')
         {
             //! Are quotes needed for a single value?

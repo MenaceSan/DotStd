@@ -49,7 +49,7 @@ namespace DotStd
             FlushDead();
         }
 
-        public static void FlushObj(int id)
+        public static void ClearObj(int id)
         {
         }
 

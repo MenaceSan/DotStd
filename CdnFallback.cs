@@ -5,7 +5,7 @@ using System.Xml.Linq;
 
 namespace DotStd
 {
-    public static class CdnUtil
+    public static class CdnFallback
     {
         // Sync/Pull .js and .css files from a CDN and make local copies for failover and dev purposes.
         // Read a file called 'CdnAll.html' that contains all the links to my CDN files.
@@ -35,7 +35,7 @@ namespace DotStd
         public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
             // Read the HTML/XML file kAll from Resource.
-            // Pull all files from the CDN that we want locally as backups.
+            // Pull all files from the CDN that we want locally as backups/fallback.
             // Write out the local stuff to outDir. e.g. "wwwroot/cdn"
             if (!File.Exists(cdnAllFilePath))
                 return 0;
@@ -49,53 +49,94 @@ namespace DotStd
                 if (node.NodeType != XmlNodeType.Element)
                     continue;
                 XElement xl = (XElement)node;
-                if (xl.Name != "script" && xl.Name != "link")
+                if (xl.Name != "script" && xl.Name != "link" && xl.Name != "a")
                     continue;
 
                 string typeExt = (xl.Name == "script") ? "src" : "href";
                 XAttribute src = xl.Attribute(typeExt);
-                XAttribute integrity = xl.Attribute("integrity");
-                XAttribute dst = xl.Attribute("asp-fallback-" + typeExt);
-                XAttribute dstDev = xl.Attribute("data-dev-" + typeExt);    // Allow null default.
-                if (integrity == null)
+                if (src==null)
                 {
-                    continue;       // Not supported. It should ?!?
+                    // weird ! Fail!
+                    continue;
                 }
 
-                // test hash e.g. "sha256-", "sha384-"
-                int i = integrity.Value.IndexOf('-');
-                if (i <= 0)
-                    continue;
-                byte[] hashCode1 = Convert.FromBase64String(integrity.Value.Substring(i + 1));
-                byte[] hashCode2 = null;
-                // string debugHash1 = Convert.ToBase64String(hashCode1);
-                // string debugHash2;
-
-                var hasher = new HashUtil(integrity.Value);
+                XAttribute integrity = xl.Attribute("integrity");       // has hash ?
+                XAttribute dstDev = xl.Attribute("data-dev-" + typeExt);    // Allow null default.
+                XAttribute dst = xl.Attribute("asp-fallback-" + typeExt);       // Assume exists.
+                if (dst == null)
+                {
+                    dst = xl.Attribute("data-fallback-" + typeExt);     // a is used for fonts/images and other data.
+                }
+                if (dst == null)
+                {
+                    if (dstDev == null)
+                    {
+                        continue;
+                    }
+                    dst = dstDev;
+                    dstDev = null;
+                    integrity = null;
+                }
 
                 string dstPath = GetPhysPathFromWeb(dst.Value); // Make a real path.
-                if (File.Exists(dstPath))
+                byte[] hashCode1 = null;
+                HashUtil hasher = null;
+
+                if (integrity == null)
                 {
-                    // Is current file ok?
-                    hashCode2 = hasher.GetHashFile(dstPath);
-                    // debugHash2 = Convert.ToBase64String(hashCode2);
-                    if (ComparerDef.CompareBytes(hashCode1, hashCode2) == 0)     // match.
+                    // integrity doesnt exist so just check that the file exists locally.
+                    if (File.Exists(dstPath))
+                    {
+                        var fi = new FileInfo(dstPath);
+                        if (fi != null && fi.Length > 0)
+                            continue;
+                    }
+                }
+                else
+                {
+                    // test hash e.g. "sha256-", "sha384-"
+                    int i = integrity.Value.IndexOf('-');
+                    if (i <= 0)
                         continue;
-                    hasher.Init();
+
+                    hashCode1 = Convert.FromBase64String(integrity.Value.Substring(i + 1));
+                    hasher = new HashUtil(integrity.Value);
+                    if (File.Exists(dstPath))
+                    {
+                        // Is current file ok?
+                        byte[] hashCode2 = hasher.GetHashFile(dstPath);
+                        // debugHash2 = Convert.ToBase64String(hashCode2);
+                        if (ComparerDef.CompareBytes(hashCode1, hashCode2) == 0)     // match.
+                            continue;
+                        hasher.Init();
+                    }
                 }
 
                 // Pull/Get the file. 
                 downloadCount++;
                 LoggerBase.DebugEntry("Get " + src.Value);
                 var dl = new WebDownloader(src.Value, dstPath);
-                dl.DownloadFileRaw();  // Assume dir is created on demand.
 
-                // Now test again!
-                hashCode2 = hasher.GetHashFile(dstPath);
-                // debugHash2 = Convert.ToBase64String(hashCode2);
-                if (ComparerDef.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
+                // CDN can get "OperationCanceledException: The operation was canceled."
+                dl.DownloadFileRaw(true);  // Assume dir is created on demand.
+
+                if (integrity == null)
                 {
-                    throw new Exception("CDN integrity hash does not match for " + dstPath);
+                    var fi = new FileInfo(dstPath);
+                    if (fi == null || fi.Length <= 0)
+                    {
+                        throw new Exception("CDN file size 0 for " + dstPath);
+                    }
+                }
+                else
+                {
+                    // Now test again!
+                    byte[] hashCode2 = hasher.GetHashFile(dstPath);
+                    // debugHash2 = Convert.ToBase64String(hashCode2);
+                    if (ComparerDef.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
+                    {
+                        throw new Exception("CDN integrity hash does not match for " + dstPath);
+                    }
                 }
 
                 if (src.Value.Contains(kMin) || src.Value.Contains(kMin2))

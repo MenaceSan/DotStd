@@ -249,6 +249,11 @@ namespace DotStd
                 return null;
             return idN;
         }
+        public static int FromId(int? id)
+        {
+            // may be cast to enum ?
+            return id ?? ValidState.kInvalidId;
+        }
 
         public static string ToUnique(string id)
         {
