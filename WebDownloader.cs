@@ -32,13 +32,15 @@ namespace DotStd
 
         public void DownloadFileRaw(bool allowRedirect = false)
         {
-            // Synchronous get file. Doesnt call any events. no protection from throw.
+            // Synchronous get file. Doesn't call any events. no protection from throw.
             DirUtil.DirCreateForFile(DestPath);
 
             if (!allowRedirect)
             {
-                var wc = new WebClient();
-                wc.DownloadFile(SrcURL, DestPath);
+                using (var wc = new WebClient())
+                {
+                    wc.DownloadFile(SrcURL, DestPath);  // vs DownloadData()
+                }
             }
             else
             {
@@ -51,8 +53,8 @@ namespace DotStd
                 // reqH.AllowAutoRedirect = true;
                 reqH.KeepAlive = false;
                 reqH.Proxy = null;      // makes it slow.
-                // reqH.ServicePoint.ConnectionLeaseTimeout = 0;
-                // reqH.ReadWriteTimeout = System.Threading.Timeout.Infinite;
+                                        // reqH.ServicePoint.ConnectionLeaseTimeout = 0;
+                                        // reqH.ReadWriteTimeout = System.Threading.Timeout.Infinite;
                 reqH.ServicePoint.Expect100Continue = false;
                 reqH.ProtocolVersion = HttpVersion.Version10;
 

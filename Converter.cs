@@ -67,16 +67,16 @@ namespace DotStd
         public static string ToString(object o)
         {
             // object to a string. don't return null.
-            // should never throw.
+            // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
-                return string.Empty;
+                return string.Empty;    // NOT null. or use ToStringN()
             return o.ToString();
         }
 
         public static string ToStringN(object o)
         {
             // object to a string. strings are always nullable.
-            // should never throw.
+            // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return null;
             return o.ToString();
@@ -273,6 +273,13 @@ namespace DotStd
             return result;
         }
 
+        public static bool IsNullableType(Type t)
+        {
+            // TypeCode.String is an odd case.
+            return t.IsGenericType &&
+              t.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+        }
+
         /// <remarks>
         /// This method exists as a workaround to System.Convert.ChangeType(Object, Type) which does not handle
         /// nullables as of version 2.0 (2.0.50727.42) of the .NET Framework.
@@ -290,21 +297,10 @@ namespace DotStd
                 return null;
 
             // If it's not a nullable type, just pass through the parameters to Convert.ChangeType
-            if (conversionType.IsGenericType &&
-              conversionType.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
+            if (IsNullableType(conversionType))
             {
                 // It's a nullable type, so instead of calling Convert.ChangeType directly which would throw a
                 // InvalidCastException (per http://weblogs.asp.net/pjohnson/archive/2006/02/07/437631.aspx),
-                // determine what the underlying type is
-                // If it's null, it won't convert to the underlying type, but that's fine since nulls don't really
-                // have a type--so just return null
-                // Note: We only do this check if we're converting to a nullable type, since doing it outside
-                // would diverge from Convert.ChangeType's behavior, which throws an InvalidCastException if
-                // value is null and conversionType is a value type.
-                if (value == null)
-                {
-                    return null;
-                }
 
                 // It's a nullable type, and not null, so that means it can be converted to its underlying type,
                 // so overwrite the passed-in conversion type with this underlying type
@@ -348,32 +344,6 @@ namespace DotStd
                 oList.Add(i);
             }
             return oList;
-        }
-
-        public static string ToHexStr(byte[] data)
-        {
-            // Loop through each byte[] and format each one as a hexadecimal string.
-            // Similar to Convert.ToBase64String(). Consider using this instead ?
-
-            // Create a new StringBuilder to collect the bytes and create a string.
-            var sb = new StringBuilder();
-            for (int i = 0; i < data.Length; i++)
-            {
-                sb.Append(data[i].ToString("x2"));
-            }
-
-            // Return the hexadecimal string.
-            return sb.ToString();
-        }
-
-        public static byte[] FromHexStr(string str)
-        {
-            // Ignore str.StartsWith("0x")
-
-            return Enumerable.Range(0, str.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(str.Substring(x, 2), 16))
-                     .ToArray(); ;
         }
 
         public static int[] ToArray(params int[] array)

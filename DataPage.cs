@@ -158,7 +158,7 @@ namespace DotStd
         // a data page with extra search/filter params imposed.
 
         public string SearchFilter { get; set; }    // Filter on some important field(s). Which ?? 
-        public int FilterId { get; set; }           // A selection of predefined filters. enum. 0 = unused.
+        public int FilterId { get; set; }           // A custom selection of predefined filters. enum. 0 = unused.
 
         public DataPageSearch(int startOfPage, int pageSize, List<ComparerDef> sortFields, string searchFilter, int filterId = 0)
             : base(startOfPage, pageSize, sortFields)

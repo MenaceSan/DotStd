@@ -49,10 +49,6 @@ namespace DotStd
             FlushDead();
         }
 
-        public static void ClearObj(int id)
-        {
-        }
-
         public static T Get(int id, int decaysec, Func<int, T> loader)
         {
             // Find this object in the cache. Load it if it isn't present.
@@ -73,7 +69,7 @@ namespace DotStd
                     return obj;  // got it.
                 }
 
-                // Fallback to the weak ref cache next. e.g. someone has a ref that existed longer than the CacheData.
+                // Fallback to the weak ref cache next. e.g. someone has a ref that existed longer than the cache.
                 WeakReference wr;
                 if (_WeakRefs.TryGetValue(cacheKey, out wr))
                 {
@@ -85,30 +81,50 @@ namespace DotStd
                 }
 
                 // lastly load it.
-                // NOTE: await Task<T> cant be done inside lock !
-                T objLoad = loader.Invoke(id);
-                ValidState.ThrowIfNull(objLoad, nameof(objLoad));
-
-                if (obj == null)
+                if (loader != null)
                 {
-                    obj = objLoad;  // Fresh load.
-                    if (wr != null)
+                    // NOTE: await Task<T> cant be done inside lock !
+                    T objLoad = loader.Invoke(id);
+                    ValidState.ThrowIfNull(objLoad, nameof(objLoad));
+
+                    if (obj == null)
                     {
-                        _WeakRefs.Remove(cacheKey);
+                        obj = objLoad;  // Fresh load.
+                        if (wr != null)
+                        {
+                            _WeakRefs.Remove(cacheKey);
+                        }
+                        _WeakRefs.Add(cacheKey, new WeakReference(obj));
                     }
-                    _WeakRefs.Add(cacheKey, new WeakReference(obj));
-                }
-                else
-                {
-                    PropertyUtil.InjectProperties<T>(obj, objLoad); // refresh old weak ref.
+                    else
+                    {
+                        PropertyUtil.InjectProperties<T>(obj, objLoad); // refresh props in old weak ref.
+                    }
                 }
 
-                // store it in cache.
-                var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.Now.AddSeconds(decaysec) };     // We have already outlived our time. we should refresh this !
-                cache.Set(cacheKey, obj, policy);
+                if (obj != null)
+                {
+                    // store it in cache.
+                    var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.Now.AddSeconds(decaysec) };     // We have already outlived our time. we should refresh this !
+                    cache.Set(cacheKey, obj, policy);
+                }
+
                 return obj;
             }
         }
+
+        public static void ClearObj(int id, T newValues)
+        {
+            // Object has changed. So sync up all other users with the new values!
+
+            lock (_WeakRefs)
+            {
+                T obj = Get(id, 10, null);
+                if (obj == null)
+                    return;     // Its not loaded so do nothing.
+                PropertyUtil.InjectProperties<T>(obj, newValues); // refresh props in old weak ref.
+            }
+       }
 
 #if false
         public static async Task<T> GetAsync(int id, int decaysec, Task<T> myTask)

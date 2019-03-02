@@ -8,34 +8,68 @@ namespace DotStd
     public enum DocumentType
     {
         // Common MIME types and related file extensions.
+        // in table document_type
+        // Get icons from https://fileicons.org/?view=square-o
 
         [Description(@"application/octet-stream")]
-        Unk = 0,    // Binary blob ?
+        BIN = 0,    // BIN (AKA BLANK) -> Unknown Binary blob ?
 
         [Description(@"application/msword")]
-        DOC = 1,    // docx
-        [Description(@"application/pdf")]
-        PDF = 2,
+        DOC = 1,    // old binary format.
+        [Description(@"application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+        DOCX = 2,    // https://fossbytes.com/doc-vs-docx-file-difference-use/
+
         [Description(@"application/vnd.ms-excel")]
-        XLS = 3,      // xlsx  // application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+        XLS = 3,      // old binary format.
+        [Description(@"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+        XLSX = 4,
+
         [Description(@"application/vnd.ms-powerpoint")]
-        PPT = 4,        // pptx
+        PPT = 5,        // old binary format.
+        [Description(@"application/vnd.openxmlformats-officedocument.presentationml.presentation")]
+        PPTX = 6,
+
+        [Description(@"application/pdf")]
+        PDF = 7,
+
         [Description(@"image/jpeg")]
-        JPG = 5,       // AKA JEPG
+        JPG = 8,       // AKA JEPG
         [Description(@"image/png")]
-        PNG = 6,
+        PNG = 9,
         [Description(@"image/gif")]
-        GIF = 7,
+        GIF = 10,
         [Description(@"image/bmp")]
-        BMP = 8,
+        BMP = 11,
         [Description(@"image/x-ico")]
-        ICO = 9,
+        ICO = 12,
+
         [Description(@"text/csv")]
-        CSV = 10,
+        CSV = 13,
         [Description(@"text/html")]
-        HTML = 11,
+        HTML = 14,
         [Description(@"text/plain")]
-        TXT = 12,        //  
+        TXT = 15,        //  
+
+        [Description(@"image/svg+xml")]
+        SVG = 16,        //  Vector images
+        [Description(@"video/mp4")]
+        MP4 = 17,        //  video consumed by chrome. HTML5
+        [Description(@"video/x-flv")]
+        FLV = 18,        //  video
+
+        // AVI
+        // MPG
+        // webm
+
+        // Other common types:
+        // RTF, XML, TGA, TTF
+        // AIF, WAV, MP3
+        // MKV, SWF, MOV, 
+        // JSON, ZIP, BZ2, ISO
+        // CFG, INI, DAT, DB, CAL, CAB
+        // C#, CPP, JS, CSS
+
+        MaxValue = 20,
     }
 
     public static class FileUtil
@@ -236,6 +270,7 @@ namespace DotStd
                 case DocumentType.PNG:
                 case DocumentType.BMP:
                 case DocumentType.ICO:
+                case DocumentType.SVG:
                     return true;
                 default:
                     return false;
@@ -262,22 +297,27 @@ namespace DotStd
                 case ".pdf":
                     return DocumentType.PDF;
                 case ".doc":
-                case ".docx":
                     return DocumentType.DOC;
+                case ".docx":
+                    return DocumentType.DOCX;
                 case ".xls":
-                case ".xlsx":
                     return DocumentType.XLS;
+                case ".xlsx":
+                    return DocumentType.XLSX;
                 case ".ppt":
-                case ".pptx":
                     return DocumentType.PPT;
+                case ".pptx":
+                    return DocumentType.PPTX;
                 case ".txt":
                     return DocumentType.TXT;
                 case ".csv":
                     return DocumentType.CSV;
                 case ".ico":
                     return DocumentType.ICO;
+                case ".svg":
+                    return DocumentType.SVG;
                 default:
-                    return DocumentType.Unk;    // binary blob.
+                    return DocumentType.BIN;    // binary blob.
             }
         }
 
@@ -292,10 +332,10 @@ namespace DotStd
             // e.g. "text/plain"
             // like MimeMapping.GetMimeMapping()
 
-            if (docType <= DocumentType.Unk || docType > DocumentType.TXT)
+            if (docType <= DocumentType.BIN || docType >= DocumentType.MaxValue)
             {
                 // Some other content type? octet-stream
-                docType = DocumentType.Unk;
+                docType = DocumentType.BIN;
             }
 
             return docType.ToDescription();

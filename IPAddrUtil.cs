@@ -85,8 +85,9 @@ namespace DotStd
                     return endPoint.Address;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                LoggerBase.DebugException("FindIPAddrLocal", ex);
                 return IPAddress.Parse(kLocalHost); // must return something.
             }
         }
@@ -95,27 +96,37 @@ namespace DotStd
         {
             // Use an external service to find my public IP address.
             // only works if: System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
-
             // https://stackoverflow.com/questions/3253701/get-public-external-ip-address
-            // http://bot.whatismyipaddress.com
-            // https://ipinfo.io/ip
 
-            // string externalip = new WebClient().DownloadString("http://icanhazip.com");
-            string externalip = new WebClient().DownloadString("https://ipinfo.io/ip");
-
-            externalip = externalip.Trim();
-            IPAddress addr;
-            if (!IPAddress.TryParse(externalip, out addr))
+            try
             {
+                string externalip;
+                using (var wc = new WebClient())
+                {
+                    // externalip = wc.DownloadString("http://bot.whatismyipaddress.com"); // Hangs ??
+                    // externalip = wc.DownloadString("http://icanhazip.com");  // Hangs ??
+                    externalip = wc.DownloadString("https://ipinfo.io/ip");
+                }
+
+                externalip = externalip.Trim();
+                IPAddress addr;
+                if (!IPAddress.TryParse(externalip, out addr))
+                {
+                    return null;
+                }
+
+                if (IsIP4Private(addr))
+                {
+                    // this is wrong!
+                }
+
+                return addr;
+            }
+            catch (Exception ex)
+            {
+                LoggerBase.DebugException("FindIPAddrExternal", ex);
                 return null;
             }
-
-            if (IsIP4Private(addr))
-            {
-                // this is wrong!
-            }
-
-            return addr;
         }
     }
 }

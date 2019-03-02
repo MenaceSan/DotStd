@@ -97,6 +97,15 @@ namespace DotStd
             }
         }
 
+        public static string TimeAgoStr(DateTime t)
+        {
+            if (IsExtremeDate(t))
+            {
+                return "never";  
+            }
+            return TimeAgoStr(DateTime.Now - t);
+        }
+
         public static string TimeMsecStr(long mSec)
         {
             // How much time in mSec.
@@ -143,7 +152,7 @@ namespace DotStd
         public static DateTime GetDateOfWeekDayPrevX(DateTime dt, DayOfWeek dow)
         {
             // Get previous dow (day of week) NOT including dt.
-            return GetDateOfWeekDayPrev(dt.AddDays(-1),dow);
+            return GetDateOfWeekDayPrev(dt.AddDays(-1), dow);
         }
 
         public static DateTime GetDateOfWeekDayNext(DateTime dt, DayOfWeek dow)
@@ -202,7 +211,5 @@ namespace DotStd
             }
             return DayOfWeek.Monday;        // no idea. -1 ?
         }
-
     }
-
 }

@@ -8,7 +8,7 @@ namespace DotStd
 {
     public enum SortDirection
     {
-        // like System.Web.UI.WebControls.SortDirection
+        // like System.Web.UI.WebControls.SortDirectionNullable
         None = 0,
         Ascending,  // default.
         Descending,

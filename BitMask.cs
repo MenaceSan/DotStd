@@ -9,7 +9,7 @@ namespace DotStd
 
         public const int kBitsPer = 8;          // bits per char/byte stored in _binary.
         public const int kFirstBit = 1;         // 1 based bit index for API calls. SetBit(),
-        public const int kDefaultSize = 128;    // n bits.
+        public const int kDefaultSize = 256;    // n bits.
 
         protected byte[] _binary;    // The raw bytes of the bitmap of unlimited length.
 
@@ -18,21 +18,25 @@ namespace DotStd
             // init via Base64 string
             // Can throw "System.FormatException: 'Invalid length for a Base-64 char array or string.'"
             // use IsValidBase64 ?
+            // TODO Allocate extra size ??
 
             if (string.IsNullOrWhiteSpace(base64String))
             {
                 // empty means no bits.
                 _binary = null;
-                return;
             }
 
-            if (base64String.StartsWith("0x"))
+            else if (base64String.StartsWith("0x"))
             {
-                _binary = Converter.FromHexStr(base64String.Substring(2));
+                _binary = SerializeUtil.FromHexStr(base64String.Substring(2));
+            }
+            else if (SerializeUtil.IsValidBase64(base64String))
+            {
+                _binary = Convert.FromBase64String(base64String);       // will throw if string is bad
             }
             else
             {
-                _binary = Convert.FromBase64String(base64String);
+                _binary = null;
             }
         }
 
@@ -124,12 +128,31 @@ namespace DotStd
             return (result & 1) != 0; // to bool
         }
 
+        public static byte[] TruncateZeros(byte[] b)
+        {
+            // Truncate 0 off the end. No need to encode that.
+            int len = b.Length;
+            for (; len > 0 && b[len - 1] == 0; len--)
+            {
+            }
+            if (len <= 0)
+                return null;
+            if (len == b.Length)
+                return b;
+            var b2 = new byte[len];
+            Buffer.BlockCopy(b, 0, b2, 0, len);
+            return b2;
+        }
+
         public override string ToString()
         {
             // Get Base64 string.
             if (_binary == null)
                 return null;
-            return Convert.ToBase64String(_binary);
+            var b = TruncateZeros(_binary);
+            if (b == null)
+                return "";
+            return Convert.ToBase64String(b);
         }
 
         public static string CreateBitMask(int maxBits = kDefaultSize, bool defaultBitValue = false)

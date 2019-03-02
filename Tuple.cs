@@ -5,7 +5,7 @@ namespace DotStd
     [Serializable]  // JSON
     public class TupleIdValue // : Tuple<int, string>
     {
-        // like KeyValuePair<int, string> (but cant init KeyValuePair properly so its not useful for JSON or EF)
+        // like KeyValuePair<int, string> (but I cant init KeyValuePair properly so its not useful for JSON or EF)
         // like class System.Tuple<int,string> NOT like struct System.ValueTuple<int,string>
 
         public int Id { get; set; }

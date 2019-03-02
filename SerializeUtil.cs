@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,14 +12,40 @@ namespace DotStd
     {
         // Helper for Generic object serialization.
 
+        public static string ToHexStr(byte[] data)
+        {
+            // Loop through each byte[] and format each one as a hexadecimal string.
+            // Similar to Convert.ToBase64String(). Consider using Base64 instead ?
+
+            // Create a new StringBuilder to collect the bytes and create a string.
+            var sb = new StringBuilder();
+            for (int i = 0; i < data.Length; i++)
+            {
+                sb.Append(data[i].ToString("x2"));
+            }
+
+            // Return the hexadecimal string.
+            return sb.ToString();
+        }
+
+        public static byte[] FromHexStr(string str)
+        {
+            // Ignore str.StartsWith("0x")
+
+            return Enumerable.Range(0, str.Length)
+                     .Where(x => x % 2 == 0)
+                     .Select(x => Convert.ToByte(str.Substring(x, 2), 16))
+                     .ToArray(); ;
+        }
+
         // Base64 *******************
 
         static Regex _regexBase64 = null;
         public static bool IsValidBase64(string s)
         {
             // Is the format of the string valid for base64?
-            // Should not throw on Convert.FromBase64()
-            // Convert.ToBase64String()
+            // Should not throw on Convert.FromBase64(). e.g. "1" is exception.
+            // from Convert.ToBase64String()
 
             if (string.IsNullOrWhiteSpace(s))
                 return false;
