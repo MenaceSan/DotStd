@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -134,6 +135,13 @@ namespace DotStd
             a.Add(sb.ToString());    // last item 
 
             return a;   // can use Linq ToArray() to get string[]
+        }
+
+        public static List<string> Decode(string sLine, char delim)
+        {
+            if (delim == ',')
+                return Decode(sLine);
+            return sLine.Split(delim).ToList();
         }
 
         public static string EncodeList<T>(IEnumerable<T> list, bool showProperties = true)

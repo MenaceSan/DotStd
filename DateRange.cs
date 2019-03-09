@@ -4,6 +4,40 @@ using System.Linq;
 
 namespace DotStd
 {
+    public enum DateRelative
+    {
+        // Range that is relative to the current date. In current users time zone and selected starting DoW.
+        // Used for reporting purposes. This, Last, Next
+        // <member name="F:OfficeOpenXml.ConditionalFormatting.eExcelConditionalFormattingTimePeriodType.LastWeek">
+        // <member name="F:Intuit.Ipp.Data.DateMacro.LastWeek">
+
+        Custom = 0,     // maybe nothing.
+        [Description("All Dates")]
+        All = 1,        // Any data i might have. no filter on time. Max Range.
+        None = 2,       // Empty date range.
+
+        [Description("Today")]
+        DSF,        // Current day so far. No future.
+        [Description("Week to Date")]
+        WTD,
+        [Description("Moth to Date")]
+        MTD,
+        QTD,
+        YTD,
+
+        Today,          // Includes to the end of today.
+        ThisWeek,       // Starting day of week (DoW) is based on users pref ?
+        ThisMonth,
+        ThisQuarter,
+        ThisYear,       // to the end of this year. not just year to date.
+
+        Yesterday,
+        LastWeek,       // Starting day of week (DoW) is based on users pref ? // e.g. JS moment 'lastWeek'. 
+        LastMonth,
+        LastQuarter,
+        LastYear,
+    }
+
     /// <summary>
     /// Represents a range of two date/times. .NET has no native concept.
     /// </summary>

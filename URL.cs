@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DotStd
@@ -53,12 +50,33 @@ namespace DotStd
             return _regexURL2.IsMatch(url);
         }
 
+        public static string GetSubDomain(string reqHost)
+        {
+            // reqHost = context.Request.Host.ToString(). e.g. "subdom.test.com:234"
+            // RETURN null for "test.com" or "localhost:44322"
+            // ASSUME not /Path
+            if (reqHost == null)
+                return null;
+            int i = reqHost.IndexOf(kSep);
+            if (i >= 0)
+            {
+                reqHost = reqHost.Substring(0, i);
+            }
+            i = reqHost.IndexOf('.');
+            if (i < 0)      // no dots.
+                return null;
+            int j = reqHost.IndexOf('.', i + 1);    // MUST have a second dot.
+            if (j < 0)
+                return null;
+            return reqHost.Substring(0, i);
+        }
+
         public static string MakeHttpX(string sURL, bool bSetHttps)
         {
             // Make sure the URL has the proper prefix. http or https
             if (sURL.StartsWith(kHttps))
             {
-                if ( ! bSetHttps)
+                if (!bSetHttps)
                     return kHttp + sURL.Substring(8);
             }
             else if (sURL.StartsWith(kHttp))
@@ -78,8 +96,8 @@ namespace DotStd
             // Make sure the URL has a prefix. default to https if it does not.
             if (!sURL.StartsWith(kHttp) && !sURL.StartsWith(kHttps))    // make sure it has prefix.
                 sURL = kHttps + sURL;
-            if (!sURL.EndsWith("/") && !sURL.Contains("?"))    // not sure why i have to do this.
-                sURL += "/";
+            if (!sURL.EndsWith(kSep) && !sURL.Contains("?"))    // not sure why i have to do this.
+                sURL += kSep;
             return sURL;
         }
 
@@ -93,14 +111,14 @@ namespace DotStd
             {
                 if (string.IsNullOrWhiteSpace(a))    // doesnt count
                     continue;
-                bool startSep = a.StartsWith("/");
+                bool startSep = a.StartsWith(kSep);
                 if (i > 0 && endSep && startSep)
                 {
                     sb.Append(a.Substring(1));
                 }
                 else if (i > 0 && !endSep && !startSep)
                 {
-                    sb.Append("/");
+                    sb.Append(kSep);
                     sb.Append(a);
                 }
                 else
@@ -108,7 +126,7 @@ namespace DotStd
                     sb.Append(a);
                 }
 
-                endSep = a.EndsWith("/");
+                endSep = a.EndsWith(kSep);
                 i++;
             }
 
@@ -117,18 +135,18 @@ namespace DotStd
 
         public static string GetFileName(string sURL)
         {
-            // Extract just the filename from the URL. Clip args after '?' or '#'
+            // Extract just the filename from the URL. No domain name, Clip args after '?' or '#'
             try
             {
-                int i = sURL.LastIndexOf("/");
+                int i = sURL.LastIndexOf(kSep);
                 if (i >= 0)
                 {
-                    sURL = sURL.Substring(sURL.LastIndexOf("/") + 1);
+                    sURL = sURL.Substring(sURL.LastIndexOf(kSep) + 1);
                 }
                 i = sURL.IndexOf("?");  // '#'
                 if (i >= 0)
                 {
-                    sURL = sURL.Substring(0,i);
+                    sURL = sURL.Substring(0, i);
                 }
                 return sURL;
             }
@@ -157,7 +175,7 @@ namespace DotStd
                     sPage += "&"; // arg usually in the form "X=Y"
                 }
                 sPage += x;
-                i ++;
+                i++;
             }
             return sPage;
         }
@@ -175,9 +193,9 @@ namespace DotStd
                 }
                 else
                 {
-                    sPage += "&"; 
+                    sPage += "&";
                 }
-                sPage += sArgs[i] + "=" + sArgs[i+1];
+                sPage += sArgs[i] + "=" + sArgs[i + 1];
             }
             return sPage;
         }

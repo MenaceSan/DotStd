@@ -13,6 +13,8 @@ namespace DotStd
         // Data type converter. usually for database derived objects. Deal with null and DBNull?
         // Similar to System.Convert.To*() or System.Convert.ChangeType()
 
+        public const char kMinus2 = '−';      // Weird char sometimes used as minus. '-'
+
         private static void ThrowConvertException()
         {
             // Put a breakpoint or debug code here to catch this.
@@ -69,17 +71,20 @@ namespace DotStd
             // object to a string. don't return null.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
-                return string.Empty;    // NOT null. or use ToStringN()
+                return string.Empty;    // NEVER null. use ToStringN() for that.
             return o.ToString();
         }
 
-        public static string ToStringN(object o)
+        public static string ToStringN(object o, bool whitenull)
         {
             // object to a string. strings are always nullable.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return null;
-            return o.ToString();
+            string s = o.ToString();
+            if (whitenull && string.IsNullOrWhiteSpace(s))
+                return null;
+            return s;
         }
 
         public static int ToInt(object o, int defVal = 0)
@@ -205,6 +210,33 @@ namespace DotStd
             if (dt.IsExtremeDate())
                 return null;
             return dt;
+        }
+
+        public static double ToDouble(object o, double defVal = 0)
+        {
+            if (ValidState.IsNull(o))
+                return defVal;
+
+            Type type = o.GetType();
+            if (type == typeof(double))     // faster convert
+                return (double)o;
+            if (type == typeof(double?))     // faster convert
+                return ((double?)o) ?? defVal;
+
+            if (type == typeof(float))     // faster convert
+                return (float)o;
+            if (type == typeof(float?))     // faster convert
+                return ((float?)o) ?? defVal;
+
+            string s = o.ToString();    // cast to intermediate string.
+            if (string.IsNullOrWhiteSpace(s))
+                return defVal;
+
+            double val;
+            if (!double.TryParse(s, out val))
+                return defVal;
+
+            return val;
         }
 
         public static decimal ToDecimal(object o, decimal defVal = 0m)

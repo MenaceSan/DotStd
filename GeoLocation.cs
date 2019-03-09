@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace DotStd
@@ -200,9 +201,131 @@ namespace DotStd
         // More ...
     }
 
-    public static class GeoLocation
+    public class GeoLocation
     {
         public const int k_ZipCode_MaxLen = 32;   // there are no countries that use Zip > 32 (i'm pretty sure)
+
+        public float Lat;   // Latitude.
+        public float Lon;   // Longitude
+
+        public static int GetTZOffset(TimeZoneId id)
+        {
+            // -599 -> -600, 601 -> 600
+            // 'Order by' should have lowest as best match.
+            int i = (int)id;
+            return i - Math.Abs(i % 15); // Chop 15 minute chunk.
+        }
+
+        public static float ParseValue(string v, int point)
+        {
+            // Parse a single dimension value string to a float.
+
+            if (point <= 0) // no decimal place.
+            {
+                int i = ((v.Length & 1) == 1) ? 3 : 2;  // DDDMM vs DDDMM
+                float d = Converter.ToInt(v.Substring(0, i));
+                if (v.Length > i)
+                {
+                    d += Converter.ToInt(v.Substring(i, 2)) / 60;
+                    i += 2;
+                }
+                if (v.Length > i)
+                {
+                    d += Converter.ToInt(v.Substring(i, 2)) / 3600;
+                }
+                return d;
+            }
+
+            var fi = NumberFormatInfo.InvariantInfo;
+            if (point == 2)
+            {
+                return float.Parse(v, fi) * 3600;
+            }
+            else if (point == 4)
+            {
+                return float.Parse(v.Substring(0, 2), fi) * 3600 + float.Parse(v.Substring(2), fi) * 60;
+            }
+            else  // point==8
+            {
+                return float.Parse(v.Substring(0, 2), fi) * 3600 + float.Parse(v.Substring(2, 2), fi) * 60 + float.Parse(v.Substring(4), fi);
+            }
+        }
+
+        public bool ParseIso(string isoStr)
+        {
+            // get code as string in format "+515248−1763929"
+            // https://en.wikipedia.org/wiki/ISO_6709
+            // https://github.com/jaime-olivares/coordinate/blob/master/Coordinate.cs
+
+            // Parse coordinate in the following ISO 6709 formats:
+            // Latitude and Longitude in Degrees:
+            // �DD.DDDD�DDD.DDDD/         (eg +12.345-098.765/)
+            // Latitude and Longitude in Degrees and Minutes:
+            // �DDMM.MMMM�DDDMM.MMMM/     (eg +1234.56-09854.321/)
+            // Latitude and Longitude in Degrees, Minutes and Seconds:
+            // �DDMMSS.SSSS�DDDMMSS.SSSS/ (eg +123456.7-0985432.1/)
+            // Latitude, Longitude (in Degrees) and Altitude:
+            // �DD.DDDD�DDD.DDDD�AAA.AAA/         (eg +12.345-098.765+15.9/)
+            // Latitude, Longitude (in Degrees and Minutes) and Altitude:
+            // �DDMM.MMMM�DDDMM.MMMM�AAA.AAA/     (eg +1234.56-09854.321+15.9/)
+            // Latitude, Longitude (in Degrees, Minutes and Seconds) and Altitude:
+            // �DDMMSS.SSSS�DDDMMSS.SSSS�AAA.AAA/ (eg +123456.7-0985432.1+15.9/)
+
+            if (isoStr == null || isoStr.Length < 8 || isoStr.Length > 18)  // Check for min/max length
+                return false;
+
+            isoStr = isoStr.Trim().Replace(Converter.kMinus2, '-');    // weird character.
+
+            if (isoStr.EndsWith("/"))  // Check for trailing slash
+            {
+                isoStr = isoStr.Remove(isoStr.Length - 1); // Remove trailing slash
+            }
+
+            string[] parts = isoStr.Split(new char[] { '+', '-' }, StringSplitOptions.None);
+            if (parts.Length < 3 || parts.Length > 4)  // Check for parts count
+                return false;
+
+            // first part must be empty!
+            if (!string.IsNullOrEmpty(parts[0]))
+                return false;
+
+            int point = parts[1].IndexOf('.');
+            if (point >= 0)
+            {
+                if (point != 2 && point != 4 && point != 6) // Check for valid length for lat/lon
+                    return false;
+                if (point != parts[2].IndexOf('.') - 1) // Check for lat/lon decimal positions
+                    return false;
+            }
+            else
+            {
+                // based on length of string.
+                int len = parts[1].Length;
+                if (len < 2 || len > 7)
+                    return false;
+                len = parts[2].Length;
+                if (len < 2 || len > 7)
+                    return false;
+            }
+
+            // Parse latitude and longitude values, according to format
+            Lat = ParseValue(parts[1], point);
+            Lon = ParseValue(parts[2], point);
+
+            // Add proper sign to lat/lon
+            if (isoStr[0] == '-')
+                Lat = -Lat;
+            if (isoStr[parts[1].Length + 1] == '-')
+                Lon = -Lon;
+
+            // Parse altitude, just to check if it is valid
+            if (parts.Length == 4)
+            {
+                // Alt = float.Parse(parts[3], NumberFormatInfo.InvariantInfo);
+            }
+
+            return true;
+        }
 
         public static string CityStateZip(string city, string state, string zip)
         {
@@ -392,6 +515,5 @@ namespace DotStd
 
             return StateId.UNK;
         }
-
     }
 }

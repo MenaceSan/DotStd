@@ -10,7 +10,7 @@ namespace DotStd
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static int AppId { get; set; }         // int Id for log. enum these in app space.
+        public static int AppId { get; set; }         // int Id for logging. enum these in app space.
 
         private static string _AppName;
         public static string AppName
@@ -87,7 +87,7 @@ namespace DotStd
                     }
                     if (i > 0)
                     {
-                        _BaseDir = _BaseDir.Substring(0, i);
+                        _BaseDir = _BaseDir.Substring(0, i); // chop this off.
                     }
                 }
                 return _BaseDir;
@@ -113,7 +113,7 @@ namespace DotStd
             // cfgInfo = new ConfigInfoServer()
 
             ConfigInfo = cfgInfo;
-            AppId = appId;
+            AppId = appId;  // What app in the cluster am i ?
             _AppName = appName;
         }
 

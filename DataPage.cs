@@ -17,6 +17,7 @@ namespace DotStd
             // NOTE: This will throw if the column/propertyName doesn't exist !
             // if (string.IsNullOrEmpty(propertyName)) // do nothing?
             //    return source;
+
             ParameterExpression param = Expression.Parameter(typeof(T), string.Empty); // I don't care about some naming
             MemberExpression property = Expression.PropertyOrField(param, propertyName);    // case not sensitive.
             LambdaExpression sort = Expression.Lambda(property, param);
@@ -42,6 +43,7 @@ namespace DotStd
         public static IOrderedQueryable<T> OrderByList<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
         {
             // Order by some named property(s).
+ 
             IOrderedQueryable<T> ret2 = null;
             bool thenByLevel = false;
             foreach (var sort in sorts)
@@ -49,6 +51,7 @@ namespace DotStd
                 ret2 = OrderingHelper(ret2 ?? source, sort.PropName, sort.SortDir == SortDirection.Ascending, thenByLevel);
                 thenByLevel = true;
             }
+
             return ret2;
         }
     }
@@ -59,7 +62,7 @@ namespace DotStd
         // Some Service returns the set of data i want. from DataPageReq
 
         public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
-        public int RowsTotal { get; set; }          // Total rows in the request. All pages. RowsTotal >= Rows.Length
+        public int RowsTotal { get; set; }          // Total rows in the request. ignore paged result. All pages. ASSUME RowsTotal >= Rows.Length
 
         public void UpdateRowsTotal()
         {
@@ -80,13 +83,14 @@ namespace DotStd
 
         public void SetRowsTotal(DataPageReq req, IQueryable<T> q)
         {
+            // Total rows from paged results.
             if (this.Rows.Count < req.PageSize || req.PageSize <= 0)    // can we infer total? not enough for PageSize = end.
             {
                 this.RowsTotal = req.GetSkip() + this.Rows.Count;
             }
             else
             {
-                // TODO: try to avoid a second round trip to populate RowsTotal !
+                // TODO: try to avoid a second round trip to populate RowsTotal !??
                 this.RowsTotal = q.Count();     //  2 trips to db ??? TODO FIXME
             }
         }
@@ -108,7 +112,7 @@ namespace DotStd
 
         public int GetSkip()
         {
-            ValidState.ThrowIf(StartOfPage < 0 || PageSize<=0);
+            ValidState.ThrowIf(StartOfPage < 0 || PageSize <= 0);
             return StartOfPage;
         }
 
@@ -131,7 +135,7 @@ namespace DotStd
             // q = IOrderedQueryable<T>
             // NOTE: The method 'Skip' is only supported for sorted input in LINQ to Entities. The method 'OrderBy' must be called before the method 'Skip'.
 
-            if (this.SortFields.Count > 0)
+            if (this.SortFields != null && this.SortFields.Count > 0)
             {
                 q = q.OrderByList(this.SortFields);
             }

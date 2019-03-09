@@ -6,7 +6,7 @@ namespace DotStd
 {
     public class TimeSig1
     {
-        // A data blob signed for a moment in time.
+        // A data blob signed for a moment in time. sign the blob and the time .
         // https://www.freetsa.org/index_en.php
         // Some external service uses a private key to sign the time + some other blob (usually a hash).
         // We use the public key to determine if this is correct.

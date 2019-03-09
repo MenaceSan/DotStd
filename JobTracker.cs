@@ -2,26 +2,25 @@
 
 namespace DotStd
 {
-    public class LongJob
+    public class JobTracker
     {
-        // Some long process that is running async on the server.
+        // Track some long process/job/task that is running async on the server.
         // Web browser can periodically request updates to its progress.
         // HangFire might do this better? use SignalR ?  
         // Similar to System.Progress<T>
 
-        // TODO Push updates?
-        // Throttle push updates ?
+        // TODO Push updates to UI ? So we dont have the UI polling for this?
 
-        private string TypeName { get; set; }        // What am i doing ? nameof(x) not friendly name. 
-        private int UserId { get; set; }             // What user is this for ?
+        private string JobTypeName { get; set; }        // Id for what am i doing ? e.g. nameof(x) not friendly name. 
+        private int UserId { get; set; }             // What user is this for ? 0 = doesnt matter.
 
-        public bool IsComplete { get; private set; }    // code exit.
-        public string FailureMsg { get; private set; }
+        public bool IsComplete { get; private set; }    // code exited.
+        public string FailureMsg { get; private set; }  // null = ok
 
-        private long Progress { get; set; }
-        private long Size { get; set; }
+        private long Size { get; set; }         // arbitrary estimated total size.
+        private long Progress { get; set; }     // how much of Size is done?
 
-        private CancellationTokenSource Cancellation { get; set; }   // try to cancel this.
+        private CancellationTokenSource Cancellation { get; set; }   // we can try to cancel this?
 
         public CancellationToken CancellationToken
         {
@@ -33,24 +32,26 @@ namespace DotStd
 
         public static string MakeKey(string typeName, int userId)
         {
+            // Make a unique id for this
             return typeName + userId.ToString();
         }
         public string Key
         {
             get
             {
-                return MakeKey(TypeName, UserId);
+                return MakeKey(JobTypeName, UserId);
             }
         }
 
-        public static LongJob FindLongJob(string typeName, int userId)
+        public static JobTracker FindJobTracker(string typeName, int userId)
         {
-            return CacheObj<LongJob>.Get(MakeKey(typeName, userId));
+            // Find the job in the global name space.
+            return CacheObj<JobTracker>.Get(MakeKey(typeName, userId));
         }
 
         public bool IsCancelled
         {
-            // should be Called by worker periodically.
+            // should be Called by worker periodically to see if it should stop.
             get
             {
                 if (this.FailureMsg != null)
@@ -63,12 +64,13 @@ namespace DotStd
 
         public void Cancel()
         {
-            // Called by watcher.
+            // Called by watcher. Cancel the JobWorker.
             this.FailureMsg = "Canceled";
             Cancellation?.Cancel();
         }
         public void SetFailureMsg(string failureMsg)
         {
+            // Cancel the worker because it failed.
             if (IsCancelled)
                 return;
             if (string.IsNullOrWhiteSpace(failureMsg))
@@ -82,13 +84,14 @@ namespace DotStd
 
         public int GetProgressPercent()
         {
+            // %
             return (int)((this.Progress * 100) / Size);
         }
 
         public static string GetProgressPercent(string typeName, int userId, bool cancel)
         {
             // Called by watcher.
-            var job = FindLongJob(typeName, userId);
+            var job = FindJobTracker(typeName, userId);
             if (job == null)
                 return "";  // never started.
             if (job.IsCancelled)
@@ -127,6 +130,14 @@ namespace DotStd
             }
         }
 
+        public void AddStartSize(long size)
+        {
+            // We discovered the job is bigger.
+            if (size <= 0)
+                size = 1;
+            this.Size += size;
+        }
+
         public void AddProgress(int length)
         {
             if (length < 0)
@@ -148,10 +159,10 @@ namespace DotStd
             {
                 this.Progress = this.Size; // true end.
             }
-            CacheObj<LongJob>.Set(Key, this, 5 * 60);  // no need to hang around too long
+            CacheObj<JobTracker>.Set(Key, this, 5 * 60);  // no need to hang around too long
         }
 
-        public static LongJob CreateLongJob(string typeName, int userId, long size, bool cancelable = false)
+        public static JobTracker CreateJobTracker(string typeName, int userId, long size, bool cancelable = false)
         {
             if (size <= 0)
             {
@@ -159,10 +170,10 @@ namespace DotStd
             }
 
             string cacheKey = MakeKey(typeName, userId);
-            var job = CacheObj<LongJob>.Get(cacheKey);
+            var job = CacheObj<JobTracker>.Get(cacheKey);
             if (job == null)
             {
-                job = new LongJob { TypeName = typeName, UserId = userId, Size = size, Progress = 0 };
+                job = new JobTracker { JobTypeName = typeName, UserId = userId, Size = size, Progress = 0 };
             }
             else if (job.IsComplete)
             {
@@ -181,7 +192,7 @@ namespace DotStd
                 job.Cancellation = new CancellationTokenSource();
             }
 
-            CacheObj<LongJob>.Set(cacheKey, job, 24 * 60 * 60);    // update time
+            CacheObj<JobTracker>.Set(cacheKey, job, 24 * 60 * 60);    // update time
             return job;
         }
     }
