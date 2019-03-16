@@ -42,7 +42,7 @@ namespace DotStd
 
         public static void FlushDeadTick()
         {
-            DateTime now = DateTime.Now;
+            DateTime now = DateTime.UtcNow;
             if ((now - _LastFlush).TotalMinutes < 2)    // throttle.
                 return;
             _LastFlush = now;
@@ -105,7 +105,7 @@ namespace DotStd
                 if (obj != null)
                 {
                     // store it in cache.
-                    var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.Now.AddSeconds(decaysec) };     // We have already outlived our time. we should refresh this !
+                    var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.UtcNow.AddSeconds(decaysec) };     // We have already outlived our time. we should refresh this !
                     cache.Set(cacheKey, obj, policy);
                 }
 

@@ -43,7 +43,7 @@ namespace DotStd
         public static IOrderedQueryable<T> OrderByList<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
         {
             // Order by some named property(s).
- 
+
             IOrderedQueryable<T> ret2 = null;
             bool thenByLevel = false;
             foreach (var sort in sorts)
@@ -99,10 +99,15 @@ namespace DotStd
     public class DataPageReq
     {
         // Params to Request a page of data.
+        // overload this to add search filters.
+
         public int StartOfPage { get; set; }    // start of the current page. 0 based.
         public int PageSize { get; set; }       // Max number of rows on page.
         public List<ComparerDef> SortFields { get; set; }   // How to sort fields.
 
+        public DataPageReq()
+        {
+        }
         public DataPageReq(int startOfPage, int pageSize, List<ComparerDef> sortFields)
         {
             StartOfPage = startOfPage;      // Make sure this is 0 based !
@@ -132,6 +137,7 @@ namespace DotStd
 
         public IQueryable<T> GetQuery<T>(IQueryable<T> q)
         {
+            // Paging query.
             // q = IOrderedQueryable<T>
             // NOTE: The method 'Skip' is only supported for sorted input in LINQ to Entities. The method 'OrderBy' must be called before the method 'Skip'.
 
@@ -156,15 +162,18 @@ namespace DotStd
         }
     }
 
-    public class DataPageSearch : DataPageReq
+    public class DataPageFilter : DataPageReq
     {
-        // SearchFilter = Search / filter based on some text.
         // a data page with extra search/filter params imposed.
+        // overload this to add more search filters.
 
-        public string SearchFilter { get; set; }    // Filter on some important field(s). Which ?? 
-        public int FilterId { get; set; }           // A custom selection of predefined filters. enum. 0 = unused.
+        public string SearchFilter { get; set; }    // Filter on some important text field(s). Which ?? 
+        public int FilterId { get; set; }           // A custom selection of predefined filters. enum. 0 = unused.  // optional.
 
-        public DataPageSearch(int startOfPage, int pageSize, List<ComparerDef> sortFields, string searchFilter, int filterId = 0)
+        public DataPageFilter()
+        {
+        }
+        public DataPageFilter(int startOfPage, int pageSize, List<ComparerDef> sortFields, string searchFilter = null, int filterId = 0)
             : base(startOfPage, pageSize, sortFields)
         {
             SearchFilter = searchFilter;

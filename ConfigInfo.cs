@@ -103,6 +103,7 @@ namespace DotStd
         public void SetService<T>(T service) where T : class
         {
             // Configure a service by its interface .
+            // ILogger is special.
             int hashCode = typeof(T).GetHashCode();
             Services.Add(hashCode, service);
         }
@@ -153,7 +154,7 @@ namespace DotStd
 
             if (connectionStringName != null)
             {
-                ConnectionStringDef = "";
+                ConnectionStringDef = GetSetting(connectionStringName);
             }
         }
     }

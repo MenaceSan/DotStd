@@ -10,7 +10,8 @@ namespace DotStd
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static int AppId { get; set; }         // int Id for logging. enum these in app space.
+        public static int AppId { get; set; }         // int Id for logging. enum these in app space. Cluster PK .
+        public static int AppTypeId { get; private set; } // AppId enum these in app space.
 
         private static string _AppName;
         public static string AppName
@@ -24,6 +25,12 @@ namespace DotStd
                 }
                 return _AppName;
             }
+        }
+
+        private static string _AppVersion;
+        public static string AppVersion
+        {
+            get { return _AppVersion; }
         }
 
         private static bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
@@ -106,7 +113,7 @@ namespace DotStd
         // get app global config info.
         public static ConfigInfoBase ConfigInfo { get; private set; }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName, string appVersion)
         {
             // Set app global config info.
             // MUST do this when first stating an app.
@@ -114,13 +121,15 @@ namespace DotStd
 
             ConfigInfo = cfgInfo;
             AppId = appId;  // What app in the cluster am i ?
+            AppTypeId = appId;
             _AppName = appName;
+            _AppVersion = appVersion;
         }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId, string appVersion)
         {
             // Set app global config info.
-            SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription());
+            SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription(), appVersion);
         }
 
         public static bool IsDebugging()

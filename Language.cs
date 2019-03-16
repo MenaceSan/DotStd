@@ -27,6 +27,8 @@ namespace DotStd
 
     public static class Language
     {
+        public const string kCultureDef = "en-US"; // default english culture
+
         public static LanguageID GetLanguageID(string sShortCode)
         {
             // GetLanguageIDByShortCode(ByVal sLanguageShortCode As String) As DotLib.LanguageID

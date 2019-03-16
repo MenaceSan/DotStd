@@ -4,6 +4,29 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    public enum EmailStatusId
+    {
+        // Test if SMS or email works.
+        // used by user_phone.StatusId, user_email.StatusId
+
+        Untested = 0,           // No idea if email or SMS is valid.
+
+        TestMessageSent = 1,    // Waiting for confirm handshake.
+        ReConfirmAddress = 2,      // a re-confirm has been sent.
+        ConfirmedAddress = 3,          // got confirm back at some DateTime. (maybe old)
+
+        // OpenId Federated logins/validation. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
+        // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-2.2
+
+        Microsoft = 5,      // Auth type. Azure is the same ?
+        Google = 6,         // Auth type name.
+        Facebook = 7,
+        Twitter = 8,
+        LinkedIn = 9,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
+
+        // etc.
+    }
+
     public class EmailGatewaySettings
     {
         // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.

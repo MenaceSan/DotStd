@@ -10,6 +10,20 @@ namespace DotStd
     {
         // Util helper to pull metadata from enums
 
+        public static bool IsDefined(Enum value)
+        {
+            // Is a defined enum value ?
+            if (value == null)
+                return false;
+            Type type = value.GetType();
+            if (type == null)
+                return false;
+            string name = value.ToString();
+            if (string.IsNullOrWhiteSpace(name) || StringUtil.IsNumeric2(name))
+                return false;
+            return type.GetMember(name) != null;
+        }
+
         public static string GetEnumDescription(Enum value)
         {
             // Get the Metadata Description tag string for an enum (if it has one) else default to the enums name.
@@ -97,7 +111,7 @@ namespace DotStd
             {
                 // is numeric ?
                 // Try desc?
-                return (T) Enum.Parse(typeof(T), value, true);   // ignore case.
+                return (T)Enum.Parse(typeof(T), value, true);   // ignore case.
             }
             catch
             {

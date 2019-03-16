@@ -59,10 +59,12 @@ namespace DotStd
         public static void Set(string cacheKey, object obj, int decaysec = 10)
         {
             // obj cant be null, even though it might make sense.
+            // NOTE: cache time is Utc time. 
+
             if (obj == null)
                 return;
             var cache = MemoryCache.Default;
-            var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.Now.AddSeconds(decaysec) };
+            var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.UtcNow.AddSeconds(decaysec) };
             // var policy = new CacheItemPolicy() { SlidingExpiration = TimeSpan.FromSeconds(decaysec) };
             cache.Set(cacheKey, obj, policy);
         }

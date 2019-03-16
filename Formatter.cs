@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace DotStd
@@ -74,7 +75,7 @@ namespace DotStd
             // ignores null, whitespace. 
             return JoinTitles(" ", array);
         }
- 
+
         public static string GetYN(bool yn)
         {
             if (yn) return "Y";

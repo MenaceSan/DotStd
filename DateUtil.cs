@@ -27,6 +27,7 @@ namespace DotStd
         };
 
         public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
+        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesnt like the UTC stuff in ?? null !!!
         public static readonly DateTime kUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);     // JavaScript
         public static readonly DateTime kExtremeMax = new DateTime(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's.
         public const int kHoursInWeek = 168;
@@ -37,17 +38,23 @@ namespace DotStd
             // e.g. Year <= 1
             return dt <= kExtremeMin || dt >= kExtremeMax;
         }
+        public static bool IsExtremeDate(DateTime? dt)
+        {
+            if (dt == null)
+                return true;
+            return IsExtremeDate(dt.Value);
+        }
 
         public static double ToJavaTime(DateTime dt)
         {
-            // JavaScript timestamp is milliseconds past epoch
+            // JavaScript time stamp is milliseconds past epoch
             if (IsExtremeDate(dt))
                 return 0;
             return (dt - kUnixEpoch).TotalMilliseconds;
         }
         public static DateTime FromJavaTime(double javaTimeStamp)
         {
-            // JavaScript timestamp is milliseconds past epoch
+            // JavaScript time stamp is milliseconds past epoch
             return kUnixEpoch.AddMilliseconds(javaTimeStamp);
         }
 
@@ -91,7 +98,7 @@ namespace DotStd
                 return ts.Hours + " hours" + ago;
 
             if (delta < 48 * kHOUR)
-                return ts.TotalSeconds > 0 ? "a day" : "yesterday";
+                return ts.TotalSeconds > 0 ? "a day" + ago : inPast ? "yesterday" : "tomorrow";
 
             if (delta < 30 * kDAY)
                 return ts.Days + " days" + ago;
@@ -101,20 +108,14 @@ namespace DotStd
                 int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
                 return months <= 1 ? "one month" + ago : months + " months" + ago;
             }
-            else
-            {
-                int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
-                return years <= 1 ? "one year" + ago : years + " years" + ago;
-            }
-        }
 
-        public static string TimeAgoStr(DateTime t)
-        {
-            if (IsExtremeDate(t))
+            int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
+            if (years > 200)
             {
                 return "never";
             }
-            return TimeSpanStr(DateTime.Now - t);
+
+            return years <= 1 ? "one year" + ago : years + " years" + ago;
         }
 
         public static string TimeMsecStr(long mSec)
@@ -275,7 +276,7 @@ namespace DotStd
             }
             else
             {
-                return string.Format("{0:D2}:{1:D2}", hours, minutes);           
+                return string.Format("{0:D2}:{1:D2}", hours, minutes);
             }
         }
     }

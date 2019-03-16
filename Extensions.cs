@@ -117,17 +117,13 @@ namespace DotStd
             return new DateTime(date.Ticks - date.Ticks % roundTicks);
         }
 
-        public static int GetAgeSeconds(this DateTime obj)
+        public static TimeSpan GetAgeUTC(this DateTime? from)
         {
-            DateTime now = DateTime.Now;
-            return (int)((now - obj).TotalSeconds);
-        }
-        public static int GetAgeSeconds(this DateTime? obj)
-        {
-            if (obj == null)
-                return short.MaxValue;
-            return GetAgeSeconds(obj.Value);
-        }
+            if (from == null)
+                return TimeSpan.MaxValue;
+
+            return DateTime.UtcNow - from.Value;
+         }
 
         public static string ToSafeDateString(this DateTime obj, string def = null, string format = null)
         {

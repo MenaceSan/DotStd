@@ -6,6 +6,61 @@ using System.Text;
 
 namespace DotStd
 {
+    public class IpAddrCidr
+    {
+        // Get an address range in CIDR format.
+        // e.g. s = "2001:200::/37"
+        // https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+        // https://networkengineering.stackexchange.com/questions/3697/the-slash-after-an-ip-address-cidr-notation
+
+        public IPAddress Addr;
+        public int Bits;            // PrefixBits. High to low bits in a mask.
+
+        public uint GetSize4()
+        {
+            // Size of the range.
+            return (uint)((1 << (32 - Bits)) - 1);
+        }
+        public ulong GetSize6L()
+        {
+            // Size of the range. low 64 bits.
+            // Bits are high to low.
+            if (Bits < 64)
+                return 0;
+            return (ulong)((1ul << (128 - Bits)) - 1);
+        }
+        public ulong GetSize6H()
+        {
+            // Size of the range. high 64 bits.
+            // Bits are high to low.
+            if (Bits >= 64)
+                return 0;
+            return (ulong)((1ul << (64 - Bits)) - 1);
+        }
+
+        public bool ParseCidr(string s)
+        {
+            // e.g. s = "2001:200::/37"
+
+            string[] addrA = s.Split('/');
+            int prefixBits;
+            if (addrA.Length != 2 || !int.TryParse(addrA[1], out prefixBits))
+            {
+                return false;
+            }
+            Bits = prefixBits;
+
+            IPAddress addr2;
+            if (!IPAddress.TryParse(addrA[0], out addr2))
+            {
+                return false;
+            }
+
+            Addr = addr2;
+            return true;
+        }
+    }
+
     public class IPAddrUtil
     {
         // Helper for IPAddress functions.
@@ -43,7 +98,7 @@ namespace DotStd
             ip += ((uint)p[i + 5]) << 16;
             ip += ((uint)p[i + 6]) << 8;
             ip += p[i + 7];
-            return 0;
+            return ip;
         }
 
         public static bool IsIP4Private(IPAddress addr)

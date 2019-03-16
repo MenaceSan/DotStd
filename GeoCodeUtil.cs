@@ -8,7 +8,7 @@ namespace DotStd
     public class GeoCodeUtil : GeoLocation
     {
         // A provider that does lookups of lat/lon given an address.
-        // related to ZipCodeFinder.
+        // related to PostalCodeFinder.
 
         // string city, string state, string zip
 

@@ -33,6 +33,8 @@ namespace DotStd
         public void DownloadFileRaw(bool allowRedirect = false)
         {
             // Synchronous get file. Doesn't call any events. no protection from throw.
+            // https://github.com/aspnet/LibraryManager/blob/master/src/LibraryManager/CacheService/WebRequestHandler.cs
+
             DirUtil.DirCreateForFile(DestPath);
 
             if (!allowRedirect)
@@ -45,6 +47,7 @@ namespace DotStd
             else
             {
                 // Make sure we allow redirects and such.
+                // Similar to HttpClient
                 // https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-request-data-using-the-webrequest-class
                 var req = WebRequest.Create(SrcURL);
                 HttpWebRequest reqH = ((HttpWebRequest)req);
@@ -60,7 +63,7 @@ namespace DotStd
 
                 reqH.Credentials = CredentialCache.DefaultCredentials;
                 reqH.UseDefaultCredentials = true;
-                reqH.Date = DateTime.Now;
+                reqH.Date = DateTime.UtcNow;
 
                 // reqH.Timeout = 5000;
                 reqH.Method = "GET";

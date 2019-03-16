@@ -93,7 +93,7 @@ namespace DotStd
         static Regex _regexNum2 = null;
         public static bool IsNumeric2(string str)
         {
-            // Far more forgiving IsNumeric. allow leading spaces. points.
+            // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
             if (string.IsNullOrWhiteSpace(str))
                 return false;
             if (_regexNum2 == null)
@@ -249,6 +249,12 @@ namespace DotStd
             if (!IsUpper(s[0]))
                 return s;
             return char.ToLower(s[0]) + s.Substring(1);
+        }
+        
+        public static string Initials(string nameString)
+        {
+            var initials = new Regex(@"(\b[a-zA-Z])[a-zA-Z]* ?");
+            return initials.Replace(nameString, "$1");
         }
     }
 }

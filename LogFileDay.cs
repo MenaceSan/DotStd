@@ -88,7 +88,7 @@ namespace DotStd
                 return;
             try
             {
-                DateTime tNow = DateTime.Now;
+                DateTime tNow = DateTime.Now;       // local server time.
                 lock (this) using (var w = OpenLog(tNow))
                     {
                         w.WriteLine("{0}{1}{2}", tNow.ToShortTimeString(), GetSeparator(level), message);

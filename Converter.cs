@@ -66,6 +66,14 @@ namespace DotStd
             return defVal;
         }
 
+        public static string ToString(object o, string nullStr)
+        {
+            // object to a string. don't return null.
+            // should never throw. (safer than o.ToString())
+            if (ValidState.IsNull(o))
+                return nullStr;    // NEVER null. use ToStringN() for that.
+            return o.ToString();
+        }
         public static string ToString(object o)
         {
             // object to a string. don't return null.
@@ -75,7 +83,7 @@ namespace DotStd
             return o.ToString();
         }
 
-        public static string ToStringN(object o, bool whitenull)
+        public static string ToStringN(object o, bool whitenull=true)
         {
             // object to a string. strings are always nullable.
             // should never throw. (safer than o.ToString())

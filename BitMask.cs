@@ -5,10 +5,10 @@ namespace DotStd
     public class BitMask
     {
         // A potentially unlimited large bit mask stored as a base64 string, defining options on/off.
+        // NOTE: Bit positions are ZERO BASED. bit 0 = the first bit.
         // Similar to System.Collections.BitArray
 
         public const int kBitsPer = 8;          // bits per char/byte stored in _binary.
-        public const int kFirstBit = 1;         // 1 based bit index for API calls. SetBit(),
         public const int kDefaultSize = 256;    // n bits.
 
         protected byte[] _binary;    // The raw bytes of the bitmap of unlimited length.
@@ -18,7 +18,7 @@ namespace DotStd
             // init via Base64 string
             // Can throw "System.FormatException: 'Invalid length for a Base-64 char array or string.'"
             // use IsValidBase64 ?
-            // TODO Allocate extra size ??
+            // TODO add argument maxBits to allocate extra size??
 
             if (string.IsNullOrWhiteSpace(base64String))
             {
@@ -49,46 +49,60 @@ namespace DotStd
         static int GetByteCount(int bits)
         {
             // get number of bytes to hold this number of bits.
-            return 1 + ((bits) / kBitsPer);   // always add an extra just in case.
+            return (bits + kBitsPer - 1) / kBitsPer;   // account for odd number of bits.
         }
 
         public void SetBitMask(int maxBits = kDefaultSize, bool defaultValue = false)
         {
             // Set/Init the bitmask with an int. (obviously limited range)
-            int count = GetByteCount(maxBits);
             byte bdef = (byte)(defaultValue ? 0xff : 0x0);
-            _binary = new byte[count];  // Is this right ??
-            for (int i = 0; i < count; i++) // fill with valueDef
+
+            int countBytes = GetByteCount(maxBits);
+            _binary = new byte[countBytes];  // Is this right ??
+            if (_binary == null)
+            {
+                throw new OutOfMemoryException("BitMask maxBits");
+            }
+
+            for (int i = 0; i < countBytes; i++) // fill with valueDef
                 _binary[i] = bdef;
+
+            // Make sure the last byte is ok.
+            int bitsLast = maxBits % kBitsPer;
+            if (bitsLast != 0)
+            {
+                // fix it.
+                _binary[countBytes - 1] = (byte)((1 << bitsLast) - 1);
+            }
         }
 
         public void SetBit(int bitPos, bool bitValue = true)
         {
             // Set state of a single bit.
-            // bitPos = bit position in the _binary - kFirstBit
-            // NOTE: This does NOT grow except if _binary == null
+            // bitPos = bit position in the _binary. 0 based.
 
-            if (bitPos > 0)    // One base instead of Zero base  
+            if (bitPos < 0)
             {
-                bitPos -= kFirstBit;
+                throw new ArgumentOutOfRangeException(nameof(bitPos), bitPos, "BitMask bitPos negative");
+                // return;
             }
 
-            int position = bitPos / kBitsPer;
+            int bytePos = bitPos / kBitsPer;
             if (_binary == null)
             {
-                SetBitMask(Math.Max(kDefaultSize, position + 1), true);
+                SetBitMask(Math.Max(kDefaultSize, bytePos + 1), false);
             }
-
-            if (_binary == null || position < 0 || position >= _binary.Length)
+            else if (bytePos >= _binary.Length)
             {
-                // If bitPos length is greater then the max length throw exception.  
-                // NO Auto grow.
-                throw new ArgumentOutOfRangeException(nameof(bitPos), bitPos, "BitMask bitPos too large");
+                // Auto grow. If bitPos length is greater then the max length .  
+                var binary2 = new byte[bytePos+1];
+                Buffer.BlockCopy(_binary, 0, binary2, 0, _binary.Length);
+                _binary = binary2;
             }
 
             int bitshift = bitPos % kBitsPer;
 
-            byte x = _binary[position];
+            byte x = _binary[bytePos];
             if (bitValue)
             {
                 x |= (byte)(1 << bitshift);
@@ -97,17 +111,16 @@ namespace DotStd
             {
                 x &= (byte)~(1 << bitshift);
             }
-            _binary[position] = x;
+            _binary[bytePos] = x;
         }
 
         public bool IsSet(int bitPos, bool defaultValue = false)
         {
-            // bitPos = bit position in the _binary
+            // bitPos = bit position in the _binary. zero base.
             if (_binary == null)
                 return false;    // special
-            if (bitPos <= 0)    // One base 
+            if (bitPos < 0)    // zero base 
                 return false;
-            bitPos -= kFirstBit;
 
             int position = bitPos / kBitsPer;
             if (position < 0 || position >= _binary.Length)
@@ -165,7 +178,7 @@ namespace DotStd
         public static string CreateBitMask2(int bitPos, bool bitValue, string base64String)
         {
             // Create a new bitmask with one bit changed.
-            // bitPos = bit position in the base64String to set.
+            // bitPos = bit position in the base64String to set. zero based.
             var t = new BitMask(base64String);
             t.SetBit(bitPos, bitValue);
             return t.ToString();
@@ -205,4 +218,3 @@ namespace DotStd
         }
     }
 }
-

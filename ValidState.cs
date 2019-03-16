@@ -36,7 +36,7 @@ namespace DotStd
     {
         // Hold the validation state for some object.
         // helper class for general validation of some object.
-        // A View model may have SUGGESTIONS for validation. We may optionally ignore them. (Zip code looks weird, etc)
+        // A View model may have SUGGESTIONS for validation. We may optionally ignore them. (Postal code looks weird, etc)
         // Similar to System.ComponentModel.DataAnnotations.Validator
         // Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
 
