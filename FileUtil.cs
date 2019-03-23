@@ -262,7 +262,7 @@ namespace DotStd
 
         public static bool IsImageType(DocumentType docType)
         {
-            // For things that only make sense as images. Avatar etc.
+            // For things that only make sense as images. Avatar, Logo etc.
             switch (docType)
             {
                 case DocumentType.JPG:
@@ -281,7 +281,7 @@ namespace DotStd
         {
             // Convert Extension to enum.
             // like Mime type. MimeMapping.GetMimeMapping()
-            // Dont allow EXE types.
+            // Don't allow EXE types.
 
             switch (fileExtension.ToLower())
             {

@@ -79,7 +79,7 @@ namespace DotStd
         public virtual bool IsEnabled(LogLevel level = LogLevel.Information)
         {
             // Quick filter check to see if this type is logged. Check this first if the rendering would be heavy.
-            return (level >= _FilterLevel); // Log this?
+            return level >= _FilterLevel; // Log this?
         }
 
         public static string GetSeparator(LogLevel eType)
