@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -147,41 +148,41 @@ namespace DotStd
             }
         }
 
-        public static IPAddress FindIPAddrExternal()
+        public static async Task<string> FindIPAddrExternal2()
         {
-            // Use an external service to find my public IP address.
+            // Use an external service to find my public IP address. May throw.
             // only works if: System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
             // https://stackoverflow.com/questions/3253701/get-public-external-ip-address
-
             try
             {
-                string externalip;
                 using (var wc = new WebClient())
                 {
                     // externalip = wc.DownloadString("http://bot.whatismyipaddress.com"); // Hangs ??
                     // externalip = wc.DownloadString("http://icanhazip.com");  // Hangs ??
-                    externalip = wc.DownloadString("https://ipinfo.io/ip");
+                    string externalip = await wc.DownloadStringTaskAsync("https://ipinfo.io/ip");
+                    return externalip.Trim();
                 }
-
-                externalip = externalip.Trim();
-                IPAddress addr;
-                if (!IPAddress.TryParse(externalip, out addr))
-                {
-                    return null;
-                }
-
-                if (IsIP4Private(addr))
-                {
-                    // this is wrong!
-                }
-
-                return addr;
             }
             catch (Exception ex)
             {
                 LoggerBase.DebugException("FindIPAddrExternal", ex);
                 return null;
             }
+        }
+
+        public static async Task<IPAddress> FindIPAddrExternal()
+        {
+            string externalip = await FindIPAddrExternal2();
+            IPAddress addr;
+            if (!IPAddress.TryParse(externalip, out addr))
+            {
+                return null;
+            }
+            if (IsIP4Private(addr))
+            {
+                // this is wrong!
+            }
+            return addr;
         }
     }
 }

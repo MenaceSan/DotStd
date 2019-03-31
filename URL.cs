@@ -69,7 +69,7 @@ namespace DotStd
 
         public static string GetSubDomain(string reqHost)
         {
-            // reqHost = context.Request.Host.ToString(). e.g. "subdom.test.com:234"
+            // reqHost = context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:234"
             // RETURN null for "test.com" or "localhost:44322"
             // ASSUME not /Path
             if (reqHost == null)

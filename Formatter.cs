@@ -57,6 +57,44 @@ namespace DotStd
             return ti.ToTitleCase(str).Trim();
         }
 
+        public static string ToBaseN(long value, int toBase)
+        {
+            // convert to a string number radix base X, 2,8,10,16, etc..
+            switch (toBase)
+            {
+                case 2: case 8: case 10: case 16:
+                    return Convert.ToString(value, toBase);
+            }
+
+            const int kBitsInLong = 64;
+            const string kBaseDigits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            if (toBase < 2 || toBase > kBaseDigits.Length)       // max base 36
+                throw new ArgumentException("The radix must be >= 2 and <= " + kBaseDigits.Length.ToString());
+
+            if (value == 0)
+                return "0";
+
+            int index = kBitsInLong - 1;
+            long currentNumber = Math.Abs(value);
+            char[] charArray = new char[kBitsInLong];
+
+            while (currentNumber != 0)
+            {
+                int remainder = (int)(currentNumber % toBase);
+                charArray[index--] = kBaseDigits[remainder];
+                currentNumber = currentNumber / toBase;
+            }
+
+            string result = new string(charArray, index + 1, kBitsInLong - index - 1);
+            if (value < 0)
+            {
+                result = "-" + result;
+            }
+
+            return result;
+        }
+
         public static string Join(string separator, params string[] array)
         {
             // join with separator = "," but skip nulls and empties.
@@ -172,7 +210,7 @@ namespace DotStd
                 object val = props.GetPropertyValue(name);
                 if (val == null)
                 {
-                    if (errorStr==null) // just leave errors.
+                    if (errorStr == null) // just leave errors.
                         continue;
                     val = errorStr;   // replace error with something.
                 }
@@ -183,7 +221,7 @@ namespace DotStd
                 i0 = b2;
             }
 
-            if (i0>0)
+            if (i0 > 0)
             {
                 sb.Append(body.Substring(i0));
                 return sb.ToString();

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -243,8 +240,8 @@ namespace DotStd
         public static string ToLower1(string s)
         {
             // Opposite of ToTitleCase()
-            // make sure the first letter is lower case char. JavaScript names like this.
-            if (s == null || s.Length <= 0)
+            // make sure the first letter is lower case char. JavaScript names like this?
+            if (string.IsNullOrEmpty(s))
                 return s;
             if (!IsUpper(s[0]))
                 return s;

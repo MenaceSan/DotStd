@@ -14,6 +14,8 @@ namespace DotStd
         // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
 
         ANY = 0, // Don't care. give me all.
+        International = 1,
+
         [Description("United States")]
         USA = 840,    // US, us
         [Description("Sweden")]
@@ -159,13 +161,40 @@ namespace DotStd
         // More ... in other countries. Manually added.
     }
 
+    [Serializable]
     public class GeoLocation
     {
-        // Latitude and longitude.
+        // Latitude and longitude. Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
         // maybe altitude ?
 
-        public float Lat;   // Latitude.
-        public float Lon;   // Longitude
+        public float Latitude { get; set; }
+        public float Longitude { get; set; }
+
+        public static bool IsValidLat(float x)
+        {
+            return x >= -90 && x <= 90;
+        }
+        public static bool IsValidLon(float x)
+        {
+            return x >= -180 && x <= 180;
+        }
+        public bool IsValid
+        {
+            get
+            {
+                return IsValidLat(Latitude) && IsValidLon(Longitude);
+            }
+        }
+
+        public override string ToString()
+        {
+            // Composite string.
+            // e.g. "15.0N+30.0E"
+            // https://maps.google.com/maps?q=24.197611,120.780512
+            // https://maps.google.com/maps?q=24.197611,120.780512&z=18
+ 
+            return String.Concat(Latitude.ToString(),",",Longitude.ToString());
+        }
 
         public static float ParseValue(string v, int point)
         {
@@ -258,14 +287,14 @@ namespace DotStd
             }
 
             // Parse latitude and longitude values, according to format
-            Lat = ParseValue(parts[1], point);
-            Lon = ParseValue(parts[2], point);
+            Latitude = ParseValue(parts[1], point);
+            Longitude = ParseValue(parts[2], point);
 
             // Add proper sign to lat/lon
             if (isoStr[0] == '-')
-                Lat = -Lat;
+                Latitude = -Latitude;
             if (isoStr[parts[1].Length + 1] == '-')
-                Lon = -Lon;
+                Longitude = -Longitude;
 
             // Parse altitude, just to check if it is valid
             if (parts.Length == 4)

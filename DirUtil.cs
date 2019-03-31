@@ -118,11 +118,11 @@ namespace DotStd
             int iCount = 0;
             try
             {
-                DateTime tExpired = DateTime.Now.Subtract(TimeSpan.FromHours(nOlderThanHours));     // local server time.
+                DateTime tExpired = DateTime.UtcNow.Subtract(TimeSpan.FromHours(nOlderThanHours));     
                 var dir = new DirectoryInfo(sDir);
                 foreach (System.IO.FileInfo file in dir.GetFiles(sPattern))
                 {
-                    if (file.CreationTime < tExpired)   // local time.
+                    if (file.CreationTimeUtc < tExpired)    
                     {
                         file.Delete();
                         iCount++;
