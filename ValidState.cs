@@ -43,6 +43,7 @@ namespace DotStd
         public const int kInvalidId = 0;    // This is never a valid id in the db. ValidState.IsValidId()
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
+        public const string kSavedChanges = "Saved Changes";
 
         public ValidLevel ValidLevel;       // aggregate state for all Fields
 

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -7,13 +8,19 @@ namespace DotStd
     public static class StringUtil
     {
         // String and char util functions.
+  
+        public static int CompareNoCase(this string s1, string s2)
+        {
+            // simple Wrapper 
+            return string.Compare(s1, s2, StringComparison.OrdinalIgnoreCase);
+        }
 
-        public static string IIf(bool b, string s, string sDef = "")
+        public static string IIf(bool expr, string ifTrue, string ifFalse = "")
         {
             // https://en.wikipedia.org/wiki/IIf
-            if (b)
-                return s;
-            return sDef;
+            if (expr)
+                return ifTrue;
+            return ifFalse;
         }
 
         public static bool IsDigit(char ch)

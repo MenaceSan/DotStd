@@ -4,15 +4,17 @@ using System.Runtime.Caching;           // 4.6 ObjectCache, CacheItemPolicy
 namespace DotStd
 {
     /// <summary>
-    /// in memory cache for query results (or any other expensive data) to avoid repeated round trips to db for mostly static data.
+    /// Wrapper/Helper for the .NET MemoryCache.Default. Has a single namespace that all share, so prefix keys by type.
+    /// M$ discourages using multiple Caches for typed caches. but regions are not supported so delete by type is not supported natively.
     /// NOTE .NET Core and Std need NuGet for Caching Support.
+    /// similar to IMemoryCache for ASP core.
     /// </summary>
     public static class CacheData
     {
-        public const string kSep = ".";
+        public const string kSep = "."; // name separator for grouping. similar to unsupported 'regions'
 
         /// <summary>
-        /// Gets a cache key for a query result object.
+        /// Helper to make a cache key.
         /// </summary>
         /// <param name="list">operation name followed by arguments to make it unique.</param>
         /// <returns>A string represents the query</returns>
@@ -21,22 +23,25 @@ namespace DotStd
             // build the string representation of some expression for the cache key. (AKA cacheKey)
 
             string KeyArgs = string.Join(kSep, argsList);
-            if (KeyArgs.Length > 16)    // Just hash it if it seems too large.
+            if (KeyArgs.Length > 16)    // Just hash it if it seems too large. DANGER ??
                 KeyArgs = KeyArgs.GetHashCode().ToString();
 
-            return string.Concat(type, kSep, KeyArgs);    // ??? reverse this string to make it more evenly distributed ?
+            return string.Concat(type, kSep, KeyArgs);    // ??? reverse this string to make hash more evenly distributed ?
         }
 
         public static void ClearObj(string cacheKey)
         {
-            // Force clear the cache for some object.
+            // Force clear the cache for a single object.
             var cache = MemoryCache.Default;
             cache.Remove(cacheKey);
         }
 
-        public static void FlushObjs(string cacheKeyPrefix)
+        public static void ClearType(string cacheKeyPrefix)
         {
-            // Force clear the cache for some objects.
+            // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
+            // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
+            //
+
             var cache = MemoryCache.Default;
             cache.Remove(cacheKeyPrefix);
             // TODO allow type prefix.
@@ -52,6 +57,8 @@ namespace DotStd
             var cache = MemoryCache.Default;
             return cache.Get(cacheKey);
         }
+
+        // SetSlide()
 
         /// <summary>
         /// Store some object in the cache. Assume it isn't already here??
@@ -74,11 +81,17 @@ namespace DotStd
     {
         // Build on CacheData/MemoryCache.Default with Type
 
+        public static string MakeKey(string id)
+        {
+            return string.Concat(typeof(T).Name, CacheData.kSep, id);
+        }
+
         public static T Get(string id)
         {
             // Find the object in the cache if possible.
-            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
-            return (T)CacheData.Get(cacheKey);
+            string cacheKey = MakeKey(id);
+            object o = CacheData.Get(cacheKey);
+            return (T)o;
         }
         public static T Get(int id)
         {
@@ -88,23 +101,33 @@ namespace DotStd
 
         public static void Set(string id, T obj, int decaysec)
         {
-            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
+            string cacheKey = MakeKey(id);
             CacheData.Set(cacheKey, obj, decaysec);
         }
-        public static void Set(int id, T obj, int seconds)
+        public static void Set(int id, T obj, int decaysec)
         {
-            Set(id.ToString(), obj, seconds);
+            Set(id.ToString(), obj, decaysec);
         }
 
         public static void ClearObj(string id)
         {
-            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
+            // Clear a single object by key.
+            string cacheKey = MakeKey(id);
             CacheData.ClearObj(cacheKey);
         }
         public static void ClearObj(int id)
         {
+            // Clear a single object by key.
             ClearObj(id.ToString());
         }
-
+        public static void ClearType(string cacheKeyPrefix=null)
+        {
+            // Clear this type or a sub set of this type.
+            if (cacheKeyPrefix == null)
+                cacheKeyPrefix = nameof(T);
+            else 
+                cacheKeyPrefix = MakeKey(cacheKeyPrefix);
+            CacheData.ClearType(cacheKeyPrefix);
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace DotStd
     public enum ChessPieceId
     {
         // Board has Max 32 pieces.
-        // ChessPieceType is constant to start but pawns may be upgraded.
+        // ChessPieceType is constant to start but pawns may be upgraded. ChessPieceType
 
         WQR,    // a1 // Rook
         WQN,    // b1 // Knight
@@ -74,7 +74,7 @@ namespace DotStd
         public byte X;    // 0-7 -> a-h
         public byte Y;    // 0-7 -> 1-8
 
-        bool IsCaptured
+        bool IsCaptured     // notation for a piece not currently on the board.
         {
             get
             {
@@ -106,11 +106,12 @@ namespace DotStd
 
         public void SetCaptured()
         {
+            // a piece is no longer on the board.
             X = Chess.kD;
             Y = Chess.kD;
         }
 
-        public ChessPosition(byte x)
+        public ChessPosition(byte x) // Chess.kD
         {
             // AKA SetCaptured.
             Debug.Assert(x == Chess.kD);
@@ -119,7 +120,7 @@ namespace DotStd
         }
         public ChessPosition(byte x, byte y)
         {
-            // Valid position on the board.
+            // create a Valid position on the board.
             X = x;
             Y = y;
             Debug.Assert(!IsCaptured);
@@ -135,7 +136,7 @@ namespace DotStd
         CastleK,    // 0-0 = kings side castle. (short)
         CastleQ,    // 0-0-0 = queen side castle. (long)
 
-        Upgrade,
+        Upgrade,    // pawn upgrade.
         Capture,    // Captured another piece. 'x'
 
         Check,      // Move is blocked because it results in check. '+'
@@ -145,10 +146,10 @@ namespace DotStd
     public class ChessPiece
     {
         public ChessPieceId Id;         // What piece am i?
-        public ChessPieceType Type;     // What Type ? pawns may be upgraded.
+        public ChessPieceType Type;     // What Type am i ? pawns may be upgraded.
         public ChessPosition Pos;       // My current position on board. test IsCaptured
 
-        public ChessColor Color
+        public ChessColor Color         // what side ? ChessColor
         {
             get
             {
@@ -174,9 +175,11 @@ namespace DotStd
 
         public const int kD = 8;    // board is a matrix of 8x8 (a-h)x(1-8)
 
-        private ChessPiece[] piece;      // ChessPieceId enum [32]
-        // private ChessPiece[,,] board;    // 2d array. null = unoccupied space.
-        // private List<ChessPiece> captured;    // off board.
+        private ChessPiece[] piece;      // status of all pieces. ChessPieceId enum [32]
+
+        // alternate views to pieces. indexes.
+        // private ChessPiece[kD,kD] board;    // 2d array. null = unoccupied space. ChessPieceId
+        // private List<ChessPiece> captured;    // list of pieces off board. ChessPieceId
 
         public int MoveNumber;  // Whose turn is it to move now ? 1 based. completed moves. Odd = white. e.g. 2 = waiting for black to move.
         public string White;    // name
@@ -184,7 +187,7 @@ namespace DotStd
         public DateTime FirstMove;  // when?
         public DateTime LastMove;   // when?
 
-        // bool DeclaredInvalid; // Next turn is refused for invalid last move ? 
+        // bool DeclaredInvalid; // Next turn is refused for invalid last move ? game is draw?
 
         public ChessColor MoveTurn
         {

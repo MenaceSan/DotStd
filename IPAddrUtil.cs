@@ -102,21 +102,43 @@ namespace DotStd
             return ip;
         }
 
-        public static bool IsIP4Private(IPAddress addr)
+        public static long GetHashLong(IPAddress addr)
         {
-            // A private ip range. not external.
-
-            if (addr.AddressFamily != AddressFamily.InterNetwork)
-                return false;
-
-            byte[] ip = addr.GetAddressBytes();
-            if (ip[0] == 10 ||
-                (ip[0] == 192 && ip[1] == 168) ||
-                (ip[0] == 172 && (ip[1] >= 16 && ip[1] <= 31)))
+            if (addr.AddressFamily == AddressFamily.InterNetwork)
             {
-                return true;
+                return ToUInt(addr);    // add offset to get ip6 non collision.
             }
-            return false;
+            else if (addr.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                ulong u = ToULong(addr, true) ^ ToULong(addr, false);
+                return (long)u;
+            }
+
+            // get binary???
+            return 0;
+        }
+
+        public static bool IsPrivate(IPAddress addr)
+        {
+            // A private ip/local range. not external. similar to IPAddress.IsLoopback(addr)
+
+            if (addr.AddressFamily == AddressFamily.InterNetwork)
+            {
+                byte[] ip = addr.GetAddressBytes();
+                if (ip[0] == 10 ||
+                    (ip[0] == 192 && ip[1] == 168) ||
+                    (ip[0] == 172 && (ip[1] >= 16 && ip[1] <= 31)))
+                {
+                    return true;
+                }
+            }
+            else if (addr.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                if (addr.IsIPv6SiteLocal)
+                    return true;
+            }
+
+            return IPAddress.IsLoopback(addr);
         }
 
         public static IPAddress FindIPAddrLocal()
@@ -178,7 +200,7 @@ namespace DotStd
             {
                 return null;
             }
-            if (IsIP4Private(addr))
+            if (IsPrivate(addr))
             {
                 // this is wrong!
             }

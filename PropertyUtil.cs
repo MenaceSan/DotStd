@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -26,7 +27,7 @@ namespace DotStd
         // Just use reflection to get a properties value from an object. IPropertyGetter
         // Assume i CANNOT just add new props on the fly.
 
-        public object Obj { get; set; }
+        object Obj; // just use Type reflection on this.
         public Type Type { get; set; }  // Maybe not the same as GetType().
 
         public PropertyBagObj()
@@ -49,7 +50,7 @@ namespace DotStd
             }
 
             var prop = Type.GetProperty(name);
-            if (prop == null)
+            if (prop == null || !prop.CanRead)
                 return null;
 
             return prop.GetValue(Obj, null);
@@ -66,7 +67,7 @@ namespace DotStd
             }
 
             var prop = Type.GetProperty(name);
-            //if (prop == null)   // throw ??
+            //if (prop == null || ! prop.CanWrite)   // throw ??
             //  return;
 
             prop.SetValue(Obj, val);
@@ -78,7 +79,7 @@ namespace DotStd
         // a IPropertyGetter implemented as a Dictionary
         // Assume i CAN add new props on the fly.
 
-        public Dictionary<string, object> Props { get; set; }
+        Dictionary<string, object> Props;
 
         public PropertyBagDic()
         {
@@ -100,14 +101,14 @@ namespace DotStd
         public void AddProperties(object obj)
         {
             // add all properties from object to the bag.
-            Type toType = obj.GetType();
+            Type fromType = obj.GetType();
             CheckProps();
-            foreach (PropertyInfo propTo in toType.GetProperties())
+            foreach (PropertyInfo propFrom in fromType.GetProperties())
             {
-                if (!propTo.CanRead)
+                if (!propFrom.CanRead)
                     continue;
-                object val = propTo.GetValue(obj, null);
-                Props[propTo.Name] = val; 
+                object val = propFrom.GetValue(obj, null);
+                Props[propFrom.Name] = val;
             }
         }
 
@@ -130,11 +131,32 @@ namespace DotStd
         }
     }
 
+    public class PropertyBagKeyValue : IPropertyGetter
+    {
+        // use with this.Request.Form, IFormCollection
+
+        readonly IEnumerable<KeyValuePair<string, StringValues>> Row;
+
+        public PropertyBagKeyValue(IEnumerable<KeyValuePair<string, StringValues>> row)
+        {
+            Row = row;
+        }
+        public object GetPropertyValue(string name)
+        {
+            foreach (var x in Row)
+            {
+                if (x.Key.CompareNoCase(name) == 0)
+                    return x.Value;
+            }
+            return null;
+        }
+    }
+
     public class PropertyBagRow : IPropertyGetter
     {
         // a IPropertyGetter implemented as a DataRow
 
-        DataRow Row { get; set; }
+        DataRow Row;
 
         public PropertyBagRow()
         {
@@ -170,6 +192,8 @@ namespace DotStd
                 return null;
             Type fromType = fromObj.GetType();
             PropertyInfo prop = fromType.GetProperty(name);
+            if (!prop.CanRead)
+                return null;
             return prop.GetValue(fromObj, null);
         }
 
@@ -180,12 +204,13 @@ namespace DotStd
                 return;
             Type toType = toObj.GetType();
             PropertyInfo prop = toType.GetProperty(name);
+            // prop == null || ! prop.CanWrite
             prop.SetValue(toObj, value);
         }
 
         public static int InjectProperties<T>(T toObj, object fromObj)
         {
-            // Inject all properties (not fields or events) like IPropertySetter
+            // Inject all properties that match. (not fields or events) like IPropertySetter
             // fromObj is some type derived from T. may have many more props but we will ignore them. Only use T Props
             // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
 
@@ -193,18 +218,25 @@ namespace DotStd
                 return 0;
             int propsCopied = 0;
             Type toType = typeof(T);
+            Type fromType = fromObj.GetType();
+            bool sameType = toType.IsAssignableFrom(fromType);
+
             foreach (PropertyInfo propTo in toType.GetProperties())
             {
-                if (!propTo.CanRead || !propTo.CanWrite)
+                if (!propTo.CanWrite)
                     continue;
-                object val = propTo.GetValue(fromObj, null);
+                // Find eqiv prop by name.
+                PropertyInfo propFrom = sameType ? propTo : fromType.GetProperty(propTo.Name);
+                if (propFrom == null || !propFrom.CanRead)
+                    continue;
+                object val = propFrom.GetValue(fromObj, null);
                 propTo.SetValue(toObj, val, null);      // like IPropertySetter
                 propsCopied++;
             }
             return propsCopied;
         }
 
-        public static int InjectProperties<T>(T toObj, IPropertyGetter from, string prefix = null)
+        public static int InjectProperties<T>(T toObj, IPropertyGetter from, string from_prefix = null)
         {
             // inject all the properties from 'from' into an object toObj that match.
             // Just skip those that don't match
@@ -218,7 +250,7 @@ namespace DotStd
             {
                 if (!propTo.CanWrite)
                     continue;
-                object val = from.GetPropertyValue(string.Concat(prefix, propTo.Name));
+                object val = from.GetPropertyValue(string.Concat(from_prefix, propTo.Name));    // has a matching prop?
                 if (val != null)
                 {
                     propTo.SetValue(toObj, Converter.ChangeType(val, propTo.PropertyType), null); // ChangeType probably not needed?
@@ -232,7 +264,8 @@ namespace DotStd
         {
             // Create a clone of some object as a target type. Maybe a child type of fromObj.
             // Use reflection to clone props.
-
+            if (fromObj == null)
+                return default(T);
             T toObj = (T)Activator.CreateInstance(typeof(T));
             InjectProperties<T>(toObj, fromObj);
             return toObj;

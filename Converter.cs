@@ -83,7 +83,7 @@ namespace DotStd
             return o.ToString();
         }
 
-        public static string ToStringN(object o, bool whitenull=true)
+        public static string ToStringN(object o, bool whitenull = true)
         {
             // object to a string. strings are always nullable.
             // should never throw. (safer than o.ToString())
@@ -128,20 +128,21 @@ namespace DotStd
             return val;
         }
 
-        public static int ToIntSloppy(string s)
+        public static int ToIntSloppy(string s, int offset = 0)
         {
             // try to read a string. End on any non digit. skip leading spaces.
             if (s == null)
                 return 0;
             int val = 0;
-            bool leadSpace = true;
-            foreach (char ch in s)
+            bool leadSpace = true;  // ignore lead spaces.
+            for (int i = offset; i < s.Length; i++)
             {
+                char ch = s[i];
                 if (leadSpace && char.IsWhiteSpace(ch))
                     continue;
                 if (ch < '0' || ch > '9')
                     break;
-                leadSpace = false;
+                leadSpace = false;  // found a non space.
                 val = val * 10 + (ch - '0');
             }
             return val;
@@ -327,41 +328,45 @@ namespace DotStd
         /// Behave as closely to Convert.ChangeType as possible.
         /// This method was written by Peter Johnson at: http://aspalliance.com/author.aspx?uId=1026.
         /// </remarks>
-        public static object ChangeType(object value, Type conversionType)
+        public static object ChangeType(object value, Type convertToType)
         {
             // Note: This if block was taken from Convert.ChangeType as is, and is needed here since we're
             // checking properties on conversionType below.
 
-            ValidState.ThrowIfNull(conversionType, nameof(conversionType));
+            ValidState.ThrowIfNull(convertToType, nameof(convertToType));
             if (ValidState.IsNull(value))  // NULL or DBNull is always null.
                 return null;
 
             // If it's not a nullable type, just pass through the parameters to Convert.ChangeType
-            if (IsNullableType(conversionType))
+            if (IsNullableType(convertToType))
             {
                 // It's a nullable type, so instead of calling Convert.ChangeType directly which would throw a
                 // InvalidCastException (per http://weblogs.asp.net/pjohnson/archive/2006/02/07/437631.aspx),
 
                 // It's a nullable type, and not null, so that means it can be converted to its underlying type,
                 // so overwrite the passed-in conversion type with this underlying type
-                var nullableConverter = new NullableConverter(conversionType);
-                conversionType = nullableConverter.UnderlyingType;
+                var nullableConverter = new NullableConverter(convertToType);
+                convertToType = nullableConverter.UnderlyingType;
             }
 
             // BEWARE ENUMS HERE . Invalid cast of int to enum.
-            if (conversionType.BaseType == typeof(System.Enum))
+            if (convertToType.BaseType == typeof(System.Enum))
             {
-                return Enum.ToObject(conversionType, Converter.ToInt(value));
+                return Enum.ToObject(convertToType, Converter.ToInt(value));
             }
 
-            if (conversionType == typeof(bool))   // Be more forgiving converting to bool. "1" = true.
+            if (convertToType == typeof(bool))   // Be more forgiving converting to bool. "1" = true.
             {
                 return ToBool(value);
+            }
+            if (convertToType == typeof(string))
+            {
+                return value.ToString();
             }
 
             // Now that we've guaranteed conversionType is something Convert.ChangeType can handle (i.e. not a
             // nullable type), pass the call on to Convert.ChangeType
-            return Convert.ChangeType(value, conversionType, CultureInfo.InvariantCulture);
+            return Convert.ChangeType(value, convertToType, CultureInfo.InvariantCulture);
         }
 
         public static MemoryStream ToMemoryStream(string str)

@@ -38,6 +38,7 @@ namespace DotStd
             // assume this column is boolean?
             return (colName.StartsWith("Is") && char.IsUpper(colName[2]))
                 || (colName.StartsWith("Has") && char.IsUpper(colName[3]))
+                || (colName.StartsWith("Use") && char.IsUpper(colName[3]))
                 || (colName.StartsWith("Uses") && char.IsUpper(colName[4]))
                 ;
         }

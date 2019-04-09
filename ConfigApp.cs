@@ -13,6 +13,9 @@ namespace DotStd
         public static int AppId { get; set; }         // int Id for logging. enum these in app space. Cluster PK .
         public static int AppTypeId { get; private set; } // AppId enum these in app space.
 
+        public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start.
+        public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;        // Equiv to IsInvokeRequired()
+
         private static string _AppName;
         public static string AppName
         {
@@ -124,6 +127,7 @@ namespace DotStd
             AppTypeId = appId;
             _AppName = appName;
             _AppVersion = appVersion;
+            MainThreadId = Environment.CurrentManagedThreadId;
         }
 
         public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId, string appVersion)

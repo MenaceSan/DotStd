@@ -43,7 +43,7 @@ namespace DotStd
     /// </summary>
     public struct DateRange : IEquatable<DateRange>
     {
-        // A range of DateTime. Might be just dates or full times.
+        // A range of DateTime. Might be just dates or full times. usually UTC.
 
         /// <summary>
         /// Gets or Sets the date representing the start of this range.
@@ -55,9 +55,19 @@ namespace DotStd
         /// </summary>
         public DateTime End { get; set; }
 
+        public bool IsValidRange
+        {
+            // Empty is valid.
+            get
+            {
+                return !this.Start.IsExtremeDate() && !this.End.IsExtremeDate() && this.Start <= this.End;
+            }
+        }
+
         public TimeSpan TimeSpan
         {
             // Exclusive dates.
+            // NOTE: if IsExtremeDate() then this really isnt valid.
             get
             {
                 return this.End - this.Start;
@@ -65,47 +75,37 @@ namespace DotStd
         }
 
         /// <summary>
-        /// Gets the range of time in days only if the range is valid (e.g. Start less than End) else return 0.
+        /// Gets the range of time only if the range is valid (e.g. Start less than End) else return 0.
         /// </summary>
-        /// <returns>Integer days of time span. If span is not valid return 0.</returns>
-        public int SpanDaysValid
+        /// <returns>Integer minutes of time span. If span is not valid return 0.</returns>
+        public int SpanMinutesValid
         {
             get
             {
-                int iDays = this.TimeSpan.Days;
-                if (iDays <= 0)  // NOT valid range.
-                    return 0;
-                return iDays;
+                if (!IsValidRange)
+                    return 0;   // NOT valid range.
+                return (int)this.TimeSpan.TotalMinutes;
             }
         }
 
-        public bool IsValidDateRange
+        public bool IsEmptyTime
         {
-            // Empty is valid.
+            // Is this time range empty?
             get
             {
-                return !this.Start.IsExtremeDate() && this.Start <= this.End;
-            }
-        }
-
-        public bool IsEmptyI
-        {
-            // Inclusive dates. (End is included)
-            get
-            {
-                if (!IsValidDateRange)
-                    return true;
-                return this.Start > this.End;
-            }
-        }
-        public bool IsEmptyX
-        {
-            // Exclusive dates.
-            get
-            {
-                if (!IsValidDateRange)
+                if (!IsValidRange)
                     return true;
                 return this.Start >= this.End;
+            }
+        }
+        public bool IsEmptyDates
+        {
+            // Is empty day range? e.g. end on same day = 1 day.
+            get
+            {
+                if (!IsValidRange)
+                    return true;
+                return this.Start.Date > this.End.Date;
             }
         }
 
@@ -121,11 +121,11 @@ namespace DotStd
         /// </summary>
         /// <param name="start">The start of the range.</param>
         /// <param name="end">The end of the range.</param>
-        public DateRange(DateTime start, DateTime end)
+        public DateRange(DateTime start, DateTime? end)
             : this()
         {
             Start = start;
-            End = end;
+            End = end.HasValue ? end.Value : DateTime.MaxValue;
         }
 
         /// <summary>
@@ -140,15 +140,15 @@ namespace DotStd
             End = start + timeSpan;
         }
 
-        public DateRange(DateTime[] startEndDates)
+        public DateRange(DateTime[] range)
         {
-            Start = startEndDates[0];
-            End = startEndDates[1];
+            Start = (range.Length > 0) ? range[0] : DateTime.MinValue;
+            End = (range.Length > 1) ? range[1] : DateTime.MaxValue;
         }
 
         public void FixExtreme(bool inclusiveDefault)
         {
-            // Null/empty dates produce IsExtremeDate. What did we intend ?
+            // Null/empty dates produce IsExtremeDate. do i want this to mean infinite range ?
             bool isStartEx = Start.IsExtremeDate();
             bool isEndEx = End.IsExtremeDate();
             if (inclusiveDefault)
@@ -159,7 +159,7 @@ namespace DotStd
             }
             else if (isStartEx && isEndEx)
             {
-                // Bad IsValidDateRange
+                // Bad IsValidRange
                 Start = DateTime.MinValue;
                 End = DateTime.MinValue;
             }
@@ -347,7 +347,7 @@ namespace DotStd
         }
 
         /// <summary>
-        /// Returns the hash code for this object.
+        /// Returns the hash code for this range.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
         public override int GetHashCode()
@@ -407,7 +407,7 @@ namespace DotStd
             int m = dt.Month;    // 1 based
             int q = (m - 1) / 3;  // quarter 0 based. 0 to 3
             Start = new DateTime(y, (q * 3) + 1, 1);
-            End = Start .AddMonths(3).AddDays(-1);
+            End = Start.AddMonths(3).AddDays(-1);
         }
 
         public void SetDatesForYear(DateTime dt)

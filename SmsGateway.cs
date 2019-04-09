@@ -12,9 +12,20 @@ namespace DotStd
 
         public static string GetEmail(PhoneCarrierId carrierId)
         {
-            // Get email gateway.
+            // Get email gateway.  for Format("{0}",number).
             // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
 
+            switch (carrierId)
+            {
+                case PhoneCarrierId.ATT: return "{0}@txt.att.net";
+                case PhoneCarrierId.Boost: return "{0}@smsmyboostmobile.com";
+                case PhoneCarrierId.Cricket: return "{0}@sms.cricketwireless.net";
+                case PhoneCarrierId.Sprint: return "{0}@messaging.sprintpcs.com";
+                case PhoneCarrierId.TMobile: return "{0}@tmomail.net";
+                case PhoneCarrierId.USCellular: return "{0}@email.uscc.net";
+                case PhoneCarrierId.Verizon: return "{0}@vtext.com";
+                case PhoneCarrierId.VirginMobile: return "{0}@vmobl.com";
+            }
             return null;
         }
 

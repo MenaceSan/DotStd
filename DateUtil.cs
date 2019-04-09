@@ -261,7 +261,7 @@ namespace DotStd
 
         public static string GetTimeStr(int minutes, bool ampm = false, bool space = true)
         {
-            // Convert minutes in the day to a military (or AMPM) time string.
+            // Convert (0 based) minutes in the day to a military (or AMPM) time string.
             if (minutes < 0)
                 return null;
             int hours = minutes / 60;
@@ -276,6 +276,7 @@ namespace DotStd
             }
             else
             {
+                // ignore hours > 24? or hours %= 24;
                 return string.Format("{0:D2}:{1:D2}", hours, minutes);
             }
         }

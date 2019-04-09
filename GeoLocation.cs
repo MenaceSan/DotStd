@@ -8,7 +8,7 @@ namespace DotStd
     [Serializable()]
     public enum CountryId
     {
-        // Countries that we care about. CountryCode
+        // ISO codes for Countries that we care about. CountryCode
         // from the table get_country
         // https://www.ncbi.nlm.nih.gov/books/NBK7249/
         // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE

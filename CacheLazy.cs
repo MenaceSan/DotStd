@@ -7,7 +7,7 @@ namespace DotStd
 {
     public static class CacheLazy<T> where T : class
     {
-        // Build on MemoryCache.Default with Type
+        // Build on MemoryCache.Default with Type. like CacheObj<T>
         // Maybe rename this to "CacheUnique" ??
         // This is a cache like CacheData that also has a weak reference to tell if the object might still be referenced some place.
         // The data stays around for cache time with the hard reference.
@@ -21,6 +21,8 @@ namespace DotStd
         public static void FlushDead()
         {
             // Periodically flush the disposed weak refs.
+            // Throttle calling this using FlushDeadTick()
+
             lock (_WeakRefs)
             {
                 var removals = new List<string>();
@@ -42,6 +44,7 @@ namespace DotStd
 
         public static void FlushDeadTick()
         {
+            // Make sure we dont call FlushDead too often.
             DateTime now = DateTime.UtcNow;
             if ((now - _LastFlush).TotalMinutes < 2)    // throttle.
                 return;
@@ -49,16 +52,13 @@ namespace DotStd
             FlushDead();
         }
 
-        public static T Get(int id, int decaysec, Func<int, T> loader)
+        public static T GetT<TId>(TId id, int decaysec, Func<TId, T> loader)
         {
-            // Find this object in the cache. Load it if it isn't present.
-            // T loader(int)
+            // NOTE: await Task<T> cant be done inside lock !???
+            // like IMemoryCache GetOrCreate
 
-            if (!ValidState.IsValidId(id))  // can't do anything about this. always null.
-                return null;
-
-            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
             var cache = MemoryCache.Default;
+            string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
 
             lock (_WeakRefs)
             {
@@ -69,7 +69,7 @@ namespace DotStd
                     return obj;  // got it.
                 }
 
-                // Fallback to the weak ref cache next. e.g. someone has a ref that existed longer than the cache.
+                // Fallback to the weak ref cache next. e.g. someone has a ref that existed longer than the cache. get it.
                 WeakReference wr;
                 if (_WeakRefs.TryGetValue(cacheKey, out wr))
                 {
@@ -80,7 +80,7 @@ namespace DotStd
                     }
                 }
 
-                // lastly load it.
+                // lastly load it if we cant find it otherwise.
                 if (loader != null)
                 {
                     // NOTE: await Task<T> cant be done inside lock !
@@ -113,18 +113,37 @@ namespace DotStd
             }
         }
 
-        public static void ClearObj(int id, T newValues)
+        public static T Get(int id, int decaysec, Func<int, T> loader)
+        {
+            // Find this object in the cache. Load it if it isn't present.
+            // T loader(int)
+            // like IMemoryCache GetOrCreate
+
+            if (!ValidState.IsValidId(id))  // can't do anything about this. always null.
+                return null;
+
+            return GetT(id, decaysec, loader);
+        }
+
+        public static void ClearObjT<TId>(TId id, T newValues)
         {
             // Object has changed. So sync up all other users with the new values!
-
+            // id is not int ?
             lock (_WeakRefs)
             {
-                T obj = Get(id, 10, null);
+                T obj = GetT(id, 10, null);
                 if (obj == null)
                     return;     // Its not loaded so do nothing.
                 PropertyUtil.InjectProperties<T>(obj, newValues); // refresh props in old weak ref.
             }
-       }
+        }
+
+        public static void ClearObj(int id, T newValues)
+        {
+            if (!ValidState.IsValidId(id))  // can't do anything about this. always null.
+                return;
+            ClearObjT(id, newValues);
+        }
 
 #if false
         public static async Task<T> GetAsync(int id, int decaysec, Task<T> myTask)

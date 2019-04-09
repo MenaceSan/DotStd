@@ -40,6 +40,7 @@ namespace DotStd
 
         public static byte[] ToByteArray(this string sIn)
         {
+            // string to bytes.
             return System.Text.Encoding.Default.GetBytes(sIn);
         }
 
