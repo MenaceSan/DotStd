@@ -16,10 +16,10 @@ namespace DotStd
 
         public const int kMaxLen = 32;   // there are no countries that use PostalCode > 32 (i'm pretty sure)
 
-        public string PostalCode { get; set; } // AKA Zip Code/  ZipCode can have multiple cities (Not PK)!
+        public string PostalCode { get; set; }      // AKA Zip Code/ZipCode can have multiple possible cities (Not PK)!
 
-        public string City { get; set; }        // Maybe all caps ? "ALLSTON"
-        public string State { get; set; }           // 2 letter code "MA" (can be added to cache dynamically)
+        public string City { get; set; }            // Converted to TitleCase. Maybe was all caps e.g. "ALLSTON". 
+        public string State { get; set; }           // 2 letter code "MA" (can be added to cache dynamically) (should exist in geo_state db)
         public string CountryCode { get; set; }     // 3 letter code. "USA" (MUST exist in geo_country db)
 
 

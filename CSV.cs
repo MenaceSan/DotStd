@@ -71,6 +71,10 @@ namespace DotStd
             {
                 if (sb.Length > 0)
                     sb.Append(",");
+                if (value == null)
+                {
+                    continue; //  sb.Append("null");
+                }
                 sb.Append(Encode1(value.ToString(), bAlwaysQuote));
             }
             return sb.ToString();

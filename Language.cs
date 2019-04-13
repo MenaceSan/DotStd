@@ -4,14 +4,16 @@ using System.ComponentModel;
 namespace DotStd
 {
     [Serializable()]
-    public enum LanguageID
+    public enum LanguageId
     {
-        // from the base.dbo.Language table
+        // Id for Languages that we care about.
+        // from Language db table ?
         // similar to the Windows concept of culture.
-        // Languages that we care about.
+        // AKA LanguageID
+        // https://developers.google.com/admin-sdk/directory/v1/languages
 
         [Description("eng")]    // Shortcode. or 'en'
-        English = 1,        // American english. .NET LanguageID =  1033
+        English = 1,        // American English. .NET LanguageId =  1033 = 0x409
         [Description("sp")]
         Spanish = 2,
         [Description("swe")]    // Shortcode
@@ -27,33 +29,35 @@ namespace DotStd
 
     public static class Language
     {
+        public const string kDefault = "en";   // source = from English
         public const string kCultureDef = "en-US"; // default english culture
 
-        public static LanguageID GetLanguageID(string sShortCode)
+        public static LanguageId GetLanguageId(string lang)
         {
-            // GetLanguageIDByShortCode(ByVal sLanguageShortCode As String) As DotLib.LanguageID
-            if (sShortCode == null)
-                return LanguageID.English;
-            switch (sShortCode.ToLower())
+            // get LanguageId from string.
+
+            if (lang == null)
+                return LanguageId.English;
+            switch (lang.ToLower())
             {
                 case "spanish":
                 case "sp":
                 case "2":
-                    return LanguageID.Spanish;
+                    return LanguageId.Spanish;
                 case "3":
                 case "swedish":
                 case "swe":
-                    return LanguageID.Swedish;
+                    return LanguageId.Swedish;
                 case "french":
                 case "fr":
                 case "4":
-                    return LanguageID.French;
+                    return LanguageId.French;
                 //case "english":
                 //case "eng":
                 //case "en":
                 //case "1":
                 default:
-                    return LanguageID.English;
+                    return LanguageId.English;
             }
         }
     }

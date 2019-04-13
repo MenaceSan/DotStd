@@ -77,6 +77,8 @@ namespace DotStd
             if (p == null)
                 return null;
             object oValue = p.GetValue(_ObjectInstance, null);
+            if (oValue == null)
+                return "";
             return oValue.ToString();
         }
         public string GetPropValue(string memberName)

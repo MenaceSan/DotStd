@@ -100,13 +100,13 @@ namespace DotStd
                         continue;
 
                     hashCode1 = Convert.FromBase64String(integrity.Value.Substring(i + 1));
-                    hasher = new HashUtil(integrity.Value);
+                    hasher = new HashUtil(HashUtil.FindHasher(integrity.Value));
                     if (File.Exists(dstPath))
                     {
                         // Is current file ok?
                         byte[] hashCode2 = hasher.GetHashFile(dstPath);
                         // debugHash2 = Convert.ToBase64String(hashCode2);
-                        if (ComparerDef.CompareBytes(hashCode1, hashCode2) == 0)     // match.
+                        if (ByteUtil.CompareBytes(hashCode1, hashCode2) == 0)     // match.
                             continue;
                         hasher.Init();
                     }
@@ -133,7 +133,7 @@ namespace DotStd
                     // Now test again!
                     byte[] hashCode2 = hasher.GetHashFile(dstPath);
                     // debugHash2 = Convert.ToBase64String(hashCode2);
-                    if (ComparerDef.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
+                    if (ByteUtil.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
                     {
                         throw new Exception("CDN integrity hash does not match for " + dstPath);
                     }

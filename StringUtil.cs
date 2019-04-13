@@ -8,7 +8,8 @@ namespace DotStd
     public static class StringUtil
     {
         // String and char util functions.
-  
+        // ToByteArray = byte[] = System.Text.Encoding.Default.GetBytes(sIn);
+
         public static int CompareNoCase(this string s1, string s2)
         {
             // simple Wrapper 

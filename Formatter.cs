@@ -47,6 +47,36 @@ namespace DotStd
             }
         }
 
+        static readonly string[] kSizeSuffixes = { "", "K", "M", "G", "T", "P", "E", "Z", "Y" };
+
+        public static string ToSizeStr(long value, int decimalPlaces=1)
+        {
+            // To metric quantity of bytes, meters or something else.
+            if (value == 0) { return "0"; }
+            if (value < 0) { return "-" + ToSizeStr(-value, decimalPlaces); }
+
+            if (decimalPlaces < 0) decimalPlaces = 0;
+
+            // mag is 0 for bytes, 1 for KB, 2, for MB, etc.
+            int mag = (int)Math.Log(value, 1024);
+
+            // 1L << (mag * 10) == 2 ^ (10 * mag) 
+            // [i.e. the number of bytes in the unit corresponding to mag]
+            decimal adjustedSize = (decimal)value / (1L << (mag * 10));
+
+            // make adjustment when the value is large enough that
+            // it would round up to 1000 or more
+            if (Math.Round(adjustedSize, decimalPlaces) >= 1000)
+            {
+                mag += 1;
+                adjustedSize /= 1024;
+            }
+
+            return string.Format("{0:n" + decimalPlaces + "} {1}",
+                adjustedSize,
+                kSizeSuffixes[mag]);
+        }
+
         public static string ToTitleCase(string str)
         {
             // capitalize word. CultureInfo cultureInfo
@@ -62,7 +92,10 @@ namespace DotStd
             // convert to a string number radix base X, 2,8,10,16, etc..
             switch (toBase)
             {
-                case 2: case 8: case 10: case 16:
+                case 2:
+                case 8:
+                case 10:
+                case 16:
                     return Convert.ToString(value, toBase);
             }
 
@@ -217,7 +250,7 @@ namespace DotStd
 
                 // replace text
                 sb.Append(body.Substring(i0, b1 - i0));
-                sb.Append((string)val);
+                sb.Append(val.ToString());
                 i0 = b2;
             }
 

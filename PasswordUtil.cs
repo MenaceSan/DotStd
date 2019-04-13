@@ -15,20 +15,21 @@ namespace DotStd
         Uppercase = 2,
         Digit = 4,      // Numbers. RequireDigit
         NonAlphanumeric = 8,    // must have special char.  RequireNonAlphanumeric
-        UniqueChars = 16,       // needs unique chars 
+        UniqueChars = 16,       // needs unique chars . cant just repeat ??
         Def = Lowercase | Uppercase | Digit,
     }
 
     public class PasswordUtil
     {
         // PasswordPolicy
+        // NOTE: Use [AllowHTML] for ASP passwords to prevent screening <>
 
         public static readonly PasswordUtil Def = new PasswordUtil(8, 16, PasswordReq.Def);
 
         public const int kMinLength = 8;
 
         public readonly int MinLength = kMinLength;
-        public readonly int MaxLength = 16;     // Why not allow longer?
+        public readonly int MaxLength = 128;     // These are hashed, there should be no max.
         public readonly PasswordReq ReqFlags = PasswordReq.Def;
 
         public static readonly char[] _numberChars = "1234567890".ToCharArray();

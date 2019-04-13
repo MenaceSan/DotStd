@@ -2,8 +2,6 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace DotStd
 {
@@ -34,7 +32,7 @@ namespace DotStd
                 return ((int)o) != 0;
             if (type == typeof(bool?))     // faster convert
                 return ((bool?)o) ?? defVal;
-            if (type == typeof(System.Enum))     // dont convert this to a string!
+            if (type == typeof(System.Enum))     // don't convert this to a string!
             {
                 return Convert.ToInt32(o) != 0;
             }
@@ -97,7 +95,7 @@ namespace DotStd
 
         public static int ToInt(object o, int defVal = 0)
         {
-            // unbox to int. handle null and DBNull.
+            // un-box to int. handle null and DBNull.
             // should never throw.
             // defVal = 0
             // @note strings with extra junk at end fail. "01FA". The conversion fails because the string cannot contain hexadecimal digits; 
@@ -161,7 +159,7 @@ namespace DotStd
                 return (long)o;
             if (type == typeof(int?))     // faster convert
                 return ((int?)o) ?? 0;
-            if (type == typeof(System.Enum))     // dont convert this to a string!
+            if (type == typeof(System.Enum))     // don't convert this to a string!
             {
                 // return (long)Convert.ChangeType(o, typeof(long));
                 return Convert.ToInt32(o);

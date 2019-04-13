@@ -35,12 +35,14 @@ namespace DotStd
 
         public static MemoryStream ToMemoryStream(this string value)
         {
-            return new MemoryStream(Encoding.UTF8.GetBytes(value ?? ""));
+            // UTF8 stream for reading
+            // Wrap this in using () {} ? 
+            return new MemoryStream(Encoding.UTF8.GetBytes(value ?? string.Empty));
         }
 
         public static byte[] ToByteArray(this string sIn)
         {
-            // string to bytes.
+            // string to bytes for hashing.
             return System.Text.Encoding.Default.GetBytes(sIn);
         }
 

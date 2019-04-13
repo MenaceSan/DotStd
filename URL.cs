@@ -15,7 +15,10 @@ namespace DotStd
         Amazon = 3,     // amazon-fireos
         Windows = 4,    // UWP apps. Windows 10.
 
-        // Chrome, Firefox, Blackberry
+        // Chrome on desktop/laptop
+        // Firefox on desktop/laptop
+        // Blackberry
+        // M$ Edge does not do Push.
 
         MSIE_Old = 15,        // https://stackoverflow.com/questions/10964966/detect-ie-version-prior-to-v9-in-javascript
     }

@@ -140,29 +140,13 @@ namespace DotStd
             //  else if the value is 1 return true. //User has rights to use the module
             return (result & 1) != 0; // to bool
         }
-
-        public static byte[] TruncateZeros(byte[] b)
-        {
-            // Truncate 0 off the end. No need to encode that.
-            int len = b.Length;
-            for (; len > 0 && b[len - 1] == 0; len--)
-            {
-            }
-            if (len <= 0)
-                return null;
-            if (len == b.Length)
-                return b;
-            var b2 = new byte[len];
-            Buffer.BlockCopy(b, 0, b2, 0, len);
-            return b2;
-        }
-
+         
         public override string ToString()
         {
             // Get Base64 string.
             if (_binary == null)
                 return null;
-            var b = TruncateZeros(_binary);
+            var b = ByteUtil.TruncateZeros(_binary);
             if (b == null)
                 return "";
             return Convert.ToBase64String(b);

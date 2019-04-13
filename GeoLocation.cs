@@ -79,7 +79,8 @@ namespace DotStd
         MO,
         MT,
         NE,
-        NV, NH,
+        NV,
+        NH,
         NJ,
         NM,
         NY,
@@ -165,16 +166,28 @@ namespace DotStd
     public class GeoLocation
     {
         // Latitude and longitude. Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
-        // maybe altitude ?
+        // Can be serialized directly from the JSON poco. altitude ?
+        // https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c
+        // The circumference of the Earth is approx. 40.000 km or 24900 miles. You need one-meter accuracy(3ft) to be able to out-resolve gps precision by an order of magnitude. Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
+        // NO float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
 
-        public float Latitude { get; set; }
-        public float Longitude { get; set; }
+        public double Latitude { get; set; }     // AKA latitude
+        public double Longitude { get; set; }    // AKA longitude
+        public float? Altitude { get; set; }     // AKA altitude
 
-        public static bool IsValidLat(float x)
+        public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
+
+        public const double kEarthRadiusMeters = 6371000.0;    // Approximate.
+        public const double kDeg2Rad = Math.PI / 180.0;    // degrees to Radians 
+
+        // https://gis.stackexchange.com/questions/142326/calculating-longitude-length-in-miles
+        public const double kMet2Deg = 111000.0;   // Meters to degrees
+
+        public static bool IsValidLat(double x)
         {
             return x >= -90 && x <= 90;
         }
-        public static bool IsValidLon(float x)
+        public static bool IsValidLon(double x)
         {
             return x >= -180 && x <= 180;
         }
@@ -192,18 +205,39 @@ namespace DotStd
             // e.g. "15.0N+30.0E"
             // https://maps.google.com/maps?q=24.197611,120.780512
             // https://maps.google.com/maps?q=24.197611,120.780512&z=18
- 
-            return String.Concat(Latitude.ToString(),",",Longitude.ToString());
+
+            return String.Concat(Latitude.ToString(), ",", Longitude.ToString());
         }
 
-        public static float ParseValue(string v, int point)
+        public static string ToGeoUrlOsm(double lat, double lon)
         {
-            // Parse a single dimension value string to a float.
+            return "http://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon;
+        }
+        public static string ToGeoUrlGoo(double lat, double lon)
+        {
+            return "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lon;
+        }
+        public static string ToGeoUrl(double lat, double lon, DeviceTypeId deviceTypeId)
+        {
+            if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows)
+            {
+                return ToGeoUrlGoo(lat, lon); // Unknown/Windows
+            }
+            if (deviceTypeId == DeviceTypeId.iOS)
+            {
+                return "maps://maps.google.com/maps?daddr=" + lat + "," + lon + "&amp;ll=";  // iOS
+            }
+            return "geo:" + lat + "," + lon;
+        }
+
+        public static double ParseValue(string v, int point)
+        {
+            // Parse a single dimension value string to a double.
 
             if (point <= 0) // no decimal place.
             {
                 int i = ((v.Length & 1) == 1) ? 3 : 2;  // DDDMM vs DDDMM
-                float d = Converter.ToInt(v.Substring(0, i));
+                double d = Converter.ToInt(v.Substring(0, i));
                 if (v.Length > i)
                 {
                     d += Converter.ToInt(v.Substring(i, 2)) / 60;
@@ -219,15 +253,15 @@ namespace DotStd
             var fi = NumberFormatInfo.InvariantInfo;
             if (point == 2)
             {
-                return float.Parse(v, fi) * 3600;
+                return double.Parse(v, fi) * 3600;
             }
             else if (point == 4)
             {
-                return float.Parse(v.Substring(0, 2), fi) * 3600 + float.Parse(v.Substring(2), fi) * 60;
+                return double.Parse(v.Substring(0, 2), fi) * 3600 + double.Parse(v.Substring(2), fi) * 60;
             }
             else  // point==8
             {
-                return float.Parse(v.Substring(0, 2), fi) * 3600 + float.Parse(v.Substring(2, 2), fi) * 60 + float.Parse(v.Substring(4), fi);
+                return double.Parse(v.Substring(0, 2), fi) * 3600 + double.Parse(v.Substring(2, 2), fi) * 60 + double.Parse(v.Substring(4), fi);
             }
         }
 
@@ -253,7 +287,7 @@ namespace DotStd
 
             if (isoStr == null || isoStr.Length < 8 || isoStr.Length > 18)  // Check for min/max length
                 return false;
- 
+
             if (isoStr.EndsWith("/"))  // Check for trailing slash
             {
                 isoStr = isoStr.Remove(isoStr.Length - 1); // Remove trailing slash
@@ -299,10 +333,31 @@ namespace DotStd
             // Parse altitude, just to check if it is valid
             if (parts.Length == 4)
             {
-                // Alt = float.Parse(parts[3], NumberFormatInfo.InvariantInfo);
+                Altitude = float.Parse(parts[3], NumberFormatInfo.InvariantInfo);
             }
 
             return true;
-        } 
+        }
+
+        public GeoLocation()
+        {
+        }
+        public GeoLocation(double lat, double lon, float? alt = null)
+        {
+            Latitude = lat; Longitude = lon; Altitude = alt;
+        }
     }
+
+    [Serializable]
+    public class GeoLocation5 : GeoLocation
+    {
+        // All the optional extra JSON stuff. getCurrentPosition.coords
+
+        public float accuracy ;
+        public float? altitudeAccuracy;
+
+        public float? heading;
+        public float? speed;
+    }
+
 }

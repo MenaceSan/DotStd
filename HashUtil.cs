@@ -5,73 +5,40 @@ using System.Threading;
 
 namespace DotStd
 {
-    public class HashMD5
+    public class HashXXH64 : HashAlgorithm
     {
-        // lenBase64 = 24
+        // Fast 64 bit hash. ulong output.
+        // like GetKnuthHash
+        // https://stackoverflow.com/questions/8820399/c-sharp-4-0-how-to-get-64-bit-hash-code-of-given-string
+        // https://github.com/brandondahler/Data.HashFunction/blob/master/src/System.Data.HashFunction.xxHash/xxHash_Implementation.cs
 
-        static ThreadLocal<MD5CryptoServiceProvider> _Hasher = new ThreadLocal<MD5CryptoServiceProvider>(() =>
+        public ulong Value { get; private set; }   // output short cut.
+
+        public override void Initialize()
         {
-            // Create a thread local version of this that we can share/re-use ?
-            return new MD5CryptoServiceProvider();
-        });
-
-        public static HashAlgorithm Get()
-        {
-            // MD5 = Return 128 bits. 16 bytes for a base64 string of 24 chars.
-            // NIST recommends SHA-256 or better for passwords.
-            // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-
-            var hasher = _Hasher.Value;
-            hasher.Initialize();
-            return hasher; // return new MD5CryptoServiceProvider();
+            throw new NotImplementedException();
         }
-    }
 
-    public static class HashSHA256
-    {
-        // Secure hash. SHA256
-        //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
-        
-        static ThreadLocal<SHA256CryptoServiceProvider> _Hasher = new ThreadLocal<SHA256CryptoServiceProvider>(() =>
+        protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
-            // Create a thread local version of this that we can share/re-use ?
-            return new SHA256CryptoServiceProvider();
-        });
-
-        public static HashAlgorithm Get()
-        {
-            // NIST recommends SHA-256 or better for passwords.
-            // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
-            // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-
-            var hasher = _Hasher.Value;
-            hasher.Initialize();    // might be shared so init.
-            return hasher; // return new SHA256CryptoServiceProvider();
+            throw new NotImplementedException();
         }
-    }
 
-    public static class HashSHA384
-    {
-        // Secure hash. SHA384
-
-        static ThreadLocal<SHA384CryptoServiceProvider> _Hasher = new ThreadLocal<SHA384CryptoServiceProvider>(() =>
+        protected override byte[] HashFinal()
         {
-            // Create a thread local version of this that we can share/re-use ?
-            return new SHA384CryptoServiceProvider();
-        });
-
-        public static SHA384CryptoServiceProvider Get()
-        {
-            var hasher = _Hasher.Value;
-            hasher.Initialize();    // might be shared so init.
-            return hasher; // return new SHA384CryptoServiceProvider();
+            throw new NotImplementedException();
         }
     }
 
     public class HashUtil
     {
+        // Wrapper for HashAlgorithm for use in crypto . 
         // Hashes can be used for 1. Id. Avoid Accidental Collision, 2. Security. Avoid intentional collision.
-        // NOTE: might wrap byte[] output in StringUtil.ToHexStr() or Convert.ToBase64String()
+        // Crypto hashes are usually on strings (passwords). Actual Hash is on String.ToByteArray().
+        // If we assume a unique salt per user and >= 128 bits of hash, the best attack left is dictionary/brute force password guessing. 
+        // Length of the hash beyond ~256 bits is no longer useful. we need to make it expensive for the attacker.
+        // Algorithms: PDFKDF2 = weak to FPGA usage. scrypt newer. control cost of attack.
+        // NOTE: might wrap byte[] hash output in StringUtil.ToHexStr() or Convert.ToBase64String() for db storage as string ?
 
         private HashAlgorithm _Hasher;
 
@@ -82,8 +49,10 @@ namespace DotStd
 
         public static ulong GetKnuthHash(string read)
         {
-            // Very fast 64 bit string hash. 
+            // Very fast 64 bit string anti-collision hash. 
             // like object.GetHashCode() but 64 bit.
+            // use 64 bits for lower hash collisions. 
+            // ? Make this faster by doing 8 byte chunks?
 
             ulong hashedValue = 3074457345618258791ul;
             for (int i = 0; i < read.Length; i++)
@@ -94,55 +63,9 @@ namespace DotStd
             return hashedValue;
         }
 
-        public static byte[] MakeHashLen(byte[] inp, int lenBin)
-        {
-            // Adjust the length of a hash to a new length. try not to lose noise.
-            // NOTE: might wrap output in StringUtil.ToHexStr() or Convert.ToBase64String()
-            // lenBin = return size.
-
-            if (inp.Length == lenBin)   // no change required.
-                return inp;
-
-            int j = 0;
-            byte[] bout = new byte[lenBin];
-            foreach (byte b in inp)
-            {
-                bout[j] ^= b;
-                if (++j >= lenBin) j = 0;
-            }
-
-            if (inp.Length < lenBin)
-            {
-                int i = 0;
-                for (; j < lenBin; j++)
-                {
-                    bout[j] ^= inp[i];
-                    if (++i >= inp.Length) i = 0;
-                }
-            }
-
-            return bout;
-        }
-
-        public byte[] GetHash(string str)
-        {
-            // Convert the input string to a byte array and compute the hash.
-            return _Hasher.ComputeHash(System.Text.Encoding.Default.GetBytes(str));
-        }
-
-        public byte[] GetHash(string str, int salt)
-        {
-            // NOTE: might wrap output in StringUtil.ToHexStr() or Convert.ToBase64String()
-            if (salt > 0)
-            {
-                str += salt.ToString();   // just append the string.
-            }
-            return GetHash(str);
-        }
-
         public byte[] GetHashFile(string filename)
         {
-            // Hash the contents of a file.
+            // Hash the contents of a file. Not crypto. just anti-collision.
             // MD5 = Return 128 bits. 16 bytes for contents of a file.
 
             using (var fs = new FileStream(filename, FileMode.Open))
@@ -152,18 +75,70 @@ namespace DotStd
             }
         }
 
-        public byte[] MakeHashKey(string str, int salt, int lenBin = 16)
+        public static void MergeHash(byte[] inp, byte[] bout)
         {
-            // Make a hash for a string and change its size arbitrarily.
-            // lenBin = return size.
-            return HashUtil.MakeHashLen(GetHash(str, salt), lenBin);
+            // Combine 2 hashes. try not to lose noise/entropy. xor wrapping extra data (or padding output).
+            int j = 0;
+            foreach (byte b in inp)
+            {
+                bout[j] ^= b;
+                if (++j >= bout.Length) j = 0;   // wrap back to start. wrap extra data back over previous data.
+            }
+
+            if (inp.Length < bout.Length)    // pad output.
+            {
+                int i = 0;
+                for (; j < bout.Length; j++) // fill bout
+                {
+                    bout[j] ^= inp[i];
+                    if (++i >= inp.Length) i = 0;   // wrap to fill bout
+                }
+            }
         }
 
-        public string GetHashStr(string str, int salt, int lenBase64 = 24)
+        public static byte[] MakeHashLen(byte[] inp, int lenOut)
         {
-            // lenBase64 = how big is the output base64 string.
-            int lenBin = SerializeUtil.FromBase64Len(lenBase64);
-            return Convert.ToBase64String(MakeHashKey(str, salt, lenBin));
+            // Adjust the length of a hash.
+            // lenOut = return byte[] size.
+
+            if (inp.Length == lenOut)   // no change required.
+                return inp; // inp is ok the way it is.
+            byte[] bout = new byte[lenOut];     // assume 0 init.
+            MergeHash(inp, bout);
+            return bout;
+        }
+
+        public byte[] GetHash(string str)
+        {
+            // Convert the input string to a byte array and compute the hash.
+            // Assume any salt has already been added.
+
+            return _Hasher.ComputeHash(str.ToByteArray());
+        }
+
+        public byte[] GetHash(string password, string systemsecret, ulong salt, int id)
+        {
+            // crypto hashes are on strings (passwords)
+            // Compute a hash of (system secret password + password + ulong random salt + id of user). 
+            // cant share lookup attacks across users or pre-compute.
+            // all attacks are per user.
+
+            return GetHash(string.Concat(password, systemsecret, salt.ToString(), id));
+        }
+
+        public byte[] GetHashSized(string password, string systemsecret, ulong salt, int id, int lenOutBin = 16)
+        {
+            // Make a arbitrarily sized hash for a password. for db storage.
+            // lenOutBin = return size.
+            return HashUtil.MakeHashLen(GetHash(password, systemsecret, salt, id), lenOutBin);
+        }
+
+        public string GetHashBase64(string password, string systemsecret, ulong salt, int id, int lenOutBase64 = 24)
+        {
+            // Get Base64 Hash for password. for db storage.
+            // leOutnBase64 = how big is the output base64 string. for db storage.
+            int lenOutBin = SerializeUtil.FromBase64Len(lenOutBase64);
+            return Convert.ToBase64String(GetHashSized(password, systemsecret, salt, id, lenOutBin));
         }
 
         public HashUtil(HashAlgorithm hasher)
@@ -171,20 +146,61 @@ namespace DotStd
             _Hasher = hasher;
         }
 
-        public HashUtil(string hashAlgName)
+        public static HashAlgorithm GetMD5()
         {
+            // faster. less secure. for low collision hashes.
+            // used for new account sign up + user email.
+            // MD5 = Return 128 bits. 16 bytes for a base64 string of 24 chars.
+            return new MD5CryptoServiceProvider();
+        }
+        public static HashAlgorithm GetSHA512()
+        {
+            // secure enough for crypto. 
+            // SHA512 = Return 512 bits. 64 bytes for a base64 string of ?? chars.
+            // assume >= 64 bit random salt is added to this.
+            return new SHA512CryptoServiceProvider();
+        }
+
+        public static HashAlgorithm FindHasher(string hashAlgName)
+        {
+            // Lookup hasher by name.
+            // like static HashAlgorithm.Create(string hashName);
+            // HMACSHA256 ? HMACSHA512 ?
+
             if (hashAlgName.StartsWith("md5"))
             {
-                _Hasher = HashMD5.Get();
+                // Wrap a MD5 HashAlgorithm.
+                // MD5 = Return 128 bits. 16 bytes for a base64 string of 24 chars.
+                // NIST recommends SHA-256 or better for passwords.
+                // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
+                return GetMD5();
             }
             else if (hashAlgName.StartsWith("sha256"))
             {
-                _Hasher = HashSHA256.Get();
+                // Secure hash. SHA256
+                //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
+                // NIST recommends SHA-256 or better for passwords.
+                // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
+                // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
+
+                return new SHA256CryptoServiceProvider();
             }
             else if (hashAlgName.StartsWith("sha384"))
             {
-                _Hasher = HashSHA384.Get();
+                // Secure hash. 
+                // SHA384 = Return 384 bits. 48 bytes for a base64 string of ??? chars.
+
+                return new SHA384CryptoServiceProvider();
             }
+            else if (hashAlgName.StartsWith("sha512"))
+            {
+                // Secure hash. 
+                // SHA512 = Return 512 bits. 64 bytes for a base64 string of ??? chars.
+
+                return GetSHA512();
+            }
+
+            return null;    // or default ?
         }
     }
 }

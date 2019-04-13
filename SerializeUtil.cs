@@ -249,11 +249,8 @@ namespace DotStd
         public static object FromXML(string xml, Type toType)
         {
             // Create object from XML string.
-            using (var stream = new MemoryStream())
+            using (var stream = xml.ToMemoryStream())
             {
-                byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
-                stream.Write(data, 0, data.Length);
-                stream.Position = 0;
                 var deserializer = new DataContractSerializer(toType);
                 return deserializer.ReadObject(stream);
             }

@@ -23,59 +23,6 @@ namespace DotStd
 
         public SortDirection SortDir { get; set; }
 
-#if true
-        public static int CompareBytes(byte[] a1, byte[] a2)
-        {
-            if (a1.Length != a2.Length)
-                return a1.Length - a2.Length;
-
-            for (int i = 0; i < a1.Length; i++)
-                if (a1[i] != a2[i])
-                    return a1[i] - a2[i];
-
-            return 0;
-        }
-#else
-        public static unsafe int CompareBytes(byte[] a1, byte[] a2)
-        {
-            // ASSUME a1 != a2 and both are not null.
-            fixed (byte* p1 = a1, p2 = a2)
-            {
-                byte* x1 = p1;
-                byte* x2 = p2;
-                int l = Math.Min(a1.Length, a2.Length);
-
-                if (l >= 8)
-                {
-                    int l8 = l / 8;
-                    for (int i = 0; i < l8; i++, x1 += 8, x2 += 8)
-                        if (*((long*)x1) != *((long*)x2))
-                            return (int)(x1 - p1);
-                }
-
-                // remainder.
-                if ((l & 4) != 0)
-                {
-                    if (*((int*)x1) != *((int*)x2))
-                        return (int)(x1 - p1);
-                    x1 += 4; x2 += 4;
-                }
-                if ((l & 2) != 0)
-                {
-                    if (*((short*)x1) != *((short*)x2))
-                        return (int)(x1 - p1);
-                    x1 += 2; x2 += 2;
-                }
-                if ((l & 1) != 0)
-                {
-                    if (*((byte*)x1) != *((byte*)x2))
-                        return (int)(x1 - p1);
-                }
-                return l;   // full match to min length of both.
-            }
-        }
-#endif
-
         public static int CompareType(object ox, object oy, TypeCode eTypeCode)
         {
             // Compare 2 simple typed objects. 
