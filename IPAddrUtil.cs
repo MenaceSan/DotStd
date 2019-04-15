@@ -19,12 +19,12 @@ namespace DotStd
 
         public uint GetSize4()
         {
-            // Size of the range.
+            // Size of the range. 32 bits.
             return (uint)((1 << (32 - Bits)) - 1);
         }
         public ulong GetSize6L()
         {
-            // Size of the range. low 64 bits.
+            // Size of the range. low 64 bits of 128.
             // Bits are high to low.
             if (Bits < 64)
                 return 0;
@@ -32,7 +32,7 @@ namespace DotStd
         }
         public ulong GetSize6H()
         {
-            // Size of the range. high 64 bits.
+            // Size of the range. high 64 bits of 128.
             // Bits are high to low.
             if (Bits >= 64)
                 return 0;

@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
-    public static class MySqlUtil
+    public static class SqlMyUtil
     {
+        // SQL features specific to MySql.
+        // MySQL DAYOFWEEK() returns the week day number (1 for Sunday,2 for Monday …… 7 for Saturday )
+
         public static string GetDeleteSelectSQL(string table, string select, bool safe)
         {
             var sb = new StringBuilder();

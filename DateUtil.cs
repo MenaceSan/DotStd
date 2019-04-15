@@ -6,7 +6,7 @@ namespace DotStd
     {
         // Util for date and time.
         // System.DayOfWeek (same as Javascript) = Sunday is 0, Monday is 1,
-        // NOTE: DayOfWeek is different for MSSQL db time functions? MySQL ?
+        // NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
 
         public enum Months : byte
         {
@@ -189,6 +189,10 @@ namespace DotStd
             {
                 switch (s.ToUpper())
                 {
+                    case "SUNDAY":
+                    case "SUN":
+                    case "SU":
+                        return DayOfWeek.Sunday;
                     case "MONDAY":
                     case "MON":
                     case "M":
@@ -215,10 +219,6 @@ namespace DotStd
                     case "SAT":
                     case "SA":
                         return DayOfWeek.Saturday;
-                    case "SUNDAY":
-                    case "SUN":
-                    case "SU":
-                        return DayOfWeek.Sunday;
                 }
             }
             return DayOfWeek.Monday;        // no idea. -1 ?

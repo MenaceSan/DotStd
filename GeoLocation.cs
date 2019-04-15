@@ -169,13 +169,17 @@ namespace DotStd
         // Can be serialized directly from the JSON poco. altitude ?
         // https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c
         // The circumference of the Earth is approx. 40.000 km or 24900 miles. You need one-meter accuracy(3ft) to be able to out-resolve gps precision by an order of magnitude. Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
-        // NO float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
+        // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
+
+        // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
 
         public double Latitude { get; set; }     // AKA latitude
         public double Longitude { get; set; }    // AKA longitude
         public float? Altitude { get; set; }     // AKA altitude
 
+        public const int kLonMax = 180;
         public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
+        public const double kIntDiv = 0.0000001;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
 
         public const double kEarthRadiusMeters = 6371000.0;    // Approximate.
         public const double kDeg2Rad = Math.PI / 180.0;    // degrees to Radians 
@@ -189,12 +193,13 @@ namespace DotStd
         }
         public static bool IsValidLon(double x)
         {
-            return x >= -180 && x <= 180;
+            return x >= -180 && x <= kLonMax;
         }
         public bool IsValid
         {
             get
             {
+                // if (Latitude == 0 && Longitude == 0) return false; // TZ UTC ?
                 return IsValidLat(Latitude) && IsValidLon(Longitude);
             }
         }
@@ -228,6 +233,27 @@ namespace DotStd
                 return "maps://maps.google.com/maps?daddr=" + lat + "," + lon + "&amp;ll=";  // iOS
             }
             return "geo:" + lat + "," + lon;
+        }
+
+        public static int ToInt(double value)
+        {
+            return (int)(value * kIntMult);
+        }
+        public static int? ToInt(double? value)
+        {
+            if (value == null)
+                return null;
+            return ToInt(value.Value);
+        }
+        public static double ToDoubleNOTUSED(int value)
+        {
+            return value * kIntDiv;
+        }
+        public static double? ToDoubleNOTUSED(int? value)
+        {
+            if (value == null)
+                return null;
+            return ToDoubleNOTUSED(value.Value);
         }
 
         public static double ParseValue(string v, int point)
@@ -353,7 +379,7 @@ namespace DotStd
     {
         // All the optional extra JSON stuff. getCurrentPosition.coords
 
-        public float accuracy ;
+        public float accuracy;
         public float? altitudeAccuracy;
 
         public float? heading;

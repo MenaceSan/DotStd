@@ -19,7 +19,7 @@ namespace DotStd
 
     public class DbTableUtil
     {
-        // Helpers for a db table.
+        // Helpers for a db table schema data.
 
         public const string kTables = "tables.txt";
         public const string kExt = ".csv";

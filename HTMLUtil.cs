@@ -9,8 +9,9 @@ namespace DotStd
     {
         // Helper functions for formatting HTML.
         // compliment Encode, Decode
+        // In some ways HTML can be treated like XML except for some exceptions. (some non closed tags, literals, some encoding)
 
-        public const string kNBSP = "&nbsp;";   // HTML space
+        public const string kNBSP = "&nbsp;";   // HTML non breaking space
 
         public const string kCommentOpen = "<!--";
         public const string kCommentClose = "-->";

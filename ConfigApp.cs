@@ -30,10 +30,23 @@ namespace DotStd
             }
         }
 
-        private static string _AppVersion;
-        public static string AppVersion
+        public static string ToVersionStr(int versionInt)
         {
-            get { return _AppVersion; }
+            // take a version integer (for compare) and make a string for display.
+            // Format X.2.3 decimal digits. (Major.Minor.Build)
+            // kVersionInt to kVersionStr
+
+            return $"{versionInt / 100000}.{(versionInt / 1000) % 100}.{versionInt % 1000}";
+        }
+        public static int ToVersionInt(int v1, int v2, int v3)
+        {
+            return v1*100000 + v2*1000 + v3;
+        }
+
+        private static int AppVersion;
+        public static string AppVersionStr
+        {
+            get { return ToVersionStr(AppVersion); }
         }
 
         private static bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
@@ -116,7 +129,7 @@ namespace DotStd
         // get app global config info.
         public static ConfigInfoBase ConfigInfo { get; private set; }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName, string appVersion)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName, int appVersion)
         {
             // Set app global config info.
             // MUST do this when first stating an app.
@@ -126,11 +139,11 @@ namespace DotStd
             AppId = appId;  // What app in the cluster am i ?
             AppTypeId = appId;
             _AppName = appName;
-            _AppVersion = appVersion;
+            AppVersion = appVersion;
             MainThreadId = Environment.CurrentManagedThreadId;
         }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId, string appVersion)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId, int appVersion)
         {
             // Set app global config info.
             SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription(), appVersion);

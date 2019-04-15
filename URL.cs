@@ -11,14 +11,16 @@ namespace DotStd
         Unknown = 0,
 
         iOS = 1,        // Apple iOS // APN
-        Android = 2,    // Google android  // FireBase ?
+        Android = 2,    // Google Android  // FireBase ?
         Amazon = 3,     // amazon-fireos
         Windows = 4,    // UWP apps. Windows 10.
+        Mac = 5,        // Xamarin for Mac OS.
 
         // Chrome on desktop/laptop
         // Firefox on desktop/laptop
         // Blackberry
         // M$ Edge does not do Push.
+        // Safari ?
 
         MSIE_Old = 15,        // https://stackoverflow.com/questions/10964966/detect-ie-version-prior-to-v9-in-javascript
     }
