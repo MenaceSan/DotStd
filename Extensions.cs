@@ -20,7 +20,7 @@ namespace DotStd
         public static bool IsNullOrWhiteSpace(this object obj)
         {
             // Is this object the same as a whitespace string ?
-            return obj == null || String.IsNullOrWhiteSpace(obj.ToString());
+            return obj == null || string.IsNullOrWhiteSpace(obj.ToString());
         }
 
         // int 

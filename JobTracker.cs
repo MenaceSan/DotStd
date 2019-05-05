@@ -12,13 +12,13 @@ namespace DotStd
         // TODO Push updates to UI ? So we dont have the UI polling for this?
 
         private string JobTypeName { get; set; }        // Id for what am i doing ? e.g. nameof(x) not friendly name. 
-        private int UserId { get; set; }             // What user is this for ? 0 = doesnt matter.
+        private int UserId { get; set; }             // What user is this for ? 0 = doesnt matter (all users share).
 
-        public bool IsComplete { get; private set; }    // code exited.
-        public string FailureMsg { get; private set; }  // null = ok
+        public bool IsComplete { get; private set; }    // code exited. fail or success.
+        public string FailureMsg { get; private set; }  // null = ok, else i failed and returned prematurely.
 
         private long Size { get; set; }         // arbitrary estimated total size.
-        private long Progress { get; set; }     // how much of Size is done?
+        private long Progress { get; set; }     // how much of Size is done? updated by worker.
 
         private CancellationTokenSource Cancellation { get; set; }   // we can try to cancel this?
 
@@ -32,7 +32,7 @@ namespace DotStd
 
         public static string MakeKey(string typeName, int userId)
         {
-            // Make a unique id for this
+            // Make a unique id/name for this job
             return typeName + userId.ToString();
         }
         public string Key
@@ -56,7 +56,7 @@ namespace DotStd
             {
                 if (this.FailureMsg != null)
                     return true;
-                if (Cancellation == null)
+                if (Cancellation == null)   // no external cancel is possible.
                     return false;
                 return Cancellation.IsCancellationRequested;
             }
@@ -70,7 +70,7 @@ namespace DotStd
         }
         public void SetFailureMsg(string failureMsg)
         {
-            // Cancel the worker because it failed.
+            // Cancel the job/worker because it failed.
             if (IsCancelled)
                 return;
             if (string.IsNullOrWhiteSpace(failureMsg))
@@ -90,6 +90,7 @@ namespace DotStd
 
         public static string GetProgressPercent(string typeName, int userId, bool cancel)
         {
+            // Find some async job in the namespace and get its status.
             // Called by watcher.
             var job = FindJobTracker(typeName, userId);
             if (job == null)
@@ -111,6 +112,7 @@ namespace DotStd
 
         public void SetStartSize(long size)
         {
+            // Estimated size of the job to be done.
             if (size <= 0)
                 size = 1;
             this.Progress = 0;
@@ -119,7 +121,7 @@ namespace DotStd
 
         public void SetProgress(long progress)
         {
-            // Called by worker to say what is done.
+            // Called by worker to say what is done so far.
             if (progress < 0 || progress > Size)
             {
                 Progress = Size;
@@ -140,6 +142,7 @@ namespace DotStd
 
         public void AddProgress(int length)
         {
+            // a chunk has been completed.
             if (length < 0)
             {
                 return;
@@ -164,6 +167,7 @@ namespace DotStd
 
         public static JobTracker CreateJobTracker(string typeName, int userId, long size, bool cancelable = false)
         {
+            // We are starting some async job that we want to track the progress of.
             if (size <= 0)
             {
                 return null;    // not allowed.

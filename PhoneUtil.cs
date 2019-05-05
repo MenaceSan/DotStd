@@ -12,24 +12,6 @@ namespace DotStd
         Work = 3,       // Avail work hours. maybe shared.
     }
 
-    public enum PhoneCarrierId
-    {
-        // Can i send SMS to this phone ?
-        // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
-
-        Unknown = 0,  // unknown.
-        LandLine,       // No SMS
-        ATT,
-        Boost,
-        Cricket,
-        Sprint,
-        TMobile,
-        USCellular,
-        Verizon,
-        VirginMobile,
-        OtherCarrier = 255,
-    }
-
     public static class PhoneUtil
     {
         // Manage string phone numbers . encode/decode formatting.

@@ -9,7 +9,7 @@ namespace DotStd
     public enum CountryId
     {
         // ISO codes for Countries that we care about. CountryCode
-        // from the table get_country
+        // from the table geo_country
         // https://www.ncbi.nlm.nih.gov/books/NBK7249/
         // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
 
@@ -31,7 +31,7 @@ namespace DotStd
     [Serializable()]
     public enum StateId
     {
-        // States/Provinces in a country we care about (USA first)
+        // Custom code for States/Provinces in a country we care about (USA first)
         // from the table geo_state
         // https://www.50states.com/abbreviations.htm
 
@@ -165,23 +165,25 @@ namespace DotStd
     [Serializable]
     public class GeoLocation
     {
-        // Latitude and longitude. Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
-        // Can be serialized directly from the JSON poco. altitude ?
-        // https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c
-        // The circumference of the Earth is approx. 40.000 km or 24900 miles. You need one-meter accuracy(3ft) to be able to out-resolve gps precision by an order of magnitude. Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
-        // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
-
-        // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
+        // Latitude and longitude.
+        // Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
+        // Can be serialized directly from the JSON poco. 
 
         public double Latitude { get; set; }     // AKA latitude
         public double Longitude { get; set; }    // AKA longitude
-        public float? Altitude { get; set; }     // AKA altitude
+        public float? Altitude { get; set; }     // optional AKA altitude
 
         public const int kLonMax = 180;
+
+        // https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c
+        // The circumference of the Earth is approx. 40.000 km or 24900 miles. You need one-meter accuracy(3ft) to be able to out-resolve gps precision by an order of magnitude. Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
+        // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
         public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
         public const double kIntDiv = 0.0000001;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
 
         public const double kEarthRadiusMeters = 6371000.0;    // Approximate.
+        public const int kEarthDistMax = 50000000;    // Max reasonable distance on Earth. Any distance greater is not on earth. (40,075 km circumference)
+
         public const double kDeg2Rad = Math.PI / 180.0;    // degrees to Radians 
 
         // https://gis.stackexchange.com/questions/142326/calculating-longitude-length-in-miles
@@ -201,6 +203,19 @@ namespace DotStd
             {
                 // if (Latitude == 0 && Longitude == 0) return false; // TZ UTC ?
                 return IsValidLat(Latitude) && IsValidLon(Longitude);
+            }
+        }
+        bool IsExtreme
+        {
+            // !IsValid or May be Valid but not normal value.
+            // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
+            get
+            {
+                if (Latitude <= -90 || Latitude >= 90 ) // Poles are extreme.
+                    return true;
+                if (!IsValidLon(Longitude))
+                    return true;
+                return Latitude == 0 && Longitude == 0;  // Extreme point in the Atlantic.
             }
         }
 
@@ -224,6 +239,7 @@ namespace DotStd
         }
         public static string ToGeoUrl(double lat, double lon, DeviceTypeId deviceTypeId)
         {
+            // deviceTypeId = Getdevice
             if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows)
             {
                 return ToGeoUrlGoo(lat, lon); // Unknown/Windows
@@ -377,7 +393,9 @@ namespace DotStd
     [Serializable]
     public class GeoLocation5 : GeoLocation
     {
-        // All the optional extra JSON stuff. getCurrentPosition.coords
+        // All the optional extra JSON stuff.
+        // Same format as JavaScript navigator.geolocation.getCurrentPosition().coords
+        // Can be serialized directly from the JSON poco. 
 
         public float accuracy;
         public float? altitudeAccuracy;
@@ -385,5 +403,4 @@ namespace DotStd
         public float? heading;
         public float? speed;
     }
-
 }

@@ -100,7 +100,7 @@ namespace DotStd
 
         public void AddProperties(object obj)
         {
-            // add all properties from object to the bag.
+            // add all CanRead properties from object to the bag.
             Type fromType = obj.GetType();
             CheckProps();
             foreach (PropertyInfo propFrom in fromType.GetProperties())

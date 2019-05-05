@@ -7,7 +7,7 @@ namespace DotStd
     public enum DbVendor
     {
         // Db Vendors i might support.
-        Unknown = 0,        // ODBC Connection ?
+        Unknown = 0,        // ODBC Connection ? InMemory provider.
         SqlServer = 1,  // Microsoft,  MsSQL, M$
         MySQL = 2,      // Or Aurora.
         Oracle = 3,

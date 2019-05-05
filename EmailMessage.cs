@@ -117,7 +117,7 @@ namespace DotStd
         {
             // Is this message valid?
             // allow override of this
-            if (String.IsNullOrWhiteSpace(Subject) && String.IsNullOrWhiteSpace(Body))
+            if (string.IsNullOrWhiteSpace(Subject) && string.IsNullOrWhiteSpace(Body))
                 return false;
             if (_message.To.Count <= 0)     // not sent to any addr?
                 return false;

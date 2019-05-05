@@ -66,6 +66,7 @@ namespace DotStd
 
         public void UpdateRowsTotal()
         {
+            // SetRowsTotal
             this.RowsTotal = this.Rows.Count;
         }
     }
@@ -80,11 +81,17 @@ namespace DotStd
             // default(T)
             return (T)Rows[i];
         }
+        public List<T> GetRows()
+        {
+            if (Rows is List<T>)
+                return (List<T>) Rows;
+            return Rows.Cast<T>().ToList();
+        }
 
         public void SetRowsTotal(DataPageReq req, IQueryable<T> q)
         {
             // Total rows from paged results.
-            if (this.Rows.Count < req.PageSize || req.PageSize <= 0)    // can we infer total? not enough for PageSize = end.
+            if (this.Rows.Count < req.PageSize || req.PageSize <= 0)    // we can infer total if not enough for PageSize = end.
             {
                 this.RowsTotal = req.GetSkip() + this.Rows.Count;
             }
@@ -137,7 +144,7 @@ namespace DotStd
 
         public IQueryable<T> GetQuery<T>(IQueryable<T> q)
         {
-            // Paging query.
+            // get Paging query.
             // q = IOrderedQueryable<T>
             // NOTE: The method 'Skip' is only supported for sorted input in LINQ to Entities. The method 'OrderBy' must be called before the method 'Skip'.
 

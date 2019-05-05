@@ -7,9 +7,9 @@ namespace DotStd
 {
     public enum DocumentType
     {
-        // Common MIME types and related file extensions.
-        // in table document_type
-        // Get icons from https://fileicons.org/?view=square-o
+        // Common IANA MIME types and related file extensions.
+        // in table app_doc_type
+        // Get SVG icons from https://fileicons.org/?view=square-o
 
         [Description(@"application/octet-stream")]
         BIN = 0,    // BIN (AKA BLANK) -> Unknown Binary blob ?
@@ -57,6 +57,9 @@ namespace DotStd
         [Description(@"video/x-flv")]
         FLV = 18,        //  video
 
+        [Description(@"application/zip")]
+        ZIP = 19,        //  anything
+
         // AVI
         // MPG
         // webm
@@ -65,9 +68,9 @@ namespace DotStd
         // RTF, XML, TGA, TTF
         // AIF, WAV, MP3
         // MKV, SWF, MOV, 
-        // JSON, ZIP, BZ2, ISO
+        // JSON, BZ2, ISO
         // CFG, INI, DAT, DB, CAL, CAB
-        // C#, CPP, JS, CSS
+        // CS, CPP, JS, CSS
 
         MaxValue = 20,
     }
@@ -81,7 +84,7 @@ namespace DotStd
         public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
         public const string kFileNameNT = "!#$&'()-@^_`{}~,";   // allow DOS + ","
         public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
-        public const string kDir = "/";     // path dir sep. Windows doesnt mind forward slash used as path.
+        public const string kDir = "/";     // path dir sep. Windows doesn't mind forward slash used as path.
 
         public enum AccessType
         {
@@ -279,7 +282,7 @@ namespace DotStd
 
         public static DocumentType GetDocumentTypeIdExt(string fileExtension)
         {
-            // Convert Extension to enum.
+            // Convert file name extension to DocumentType enum.
             // like Mime type. MimeMapping.GetMimeMapping()
             // Don't allow EXE types.
 

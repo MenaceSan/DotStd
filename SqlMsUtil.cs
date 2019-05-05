@@ -2,6 +2,23 @@
 
 namespace DotStd
 {
+    public enum SQLDay
+    {
+        // M$ SQL server days of week.
+        // like Microsoft.VisualBasic.FirstDayOfWeek (where Sunday=1,Saturday=7)
+        // like MySQL DAYOFWEEK()
+        // NOT the same as .NET System.DayOfWeek (where Sunday=0,Saturday=6) 
+        // NOT JavaScript where Sunday is 0, Monday is 1,
+
+        Sunday = 1,
+        Monday = 2,
+        Tuesday = 3,
+        Wednesday = 4,
+        Thursday = 5,
+        Friday = 6,
+        Saturday = 7,
+    }
+
     public static class SqlMsUtil
     {
         // SQL features specific to M$ SQL
@@ -9,23 +26,6 @@ namespace DotStd
         // NOTE: DateTime.MinValue = "1/1/0001 12:00:00 AM", SqlDateTime.MinValue = DateTime(1753, 1, 1)
         public static DateTime kSmallDateTimeMin = new DateTime(1900, 01, 01, 00, 00, 00);    // "1/1/1900 12:00:00 AM"
         public static DateTime kSmallDateTimeMax = new DateTime(2079, 06, 06, 23, 59, 00);
-
-        public enum SQLDay
-        {
-            // M$ SQL server days of week.
-            // like Microsoft.VisualBasic.FirstDayOfWeek (where Sunday=1,Saturday=7)
-            // like MySQL DAYOFWEEK()
-            // NOT the same as .NET System.DayOfWeek (where Sunday=0,Saturday=6) 
-            // NOT JavaScript where Sunday is 0, Monday is 1,
-
-            Sunday = 1,
-            Monday = 2,
-            Tuesday = 3,
-            Wednesday = 4,
-            Thursday = 5,
-            Friday = 6,
-            Saturday = 7,
-        };
 
         public enum SQLExcepNum
         {

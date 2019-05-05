@@ -165,12 +165,12 @@ namespace DotStd
                 case LogLevel.Error:
                     // If in errors level we'll keep the error message
                     strMessage = oEx.Message;
-                    LogEntry(strMessage, LogLevel.Error, userId);
+                    LogEntry(strMessage, LogLevel.Error, userId, oEx.ToString());
                     break;
                 case LogLevel.Critical:
                     // If in debug build full error string
                     strMessage = oEx.ToString();
-                    LogEntry(strMessage, LogLevel.Critical, userId);
+                    LogEntry(oEx.Message, LogLevel.Critical, userId, strMessage);
                     break;
                 case LogLevel.Trace:
                 case LogLevel.Warning:

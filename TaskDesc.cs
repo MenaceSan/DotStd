@@ -8,7 +8,7 @@ namespace DotStd
 {
     public enum TaskState
     {
-        // Track the state of some task i run.
+        // Track the state of some task/process i run.
         // Corresponds with the Process.ExitCodes >= 0.
 
         Aborting = -3,      // Sent the Kill request.
@@ -16,8 +16,9 @@ namespace DotStd
         Running = -1,       // Started and probably running.
 
         Success = 0,        // POSIX success return for process.
-        Error = 1,          // Process responded with its own error and text
-        Abort = 2,          // We aborted. Might have been hung/timeout ?
+        Error = 1,          // Process responded with its own error and text. POSIX
+        Abort = 2,          // We aborted. Might have been hung/timeout ? POSIX
+
         Exception = 3,      // threw an exception.
         FailStart = 4,      // Failed to start.
         Ghost = 5,          // Task is gone. No idea why.

@@ -10,8 +10,8 @@ namespace DotStd
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static int AppId { get; set; }         // int Id for logging. enum these in app space. Cluster PK .
-        public static int AppTypeId { get; private set; } // AppId enum these in app space.
+        public static int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
+        public static int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
 
         public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start.
         public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;        // Equiv to IsInvokeRequired()
@@ -43,7 +43,7 @@ namespace DotStd
             return v1*100000 + v2*1000 + v3;
         }
 
-        private static int AppVersion;
+        private static int AppVersion;  // (Major.Minor.Build) encoded as an int for sorting migration data.
         public static string AppVersionStr
         {
             get { return ToVersionStr(AppVersion); }
@@ -119,14 +119,14 @@ namespace DotStd
 
         public static void SetUnitTesting(string baseDir)
         {
-            // I am in unit test mode. set my _BaseDir
+            // Declare that I am in unit test mode. set my _BaseDir
             // Assume IsUnitTesting
 
             _BaseDir = baseDir;
         }
 
         // The applications top level config read from some config file. May be redirected for testing.
-        // get app global config info.
+        // get app global config info. support IServiceProvider.
         public static ConfigInfoBase ConfigInfo { get; private set; }
 
         public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName, int appVersion)
@@ -136,7 +136,7 @@ namespace DotStd
             // cfgInfo = new ConfigInfoServer()
 
             ConfigInfo = cfgInfo;
-            AppId = appId;  // What app in the cluster am i ?
+            AppId = appId;  // What app in the cluster am i ? may be updated later?
             AppTypeId = appId;
             _AppName = appName;
             AppVersion = appVersion;

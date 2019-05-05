@@ -15,7 +15,7 @@ namespace DotStd
         ReConfirmAddress = 2,      // a re-confirm has been sent.
         ConfirmedAddress = 3,          // got confirm back at some DateTime. (maybe old)
 
-        // OpenId Federated logins/validation. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
+        // OpenId Federated logins/validation are validated automatically. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
         // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-2.2
 
         Microsoft = 5,      // Auth type. Azure is the same ?
@@ -29,6 +29,7 @@ namespace DotStd
 
     public class EmailGatewaySettings
     {
+        // Send email settings.
         // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
         // https://developer.telerik.com/featured/new-configuration-model-asp-net-core/
         // Similar to System.Net.Configuration.SmtpNetworkElement from MailSettingsSectionGroup, 
@@ -70,6 +71,7 @@ namespace DotStd
 
     public class EmailGateway
     {
+        // Send email.
         // helper for System.Net.Mail.SmtpClient For use with EmailMessage
         // https://dotnetcoretutorials.com/2017/08/20/sending-email-net-core-2-0/
 

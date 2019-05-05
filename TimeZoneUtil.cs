@@ -8,7 +8,7 @@ namespace DotStd
     public enum TimeZoneId
     {
         // Difference in minutes from GMT if between (-12*60 and 12*60). Standard Time.
-        // ASSUME all zones round down to 15 minute chunks.
+        // ASSUME all zones modulus to 15 minute chunks.
         // ?? Do All values between (-12*60 and 12*60) observe US daylight savings time rules.
         // ?? Create new time zones outside this range if the client does not use DST.
         // Similar to JavaScript getTimezoneOffset()

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace DotStd
@@ -16,10 +17,15 @@ namespace DotStd
         // https://mail.google.com/mail/feed/atom
         // https://stackoverflow.com/questions/7056715/reading-emails-from-gmail-in-c-sharp/19570553#19570553
 
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public System.Net.NetworkCredential _Credentials;   // more secure to store like this.
 
-        public List<GmailMessage> ReadMessages()
+        public void SetCreds(string email, string password)
+        {
+            // Store my credentials.
+            _Credentials = new System.Net.NetworkCredential(email, password);
+        }
+
+        public async Task<List<GmailMessage>> ReadMessages()
         {
             // get responses back from the free SMS email gateway.
 
@@ -28,10 +34,10 @@ namespace DotStd
                 // Logging in Gmail server to get data
                 using (var objClient = new System.Net.WebClient())
                 {
-                    objClient.Credentials = new System.Net.NetworkCredential(Email, Password);
+                    objClient.Credentials = _Credentials;
 
                     // reading data and converting to string
-                    var respRaw = objClient.DownloadData(@"https://mail.google.com/mail/feed/atom");
+                    byte[] respRaw = await objClient.DownloadDataTaskAsync(@"https://mail.google.com/mail/feed/atom");
                     string response = Encoding.UTF8.GetString(respRaw);
                     response = response.Replace(@"<feed version=""0.3"" xmlns=""http://purl.org/atom/ns#"">", @"<feed>");
 

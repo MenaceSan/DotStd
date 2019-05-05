@@ -92,6 +92,10 @@ namespace DotStd
                 lock (this) using (var w = OpenLog(tNow))
                     {
                         w.WriteLine("{0}{1}{2}", tNow.ToShortTimeString(), GetSeparator(level), message);
+                        if (!ValidState.IsEmpty(detail))
+                        {
+                            w.WriteLine("\t" + detail.ToString());
+                        }
                         if (level >= LogLevel.Error)
                         {
                             w.Flush();

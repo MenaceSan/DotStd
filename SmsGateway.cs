@@ -5,6 +5,27 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    public enum PhoneCarrierId
+    {
+        // Can i send SMS to this phone ?
+        // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
+
+        Unknown = 0,  // unknown.
+        LandLine,       // No SMS
+
+        // free email gateways we know about.
+        ATT,
+        Boost,
+        Cricket,
+        Sprint,
+        TMobile,
+        USCellular,
+        Verizon,
+        VirginMobile,
+
+        OtherCarrier = 255,     // Need to use some external provider to figure out the SMS routing.
+    }
+
     public class SmsGateway
     {
         // Send messages to a phone number.
@@ -12,7 +33,7 @@ namespace DotStd
 
         public static string GetEmail(PhoneCarrierId carrierId)
         {
-            // Get email gateway.  for Format("{0}",number).
+            // Get email gateway for SMS by provider. for Format("{0}",number).
             // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
 
             switch (carrierId)

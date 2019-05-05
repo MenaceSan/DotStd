@@ -11,7 +11,6 @@ namespace DotStd
     {
         // String formatting for display.
         // Compliments StringUtil
-        // TODO: TimeSpan string ??
 
         public const string kCrLf = "\r\n";     // Windows style. like VB vbCrLf or Environment.NewLine
 

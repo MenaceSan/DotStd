@@ -10,6 +10,7 @@ namespace DotStd
         // Convert from some (unknown) type object to a known type.
         // Data type converter. usually for database derived objects. Deal with null and DBNull?
         // Similar to System.Convert.To*() or System.Convert.ChangeType()
+        // NOTE: NEVER allow untrusted sources to serialize to object/any types. This is an injection attack!
 
         public const char kMinus2 = '−';      // Weird char sometimes used as minus. '-'
 

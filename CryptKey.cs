@@ -7,11 +7,11 @@ namespace DotStd
 {
     public abstract class CryptKey
     {
-        // Base for helper mechanism to store key for crypt/decrypt of some object.
+        // Base for helper mechanism to store key for crypt/decrypt of some string.
 
         protected byte[] _Key; // kLen bytes.
         protected byte[] _IV; // kLen bytes.
-        protected SymmetricAlgorithm _Algo;
+        protected SymmetricAlgorithm _Algo; // what crypto algorithm to use ?
 
         public string EncryptStr(string value)
         {

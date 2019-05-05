@@ -20,7 +20,7 @@ namespace DotStd
         Warning,        // We may still save this object but it looks odd.
         WarningManager, // This needs a managers approval.
         WarningAdmin,   // This needs a Admin approval.
-        Fail,        // This object is not valid because this property is not valid.
+        Fail,        // This object is not valid because this property is not valid. Can not proceed.
     }
 
     public class ValidField
@@ -40,7 +40,7 @@ namespace DotStd
         // Similar to System.ComponentModel.DataAnnotations.Validator
         // Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
 
-        public const int kInvalidId = 0;    // This is never a valid id in the db. ValidState.IsValidId()
+        public const int kInvalidId = 0;    // This is never a valid id/PK in the db. ValidState.IsValidId()
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
         public const string kSavedChanges = "Saved Changes";
@@ -144,7 +144,7 @@ namespace DotStd
             return id.ToInt() != kInvalidId;
         }
 
-        public const string kUniqueX = "_@.-+";
+        public const string kUniqueAllowX = "_@.-+"; // special allowed.
 
         public static bool IsValidUnique(string s)
         {
@@ -167,7 +167,7 @@ namespace DotStd
                     continue;
                 if (ch >= '0' && ch <= '9')
                     continue;
-                if (kUniqueX.IndexOf(ch) >= 0)
+                if (kUniqueAllowX.IndexOf(ch) >= 0)      // allowed.
                     continue;
                 return false;   // bad char.
             }

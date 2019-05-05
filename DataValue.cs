@@ -6,7 +6,7 @@ namespace DotStd
 {
     enum DataUnit
     {
-        // units. What type of data? 
+        // units. What type of data? SI units + more.
         // https://en.wikipedia.org/wiki/SI_base_unit
 
         unk = 0,        // can be fractional. percent?
@@ -17,11 +17,11 @@ namespace DotStd
         g,      // grams mass. (kg)
         s,      // seconds of time. (minutes, hours)
 
-        A,      // Amperes = quantity of electric current
-        mol,    // Moles = quantity of substance.
-        cd,     // Candella = quantity of luminous intensity
+        cd,     // Candella = quantity of luminous intensity (photons)
+        A,      // Amperes = quantity of electric current (electrons)
+        mol,    // Moles = quantity of substance. (molecules)
 
-        K,      // Kelvin temperature.
+        K,      // Kelvin temperature. general collective energy level.
 
         // Combo unit types. 2 or more SI base types .
         // https://en.wikipedia.org/wiki/Non-SI_units_mentioned_in_the_SI
