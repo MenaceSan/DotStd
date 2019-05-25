@@ -148,7 +148,7 @@ namespace DotStd
 #if false
         public static async Task<T> GetAsync(int id, int decaysec, Task<T> myTask)
         {
-            // TODO FIXME
+            // TODO FIXME make async version.
             // NOTE: await Task<T> cant be done inside lock !
             var myFun = async () => await myTask;
             return Get(id, decaysec, myFun);

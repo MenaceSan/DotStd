@@ -32,31 +32,10 @@ namespace DotStd
             return StringUtil.GetNumericOnly(phone);
         }
 
-        public static string GetPhoneHTML(string phone)
+        public static string GetFormatted(string phone)
         {
-            // Encode the 10 digit phone number for HTML display ? 
-            // Never store this. only before display.
-            phone = RemoveFormatting(phone);
+            // format 10 digit string for display. NOT storage.
 
-            var sb = new StringBuilder();
-            if ( phone != null && phone.Length > 9)
-            {
-                for (int i = 0; i < phone.Length; i++)
-                {
-                    if (i == 0) sb.Append("(");
-                    else if (i == 3) sb.Append(")&nbsp;");           // HTML
-                    else if (i == 6) sb.Append("-");
-
-                    sb.Append(phone.Substring(i, 1));
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        public static string GetPhoneDashed(string phone)
-        {
-            // format 10 digit string for display.
             phone = RemoveFormatting(phone);
 
             var sb = new StringBuilder();

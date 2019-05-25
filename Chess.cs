@@ -7,6 +7,7 @@ namespace DotStd
 {
     public enum ChessColor
     {
+        // Two sides to the chess game board.
         White = 0,
         Black = 1,
     }
@@ -191,7 +192,7 @@ namespace DotStd
 
         public ChessColor MoveTurn
         {
-            // Whose turn is it to move next?
+            // Whose turn is it to move next? White moves first. 1 based.
             get
             {
                 return ((MoveNumber % 1) == 1) ? ChessColor.White : ChessColor.Black;

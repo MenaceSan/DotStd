@@ -8,7 +8,7 @@ namespace DotStd
     {
         public const int k_DLicense_MaxLen = 21;   // there are no states with DLNum len > 21 (NY)
 
-        public static string GetValidDriversLicense(string sDLNum, StateId stateId, out string sFailure)
+        public static string GetValidDriversLicense(string sDLNum, GeoStateId stateId, out string sFailure)
         {
             // Is this a generally validate Drivers license format ? Is it valid for a particular issuing state ?
             // Mostly for the US and Canada.
@@ -20,7 +20,7 @@ namespace DotStd
             // http://www.diogenesllc.com/stdlformats.html
             // TODO : Some of these have check digits etc that can be validated.
 
-            if (stateId == StateId.WA)   // WA Must allow *
+            if (stateId == GeoStateId.WA)   // WA Must allow *
             {
                 // Some special chars are valid.
                 sDLNum = System.Text.RegularExpressions.Regex.Replace(sDLNum, @"[^\*A-Za-z0-9]", "");  // strip all but letters and numbers and *.
@@ -44,36 +44,36 @@ namespace DotStd
 
             switch (stateId)
             {
-                case StateId.AK:
+                case GeoStateId.AK:
                     // The license number format for Alaska must be 1 to 7 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 1;
                     nLengthMax = 7;
                     break;
-                case StateId.AL:
+                case GeoStateId.AL:
                     // The license number format for Alabama is 7 numeric characters.
                     // NOTE: If the driver's license number contains zeroes, they must be present for a HIT. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = nLengthMax = 7;
                     break;
-                case StateId.AR:
+                case GeoStateId.AR:
                     // Arkansas = 8 or 9 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 8;
                     nLengthMax = 9;
                     break;
-                case StateId.AZ:
+                case GeoStateId.AZ:
                     // Arizona = 1 alpha (either A, B, D, or Y) followed by 8 numeric characters.  OR 9 numeric characters. 
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.CA:
+                case GeoStateId.CA:
                     // California license format is 1 alpha followed by 7 numeric characters. 
                     bMustStartWithAlpha = true;
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 8;
                     break;
-                case StateId.CO:
+                case GeoStateId.CO:
                     // There are 2 license formats in Colorado.
                     // 1. 1 to 2 alpha characters followed by 1 to 6 numeric characters.
                     // 2. 9 numeric characters (Not the social security number). 
@@ -90,19 +90,19 @@ namespace DotStd
                         nLengthMin = nLengthMax = 9;
                     }
                     break;
-                case StateId.CT:
+                case GeoStateId.CT:
                     // Connecticut license format is 9 numeric characters.
                     // TODO = The first 2 digits can not be less than '01' or greater than '24'. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.DE:
+                case GeoStateId.DE:
                     // The Delaware license format is 1 to 7 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 2;
                     nLengthMax = 7;
                     break;
-                case StateId.FL:
+                case GeoStateId.FL:
                     // FL = "A123456789012", 1 Letter + 12 digits. normally. 
                     // The Florida license format is 1 alpha followed by 11-12 digits. 
                     bMustStartWithAlpha = true;
@@ -110,16 +110,16 @@ namespace DotStd
                     nLengthMin = 12;
                     nLengthMax = 13;
                     break;
-                case StateId.GA:
+                case GeoStateId.GA:
                     // Georgia license format is 9 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.IA:
+                case GeoStateId.IA:
                     // Iowa. There are 2 license formats in Iowa. 1. 9 alpha or numeric characters. 2. 9 numeric characters. 
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.ID:
+                case GeoStateId.ID:
                     // Idaho license formats:
                     // 1. 9 numeric characters.
                     // 2. 2 alpha characters followed by 6 numeric characters followed by an alpha character.
@@ -127,20 +127,20 @@ namespace DotStd
                     nLengthMin = 4;
                     nLengthMax = 9;
                     break;
-                case StateId.IL:
+                case GeoStateId.IL:
                     // First Letter Of Last Name And 11 Digits
                     bMustStartWithAlpha = true;
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 12;
                     break;
-                case StateId.IN:
+                case GeoStateId.IN:
                     // There are 2 license formats in Indiana.
                     // 1. 10 numeric characters.
                     // 2. 1 alpha followed by 9 numeric characters. 
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 10;
                     break;
-                case StateId.KS: // Kansas
+                case GeoStateId.KS: // Kansas
                     // There are 3 license formats in Kansas.
                     // 1. 9 numeric characters.
                     // 2. 1 alpha followed by 8 numeric characters.
@@ -153,28 +153,28 @@ namespace DotStd
                         return null;
                     }
                     break;
-                case StateId.KY:
+                case GeoStateId.KY:
                     // There are 2 license formats in Kentucky.
                     // 1. 9 numeric characters.
                     // 2. 1 alpha followed by 8 numeric characters. 
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.LA:
+                case GeoStateId.LA:
                     break;
-                case StateId.MA:
+                case GeoStateId.MA:
                     //  9 numeric characters. OR 1 alpha followed by 8 numeric characters (Note: the first position may not be 'X'). 
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = 9;
                     nLengthMax = 9;
                     break;
-                case StateId.MD:
+                case GeoStateId.MD:
                     // The Maryland license consists of 1 alpha followed by 12 digits. 
                     // The number is derived from the users name + some digits for uniqueness. Full validation should include this?
                     bMustStartWithAlpha = true;
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 13;
                     break;
-                case StateId.MI:
+                case GeoStateId.MI:
                     // Michigan license number format is 1 alpha character followed by 12
                     // numeric characters. The first three numeric characters cannot be
                     // 7, 8, or 9. (except for range 726 - 750) 
@@ -182,13 +182,13 @@ namespace DotStd
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 13;
                     break;
-                case StateId.MN:
+                case GeoStateId.MN:
                     // Minnesota license number format is 1 alpha character followed by 12 numeric characters. 
                     bMustStartWithAlpha = true;
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 13;
                     break;
-                case StateId.MO:
+                case GeoStateId.MO:
                     // Missouri license formats (as of 01/27/95):
                     // 1)  7-10 positions
                     //          1st position alpha
@@ -212,15 +212,15 @@ namespace DotStd
                     nLengthMin = 7;
                     nLengthMax = 17;
                     break;
-                case StateId.MS:
+                case GeoStateId.MS:
                     // Mississippi license format is 9 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = nLengthMax = 9;
                     break;
-                case StateId.MT:
+                case GeoStateId.MT:
                     // Montana 
                     break;
-                case StateId.NE:
+                case GeoStateId.NE:
                     // Nebraska license format is 1 alpha followed by 3 to 8 numeric characters. (typically 8?)
                     bMustStartWithAlpha = true;
                     if (!("ABCEGHPRVZ".Contains(sDLNum[0].ToString())))
@@ -233,15 +233,15 @@ namespace DotStd
                     nLengthMin = 9; // some docs say this is 4. db sometimes has 8. But NE regs say all numbers are 9 ?
                     nLengthMax = 9;
                     break;
-                case StateId.NM:
+                case GeoStateId.NM:
                     // New Mexico license format is 8 or 9 digits. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 8;
                     nLengthMax = 9;
                     break;
-                case StateId.NJ:
+                case GeoStateId.NJ:
                     break;
-                case StateId.NY:
+                case GeoStateId.NY:
                     // TODO
                     // There are 2 license formats in New York.
                     // 1. 1 position - alpha (prefix not required)
@@ -263,49 +263,49 @@ namespace DotStd
                     nLengthMin = 8;
                     nLengthMax = 21;
                     break;
-                case StateId.OK:  // Oklahoma
+                case GeoStateId.OK:  // Oklahoma
                     break;
-                case StateId.OH:  // Ohio
+                case GeoStateId.OH:  // Ohio
                     break;
-                case StateId.ON:    // Ontario
+                case GeoStateId.ON:    // Ontario
                     // 15 positions.    1st position alpha.    2-15 positions numeric 
                     // May contain 2*'-' chars which we strip.
                     bMustStartWithAlpha = true;
                     nOnlyDigitsAfterX = 1;
                     nLengthMin = nLengthMax = 15;
                     break;
-                case StateId.OR:  // Oregon
+                case GeoStateId.OR:  // Oregon
                     break;
-                case StateId.PA:
+                case GeoStateId.PA:
                     break;
-                case StateId.RI:
+                case GeoStateId.RI:
                     break;
-                case StateId.SC:
+                case GeoStateId.SC:
                     // South Carolina license format is 1 to 10 digits. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 6;     // We typically see >= 6 
                     nLengthMax = 10;
                     break;
-                case StateId.SD:
+                case GeoStateId.SD:
                     break;
-                case StateId.TN:
+                case GeoStateId.TN:
                     // Tennessee license formats: 1. 8 numeric characters. 2. 9 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = 8;
                     nLengthMax = 9;
                     break;
-                case StateId.TX:
+                case GeoStateId.TX:
                     // Texas license format is 8 numeric characters. 
                     nOnlyDigitsAfterX = 0;
                     nLengthMin = nLengthMax = 8;
                     break;
-                case StateId.UT:
+                case GeoStateId.UT:
                     break;
-                case StateId.VA:
+                case GeoStateId.VA:
                     break;
-                case StateId.VT:
+                case GeoStateId.VT:
                     break;
-                case StateId.WA:
+                case GeoStateId.WA:
                     // TODO
                     // Washington license format is 12 alpha or numeric characters
                     // 1-7 positions alpha or asterisks.
@@ -317,7 +317,7 @@ namespace DotStd
                     nLengthMin = nLengthMax = 12;
                     break;
 
-                case StateId.WI:
+                case GeoStateId.WI:
                     // Wisconsin license format is 1 alpha character followed by 13 numeric characters.
                     // Position 13 is a duplicate tie breaker and position 14 is a check digit.
                     // The check digit is validated. 
@@ -326,9 +326,9 @@ namespace DotStd
                     nLengthMin = nLengthMax = 14;
                     break;
 
-                case StateId.WV:
+                case GeoStateId.WV:
                     break;
-                case StateId.WY:  // Wyoming
+                case GeoStateId.WY:  // Wyoming
                     break;
                 default:
                     // NOT a valid state ?

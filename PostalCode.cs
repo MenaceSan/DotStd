@@ -28,7 +28,7 @@ namespace DotStd
             // Format "city, state postal" and account for missing info in USA normal style. 
             // uses Formatter.ToTitleCase 
 
-            string ret = Formatter.JoinTitles(",", city, state);
+            string ret = Formatter.JoinTitles(", ", city, state);
             if (ValidState.IsValidUnique(postal))
             {
                 if (ret.Length > 0)
@@ -83,129 +83,129 @@ namespace DotStd
             return CountryId.ANY;   // no idea what country this might be.
         }
 
-        public static StateId GetStateFromPostalUS(int zip)
+        public static GeoStateId GetStateFromPostalUS(int zip)
         {
-            // Convert US Postal codes to StateId. 
+            // Convert US Postal codes to GeoStateId. 
             // https://en.wikipedia.org/wiki/ZIP_Code
 
             if ((zip >= 600 && zip <= 799) || (zip >= 900 && zip <= 999)) // Puerto Rico (00600-00799 and 900--00999 ranges)
-                return StateId.PR;
+                return GeoStateId.PR;
             else if (zip >= 800 && zip <= 899) // US Virgin Islands (00800-00899 range)            
-                return StateId.VI;
+                return GeoStateId.VI;
             else if (zip >= 1000 && zip <= 2799) // Massachusetts (01000-02799 range)
-                return StateId.MA;
+                return GeoStateId.MA;
             else if (zip >= 2800 && zip <= 2999) // Rhode Island (02800-02999 range)
-                return StateId.RI;
+                return GeoStateId.RI;
             else if (zip >= 3000 && zip <= 3899) // New Hampshire (03000-03899 range)
-                return StateId.NH;
+                return GeoStateId.NH;
             else if (zip >= 3900 && zip <= 4999) // Maine (03900-04999 range)
-                return StateId.ME;
+                return GeoStateId.ME;
             else if (zip >= 5000 && zip <= 5999) // Vermont (05000-05999 range)
-                return StateId.VT;
+                return GeoStateId.VT;
             else if ((zip >= 6000 && zip <= 6999) && zip != 6390) // Connecticut (06000-06999 range excluding 6390)
-                return StateId.CT;
+                return GeoStateId.CT;
             else if (zip >= 70000 && zip <= 8999) // New Jersey (07000-08999 range)
-                return StateId.NJ;
+                return GeoStateId.NJ;
             else if ((zip >= 10000 && zip <= 14999) || zip == 6390 || zip == 501 || zip == 544) // New York (10000-14999 range and 6390, 501, 544)
-                return StateId.NY;
+                return GeoStateId.NY;
             else if (zip >= 15000 && zip <= 19699) // Pennsylvania (15000-19699 range)
-                return StateId.PA;
+                return GeoStateId.PA;
             else if (zip >= 19700 && zip <= 19999) // Delaware (19700-19999 range)
-                return StateId.DE;
+                return GeoStateId.DE;
             else if ((zip >= 20000 && zip <= 20099) || (zip >= 20200 && zip <= 20599) || (zip >= 56900 && zip <= 56999)) // District of Columbia (20000-20099, 20200-20599, and 56900-56999 ranges)
-                return StateId.DC;
+                return GeoStateId.DC;
             else if (zip >= 20600 && zip <= 21999) // Maryland (20600-21999 range)            
-                return StateId.MD;
+                return GeoStateId.MD;
             else if ((zip >= 20100 && zip <= 20199) || (zip >= 22000 && zip <= 24699)) // Virginia (20100-20199 and 22000-24699 ranges, also some taken from 20000-20099 DC range)
-                return StateId.VA;
+                return GeoStateId.VA;
             else if (zip >= 24700 && zip <= 26999) // West Virginia (24700-26999 range)
-                return StateId.WV;
+                return GeoStateId.WV;
             else if (zip >= 27000 && zip <= 28999) // North Carolina (27000-28999 range)
-                return StateId.NC;
+                return GeoStateId.NC;
             else if (zip >= 29000 && zip <= 29999) // South Carolina (29000-29999 range)            
-                return StateId.SC;
+                return GeoStateId.SC;
             else if ((zip >= 30000 && zip <= 31999) || (zip >= 39800 && zip <= 39999)) // Georgia (30000-31999, 39901[Atlanta] range)
-                return StateId.GA;
+                return GeoStateId.GA;
             else if (zip >= 32000 && zip <= 34999) // Florida (32000-34999 range)
-                return StateId.FL;
+                return GeoStateId.FL;
             else if (zip >= 35000 && zip <= 36999) // Alabama (35000-36999 range)
-                return StateId.AL;
+                return GeoStateId.AL;
             else if (zip >= 37000 && zip <= 38599) // Tennessee (37000-38599 range)
-                return StateId.TN;
+                return GeoStateId.TN;
             else if (zip >= 38600 && zip <= 39799) // Mississippi (38600-39999 range)
-                return StateId.MS;
+                return GeoStateId.MS;
             else if (zip >= 40000 && zip <= 42799) // Kentucky (40000-42799 range)
-                return StateId.KY;
+                return GeoStateId.KY;
             else if (zip >= 43000 && zip <= 45999) // Ohio (43000-45999 range)
-                return StateId.OH;
+                return GeoStateId.OH;
             else if (zip >= 46000 && zip <= 47999) // Indiana (46000-47999 range)
-                return StateId.IN;
+                return GeoStateId.IN;
             else if (zip >= 48000 && zip <= 49999) // Michigan (48000-49999 range)
-                return StateId.MI;
+                return GeoStateId.MI;
             else if (zip >= 50000 && zip <= 52999) // Iowa (50000-52999 range)
-                return StateId.IA;
+                return GeoStateId.IA;
             else if (zip >= 53000 && zip <= 54999) // Wisconsin (53000-54999 range)
-                return StateId.WI;
+                return GeoStateId.WI;
             else if (zip >= 55000 && zip <= 56799) // Minnesota (55000-56799 range)
-                return StateId.MN;
+                return GeoStateId.MN;
             else if (zip >= 57000 && zip <= 57999) // South Dakota (57000-57999 range)
-                return StateId.SD;
+                return GeoStateId.SD;
             else if (zip >= 58000 && zip <= 58999) // North Dakota (58000-58999 range)
-                return StateId.ND;
+                return GeoStateId.ND;
             else if (zip >= 59000 && zip <= 59999) // Montana (59000-59999 range)
-                return StateId.MT;
+                return GeoStateId.MT;
             else if (zip >= 60000 && zip <= 62999) // Illinois (60000-62999 range)
-                return StateId.IL;
+                return GeoStateId.IL;
             else if (zip >= 63000 && zip <= 65999) // Missouri (63000-65999 range)
-                return StateId.MO;
+                return GeoStateId.MO;
             else if (zip >= 66000 && zip <= 67999) // Kansas (66000-67999 range)
-                return StateId.KS;
+                return GeoStateId.KS;
             else if (zip >= 68000 && zip <= 69999) // Nebraska (68000-69999 range)
-                return StateId.NE;
+                return GeoStateId.NE;
             else if (zip >= 70000 && zip <= 71599) // Louisiana (70000-71599 range)
-                return StateId.LA;
+                return GeoStateId.LA;
             else if (zip >= 71600 && zip <= 72999) // Arkansas (71600-72999 range)
-                return StateId.AR;
+                return GeoStateId.AR;
             else if (zip >= 73000 && zip <= 74999) // Oklahoma (73000-74999 range)
-                return StateId.OK;
+                return GeoStateId.OK;
             else if ((zip >= 75000 && zip <= 79999) || (zip >= 88500 && zip <= 88599)) // Texas (75000-79999 and 88500-88599 ranges)
-                return StateId.TX;
+                return GeoStateId.TX;
             else if (zip >= 80000 && zip <= 81999) // Colorado (80000-81999 range)
-                return StateId.CO;
+                return GeoStateId.CO;
             else if (zip >= 82000 && zip <= 83199) // Wyoming (82000-83199 range)
-                return StateId.WY;
+                return GeoStateId.WY;
             else if (zip >= 83200 && zip <= 83999) // Idaho (83200-83999 range)
-                return StateId.ID;
+                return GeoStateId.ID;
             else if (zip >= 84000 && zip <= 84999) // Utah (84000-84999 range)
-                return StateId.UT;
+                return GeoStateId.UT;
             else if (zip >= 85000 && zip <= 86999) // Arizona (85000-86999 range)
-                return StateId.AZ;
+                return GeoStateId.AZ;
             else if (zip >= 87000 && zip <= 88499) // New Mexico (87000-88499 range)
-                return StateId.NM;
+                return GeoStateId.NM;
             else if (zip >= 88900 && zip <= 89999) // Nevada (88900-89999 range)
-                return StateId.NV;
+                return GeoStateId.NV;
             else if (zip >= 90000 && zip <= 96199) // California (90000-96199 range)
-                return StateId.CA;
+                return GeoStateId.CA;
             else if (zip >= 96700 && zip <= 96899) // Hawaii (96700-96899 range)  
-                return StateId.HI;
+                return GeoStateId.HI;
             else if (zip >= 97000 && zip <= 97999) // Oregon (97000-97999 range)
-                return StateId.OR;
+                return GeoStateId.OR;
             else if (zip >= 98000 && zip <= 99499) // Washington (98000-99499 range)
-                return StateId.WA;
+                return GeoStateId.WA;
             else if (zip >= 99500 && zip <= 99999) // Alaska (99500-99999 range)
-                return StateId.AK;
+                return GeoStateId.AK;
 
-            return StateId.UNK;
+            return GeoStateId.UNK;
         }
 
-        public static StateId GetStateFromPostal(string postal)
+        public static GeoStateId GetStateFromPostal(string postal)
         {
             string[] temp = postal.Split('-');
 
             if (GetCountryFromPostal(temp[0]) == CountryId.USA)
                 return GetStateFromPostalUS(Converter.ToInt(temp[0]));
 
-            return StateId.UNK;
+            return GeoStateId.UNK;
         }
     }
 

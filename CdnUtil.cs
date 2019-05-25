@@ -5,21 +5,47 @@ using System.Xml.Linq;
 
 namespace DotStd
 {
-    public static class CdnFallback
+    public class CdnHost
+    {
+        // An external host that we use that may be allowed or disallowed. (has fallback)
+        // we can also add any external services like Google Map apis that may be enabled or disabled dynamically?
+
+        public string HostName;
+        public bool Enabled;
+    }
+
+    public class CdnConfig
+    {
+        // TODO List of Cdn servers used.
+
+    }
+
+    public static class CdnUtil
     {
         // Sync/Pull .js and .css files from a CDN and make local copies for failover and dev purposes.
         // Read a file called 'CdnAll.html' that contains all the links to my CDN files.
         // pull local version of these. to "asp-fallback-src" or "asp-fallback-href"
         // Similar function to Bower but centered on the CDN not the FULL dev packages.
-        // TODO read the 'libman.json' file to build this ?! Since libman doesnt contain 'integrity' at this time we can just use libman directly. (2018)
+        // TODO read the 'libman.json' file to build this ?! Since libman doesnt contain 'integrity' at this time we can't just use libman directly. (2018)
 
-        public const string kAll = "CdnAll.html";
-        public const string kDataLibAttr = "data-lib-";      // If i pulled the lib from Bower
-        public const string kMin = ".min.";
-        public const string kMin2 = "-min.";    // alternate style.
+        // TODO Manage list of CDN services such that they may be enabled/disabled on the fly.
+
+        public const string kAll = "CdnAll.html";       // Define all Cdn files i might use.
+
+        public const string kDataLibAttr = "data-lib-";      // If i pulled the lib from Bower (for developers not really for CDN consumers)
+        public const string kMin = ".min.";     // is minified version ?
+        public const string kMin2 = "-min.";    // alternate minified style.
+
+        public static string GetNonMin(string n)
+        {
+            // Try to find the NON-minified version of the file. If it has one.
+            return n.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
+        }
 
         public static string GetPhysPathFromWeb(string w)
         {
+            // Get app relative physical path for file.
+            // w = site relative url path.
             // ~ = wwwroot
             // / = wwwroot
             // NO / = root of app.
@@ -34,9 +60,10 @@ namespace DotStd
 
         public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
-            // Read the HTML/XML file kAll from Resource.
-            // Pull all files from the CDN that we want locally as backups/fallback.
-            // Write out the local stuff to outDir. e.g. "wwwroot/cdn"
+            // 1. Read the HTML/XML file kAll from Resource.
+            // 2. Pull all files from the CDN that we want locally as backups/fallback.
+            // 3. Write out the local stuff to outDir. e.g. "wwwroot/cdn"
+
             if (!File.Exists(cdnAllFilePath))
                 return 0;
 
@@ -52,9 +79,9 @@ namespace DotStd
                 if (xl.Name != "script" && xl.Name != "link" && xl.Name != "a")
                     continue;
 
-                string typeExt = (xl.Name == "script") ? "src" : "href";
+                string typeExt = (xl.Name == "script") ? "src" : "href"; // Is JavaScript or CSS ?
                 XAttribute src = xl.Attribute(typeExt);
-                if (src==null)
+                if (src == null)
                 {
                     // weird ! Fail!
                     continue;
@@ -89,15 +116,17 @@ namespace DotStd
                     {
                         var fi = new FileInfo(dstPath);
                         if (fi != null && fi.Length > 0)
-                            continue;
+                            continue;   // it exists.
                     }
                 }
                 else
                 {
                     // test hash e.g. "sha256-", "sha384-"
                     int i = integrity.Value.IndexOf('-');
-                    if (i <= 0)
+                    if (i <= 0)     // badly formed integrity ?? Fail ?
+                    {
                         continue;
+                    }
 
                     hashCode1 = Convert.FromBase64String(integrity.Value.Substring(i + 1));
                     hasher = new HashUtil(HashUtil.FindHasher(integrity.Value));
@@ -114,7 +143,7 @@ namespace DotStd
 
                 // Pull/Get the file. 
                 downloadCount++;
-                LoggerBase.DebugEntry("Get " + src.Value);
+                LoggerBase.DebugEntry($"Get '{src.Value}'");
                 var dl = new WebDownloader(src.Value, dstPath);
 
                 // CDN can get "OperationCanceledException: The operation was canceled."
@@ -122,6 +151,7 @@ namespace DotStd
 
                 if (integrity == null)
                 {
+                    // Does the destination file exist now ?
                     var fi = new FileInfo(dstPath);
                     if (fi == null || fi.Length <= 0)
                     {
@@ -141,19 +171,60 @@ namespace DotStd
 
                 if (src.Value.Contains(kMin) || src.Value.Contains(kMin2))
                 {
-                    // Pull the non-minified (Dev) version as well.
+                    // Pull the non-minified (Dev) version as well. if it has one.
                     if (dstDev == null || dstDev.Value != dst.Value)
                     {
-                        dstPath = (dstDev != null) ? GetPhysPathFromWeb(dstDev.Value) :
-                            dstPath.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
-                        string srcPath = src.Value.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
-                        var dl2 = new WebDownloader(srcPath, dstPath);
+                        dstPath = (dstDev != null) ? GetPhysPathFromWeb(dstDev.Value) : GetNonMin(dstPath);
+                        var dl2 = new WebDownloader(GetNonMin(src.Value), dstPath);
                         dl2.DownloadFileRaw();
                     }
                 }
             }
 
             return downloadCount;
+        }
+
+        public static void AddCdnHost(string h, bool enable=true)
+        {
+            // Add a CDN host that i might optionally use.
+
+        }
+
+        public static bool UseCdn()
+        {
+            // should i use a Cdn at all ?
+            // Similar to <environment include="Development">
+            return !ConfigApp.ConfigInfo.isConfigModeLike(DotStd.ConfigMode.DEV);
+        }
+
+        public static bool UseCdn(string relUrl)
+        {
+            // Use a particular Cdn server ?
+            // This may be used to check for enablement of any external service API. Google Maps, etc.
+
+            if (!UseCdn())
+                return false;
+
+            return true;
+        }
+
+        public static string GetScript(string n)
+        {
+            // Get Html to load a JavaScript file source. Supply integrity.
+            // If Cdn is enabled get it from there else get it from the local fallback/backup/failover.
+            // e.g. <script src='xxx'></script>
+            // Use minified versions?
+
+            return null;
+        }
+
+        public static string GetCss(string n)
+        {
+            // get Html for CSS link. Supply integrity.
+            // e.g. <link rel='stylesheet' href='xxx' />
+            // If Cdn is enabled get it from there else get it from the local fallback/backup/failover.
+
+            return null;
         }
     }
 }

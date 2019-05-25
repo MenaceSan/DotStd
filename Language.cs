@@ -7,7 +7,8 @@ namespace DotStd
     public enum LanguageId
     {
         // Id for Languages/Cultures that we care about. <html lang="en"> <html lang="en-US">
-        // from Language db table ? CultureInfo Code
+        // from Language db table ? CultureInfo Code.
+        // Description = Native Name and font (English Name)
         // https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
         // similar to the Windows concept of culture.
         // https://developers.google.com/admin-sdk/directory/v1/languages
@@ -17,19 +18,19 @@ namespace DotStd
         [Description("English")]    // English
         en = 1,        // Default American English. .NET LanguageId =  1033 = 0x409 = 'en-US'
 
-        [Description("Russian")]    //  
+        [Description("Русский язык (Russian)")]    //  https://en.wikipedia.org/wiki/Russian_language
         ru = 2,
 
-        [Description("German")]     //  
+        [Description("Deutsch (German)")]     //  https://en.wikipedia.org/wiki/German_language
         de = 3,
 
-        [Description("Spanish")]    // Spanish, Espana
+        [Description("Español (Spanish)")]    // Spanish, Espana. https://en.wikipedia.org/wiki/Spanish_language
         es = 4,
 
-        [Description("French")]     // French
+        [Description("Le Français (French)")]     // French https://en.wikipedia.org/wiki/French_language
         fr = 5,
 
-        [Description("Japanese")]     //  
+        [Description("日本語 (Japanese)")]     //   https://en.wikipedia.org/wiki/Japanese_language
         ja = 6,
 
         [Description("Portuguese")]     // por
@@ -63,6 +64,8 @@ namespace DotStd
         // en_CA = "English_Canadian"
         // en_AU = "English_Australian"
 
+        [Description("Test Language (Test Accents)")]     
+        test = 100,
     }
 
     public static class Language

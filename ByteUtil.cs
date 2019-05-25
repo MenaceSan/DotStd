@@ -124,15 +124,10 @@ namespace DotStd
 
         public static int ToIntLE(byte[] b, int offset = 0)
         {
+            // NOTE: This doesnt really make sense as we dont use sign.
             // Convert 4 bytes to a 32 bit signed int. (Host Order) LittleEndian (Intel)  
             // Like BitConverter.ToInt32()
-
-            if (b == null)
-                return 0;
-            if (b.Length < offset + 4)
-                return ToUShortLE(b,offset);
-
-            return (int)b[offset + 0] | ((int)b[offset + 1] << 8) | ((int)b[offset + 2] << 16) | ((int)b[offset + 3] << 24);
+            return (int)ToUIntLE(b,offset);
         }
 
         public static uint ToUIntLE(byte[] b, int offset = 0)
@@ -145,9 +140,10 @@ namespace DotStd
                 return ToUShortLE(b, offset);
             return (uint)b[offset + 0] | ((uint)b[offset + 1] << 8) | ((uint)b[offset + 2] << 16) | ((uint)b[offset + 3] << 24);
         }
-        
-        public static ulong ToULongLE(byte[] b, int offset=0)
+
+        public static ulong ToULongLE(byte[] b, int offset = 0)
         {
+            // little endian
             if (b == null)
                 return 0;
             uint valLow = ToUIntLE(b, offset);
@@ -158,13 +154,8 @@ namespace DotStd
 
         public static void PackIntLE(byte[] b, int offset, int value)
         {
-            b[offset + 0] = (byte)(value);
-            b[offset + 1] = (byte)(value >> 8);
-            b[offset + 2] = (byte)(value >> 16);
-            b[offset + 3] = (byte)(value >> 24);
-        }
-        public static void PackUIntLE(byte[] b, int offset, uint value)
-        {
+            // little endian
+            // NOTE: This doesnt really make sense as we dont use sign.
             b[offset + 0] = (byte)(value);
             b[offset + 1] = (byte)(value >> 8);
             b[offset + 2] = (byte)(value >> 16);
@@ -172,9 +163,65 @@ namespace DotStd
         }
         public static void PackUShortLE(byte[] b, int offset, ushort value)
         {
+            // little endian
             b[offset + 0] = (byte)(value);
             b[offset + 1] = (byte)(value >> 8);
         }
+        public static void PackUIntLE(byte[] b, int offset, uint value)
+        {
+            // little endian
+            b[offset + 0] = (byte)(value);
+            b[offset + 1] = (byte)(value >> 8);
+            b[offset + 2] = (byte)(value >> 16);
+            b[offset + 3] = (byte)(value >> 24);
+        }
+        public static void PackULongLE(byte[] b, int offset, ulong value)
+        {
+            // little endian
+            b[offset + 0] = (byte)(value);
+            b[offset + 1] = (byte)(value >> 8);
+            b[offset + 2] = (byte)(value >> 16);
+            b[offset + 3] = (byte)(value >> 24);
+            b[offset + 4] = (byte)(value >> 32);
+            b[offset + 5] = (byte)(value >> 40);
+            b[offset + 6] = (byte)(value >> 48);
+            b[offset + 7] = (byte)(value >> 56);
+        }
 
+        // to/from Network order.
+
+        public static uint ToUIntN(byte[] b, int offset = 0)
+        {
+            // Convert 4 bytes to a 32 bit UNsigned int. (Network Order)
+            if (b == null)
+                return 0;
+            return (uint)b[offset + 3] | ((uint)b[offset + 2] << 8) | ((uint)b[offset + 1] << 16) | ((uint)b[offset + 0] << 24);
+        }
+
+        public static ulong ToULongN(byte[] b, int offset = 0)
+        {
+            // network order.
+            return b[offset + 7] |
+                ((uint)b[offset + 6] << 40) |
+                ((uint)b[offset + 5] << 48) |
+                ((uint)b[offset + 4] << 56) |
+                ((ulong)b[offset + 3] << 32) |
+                ((ulong)b[offset + 2] << 40) |
+                ((ulong)b[offset + 1] << 48) |
+                ((ulong)b[offset + 0] << 56);
+        }
+
+        public static void PackULongN(byte[] b, int offset, ulong value)
+        {
+            // network order.
+            b[offset + 7] = (byte)(value);
+            b[offset + 6] = (byte)(value >> 8);
+            b[offset + 5] = (byte)(value >> 16);
+            b[offset + 4] = (byte)(value >> 24);
+            b[offset + 3] = (byte)(value >> 32);
+            b[offset + 2] = (byte)(value >> 40);
+            b[offset + 1] = (byte)(value >> 48);
+            b[offset + 0] = (byte)(value >> 56);
+        }
     }
 }

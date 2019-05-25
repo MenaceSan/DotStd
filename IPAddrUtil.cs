@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DotStd
@@ -41,6 +39,7 @@ namespace DotStd
 
         public bool ParseCidr(string s)
         {
+            // Get an IPAddress range in string CIDR format.
             // e.g. s = "2001:200::/37"
 
             string[] addrA = s.Split('/');
@@ -69,52 +68,68 @@ namespace DotStd
         // To check if you're connected or not:
         // System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
 
-        public static string kLocalHost = "127.0.0.1";  // System.Net.IPAddress.Parse()
+        public static string kLocalHost = "127.0.0.1";  // IPAddress.Loopback = System.Net.IPAddress.Parse(kLocalHost) for ip4. 
 
         public static uint ToUInt(IPAddress addr)
         {
-            // Get ip4 as 32 bit uint in proper host order.
+            // Get ip4 as 32 bit uint in proper host order. from network order.
+            ValidState.ThrowIf(addr.AddressFamily != AddressFamily.InterNetwork);   // assume ip4 || IsIPv4MappedToIPv6
+            return ByteUtil.ToUIntN(addr.GetAddressBytes(), 0);
+        }
 
-            ValidState.ThrowIf(addr.AddressFamily != AddressFamily.InterNetwork);   // assume ip4
-
-            var p = addr.GetAddressBytes();
-            uint ip = ((uint)p[0]) << 24;
-            ip += ((uint)p[1]) << 16;
-            ip += ((uint)p[2]) << 8;
-            ip += p[3];
-            return ip;
+        public static IPAddress GetIPAddress(uint n)
+        {
+            // Rebuild AddressFamily.InterNetwork address.
+            // Convert n to network order.
+            uint val = (uint)IPAddress.HostToNetworkOrder((int)n);
+            return new IPAddress(val);
         }
 
         public static ulong ToULong(IPAddress addr, bool high)
         {
-            // ip6 is 2 64 bit parts.
+            // ip6 is 2 64 bit parts. high and low. from network order to host order
 
-            var p = addr.GetAddressBytes();
-            int i = high ? 0 : 8;
-            ulong ip = ((ulong)p[i + 0]) << 56;
-            ip += ((ulong)p[i + 1]) << 48;
-            ip += ((ulong)p[i + 2]) << 40;
-            ip += ((ulong)p[i + 3]) << 32;
-            ip += ((uint)p[i + 4]) << 24;
-            ip += ((uint)p[i + 5]) << 16;
-            ip += ((uint)p[i + 6]) << 8;
-            ip += p[i + 7];
-            return ip;
+            if (addr.AddressFamily == AddressFamily.InterNetwork)
+            {
+                // IsIPv4MappedToIPv6
+                // For example if your IPv4 IP is 209.173.53.167 the valid IPv6 version will be 0:0:0:0:0:ffff:d1ad:35a7
+                if (high)
+                    return 0;
+                return (0xfffful << 32) | ByteUtil.ToUIntN(addr.GetAddressBytes(), 0);
+            }
+            else
+            {
+                ValidState.ThrowIf(addr.AddressFamily != AddressFamily.InterNetworkV6);   // assume ip6
+                return ByteUtil.ToULongN(addr.GetAddressBytes(), high ? 0 : 8);
+            }
+        }
+
+        public static IPAddress GetIPAddress(ulong iph, ulong ipl)
+        {
+            // Rebuild AddressFamily.InterNetworkV6 address.
+            byte[] p = new byte[16];
+            ByteUtil.PackULongN(p, 0, iph);
+            ByteUtil.PackULongN(p, 8, ipl);
+            return new IPAddress(p);
         }
 
         public static long GetHashLong(IPAddress addr)
         {
+            // Get a single 64 bit hash for the address.
+
             if (addr.AddressFamily == AddressFamily.InterNetwork)
             {
                 return ToUInt(addr);    // add offset to get ip6 non collision.
             }
             else if (addr.AddressFamily == AddressFamily.InterNetworkV6)
             {
-                ulong u = ToULong(addr, true) ^ ToULong(addr, false);
+                ulong u = ToULong(addr, true) ^ ToULong(addr, false);   // combine high and low into a single uint64
                 return (long)u;
             }
 
             // get binary???
+            // byte[] p = HashUtil.MergeHash( addr.GetAddressBytes());
+            ValidState.ThrowIf(true);
             return 0;
         }
 

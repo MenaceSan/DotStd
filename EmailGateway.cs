@@ -21,7 +21,7 @@ namespace DotStd
         Microsoft = 5,      // Auth type. Azure is the same ?
         Google = 6,         // Auth type name.
         Facebook = 7,
-        Twitter = 8,
+        Twitter = 8,        // NOT USED YET.
         LinkedIn = 9,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
 
         // etc.

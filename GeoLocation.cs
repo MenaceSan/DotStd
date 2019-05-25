@@ -14,7 +14,9 @@ namespace DotStd
         // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
 
         ANY = 0, // Don't care. give me all.
-        International = 1,
+
+        [Description("International")]        
+        III = 1,
 
         [Description("United States")]
         USA = 840,    // US, us
@@ -29,7 +31,7 @@ namespace DotStd
     }
 
     [Serializable()]
-    public enum StateId
+    public enum GeoStateId
     {
         // Custom code for States/Provinces in a country we care about (USA first)
         // from the table geo_state

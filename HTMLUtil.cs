@@ -16,6 +16,19 @@ namespace DotStd
         public const string kCommentOpen = "<!--";
         public const string kCommentClose = "-->";
 
+        public static string DecodeEntities2( string src)
+        {
+            // replace Non standard entities with chars.
+            // Replacing "&nbsp;" with "&#160;" since "&nbsp;" is not XML standard
+            // NOTE: XmlReader is vulnerable to attacks from entity creation. XSS. OK in .Net 4.0+ but use DtdProcessing.Prohibit.
+
+            src = src.Replace(kNBSP, " ");
+            src = src.Replace("&eacute;", "é");
+            src = src.Replace("&trade;", "™");
+            
+            return src;
+        }
+
         public static string GetOptStr(string value, string desc, bool selected = false)
         {
             // for <select>

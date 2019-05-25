@@ -130,14 +130,14 @@ namespace DotStd
 
         public static string ToSafeDateString(this DateTime obj, string def = null, string format = null)
         {
-            // If this is a bad date just display nothing. otherwise like ToShortDateString()
+            // If this is a bad date just display nothing. otherwise like DateUtil.kShortDate
             // e.g format = "M/d/yyyy" or 'yyyy-MM-dd' (for Javascript)
             if (def == null)
                 def = string.Empty;
             if (obj.IsExtremeDate())    // Const.dateExtremeMin
                 return def;
             if (format == null)
-                return obj.ToShortDateString();
+                format = DateUtil.kShortDate;
             return obj.ToString(format);
         }
 
@@ -148,6 +148,11 @@ namespace DotStd
             if (obj == null)
                 return def;
             return ToSafeDateString(obj.Value, def, format);
+        }
+
+        public static string ToLocalStr(this TimeZoneUtil tz, DateTime dt, string format = null)
+        {
+            return TimeZoneUtil.ToLocalStr(tz, dt, format);
         }
 
         // Extend Nullable<> types

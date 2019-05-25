@@ -29,11 +29,14 @@ namespace DotStd
                 return true;
             if (char.IsWhiteSpace(value[value.Length - 1])) // trailing whitespace
                 return true;
+
+            // RFC 4180. 6. Fields containing line breaks (CRLF), double quotes, and commas should be enclosed in double-quotes.
+
             foreach (char ch in value)
             {
                 if (ch == ',' || ch == q)  // special chars.
                     return true;
-                if (ch == '\n' || ch == '\r') // cant contain new lines either.
+                if (ch == '\n' || ch == '\r') // cant contain new lines either. 
                     return true;
             }
             return false;
@@ -41,11 +44,13 @@ namespace DotStd
 
         public static string EncodeQ(string value, string q1 = "\"", string q2 = "\"\"")
         {
+            // Encode a single value with quotes.
             // double quote = ASCII 34
+            // NOTE: Newlines are left but the reader must be aware to keep reading lines.
 
             value = value.Replace(q1, q2);    // interior quotes become double quotes. NOT slash quotes.
 
-            return q1 + value + q1;   // Quote it.
+            return string.Concat(q1, value, q1);   // Quote it.
         }
 
         public static string Encode1(string value, bool bAlwaysQuote = false)
@@ -82,6 +87,7 @@ namespace DotStd
 
         public static string Encode(params object[] values)
         {
+            // Add quotes only if necessary.
             return Encode(values, false);
         }
         public static string EncodeQ(params object[] values)
@@ -141,10 +147,13 @@ namespace DotStd
             return a;   // can use Linq ToArray() to get string[]
         }
 
-        public static List<string> Decode(string sLine, char delim)
+        public static List<string> Decode2(string sLine, char delim)
         {
+            // NOTE: This might not deal with interior line breaks correctly ???
+
             if (delim == ',')
                 return Decode(sLine);
+
             return sLine.Split(delim).ToList();
         }
 

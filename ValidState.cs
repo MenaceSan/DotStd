@@ -44,6 +44,7 @@ namespace DotStd
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
         public const string kSavedChanges = "Saved Changes";
+        public const string kNoChanges = "No Changes";      // We pressed 'save' but there was nothing to do.
 
         public ValidLevel ValidLevel;       // aggregate state for all Fields
 

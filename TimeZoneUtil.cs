@@ -92,6 +92,7 @@ namespace DotStd
 
         public static string GetOffsetStr(int offset)
         {
+            // offset = minutes.
             if (offset < 0)
                 return string.Concat("(-", DateUtil.GetTimeStr(-offset), ")");
             return string.Concat("(+", DateUtil.GetTimeStr(offset), ")");
@@ -99,6 +100,7 @@ namespace DotStd
 
         public string GetOffsetStr()
         {
+            // offset = minutes.
             return TimeZoneUtil.GetOffsetStr(Offset);
         }
 
@@ -222,6 +224,14 @@ namespace DotStd
             return _tzi;
         }
 
+        public DateTime ToUtc(DateTime dt)
+        {
+            // convert this local time zone to UTC
+            if (dt.Kind == DateTimeKind.Utc)
+                return dt;
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.UtcNow, GetTimeZoneInfo());
+        }
+
         public DateTime ToLocal(DateTime dt)
         {
             // convert UTC to this local time zone
@@ -230,12 +240,19 @@ namespace DotStd
             return TimeZoneInfo.ConvertTimeFromUtc(dt, GetTimeZoneInfo());
         }
 
-        public DateTime ToUtc(DateTime dt)
+        public static string ToLocalStr(TimeZoneUtil tz, DateTime dt, string format = null)
         {
-            // convert this local time zone to UTC
-            if (dt.Kind == DateTimeKind.Utc)
-                return dt;
-            return TimeZoneInfo.ConvertTimeToUtc(DateTime.UtcNow, GetTimeZoneInfo());
+            // Localize the time string for user display.
+            // if tz == null then just label as (UTC) clearly.
+
+            var tzi = tz?.GetTimeZoneInfo();
+            if (tzi == null)
+            {
+                // label as UTC or (LOCAL)
+                return dt.ToString(format) + "(UTC)";
+            }
+
+            return TimeZoneInfo.ConvertTimeFromUtc(dt, tzi).ToString(format);
         }
     }
 }

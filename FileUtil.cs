@@ -57,18 +57,21 @@ namespace DotStd
         [Description(@"video/x-flv")]
         FLV = 18,        //  video
 
+        [Description(@"audio/wav")]
+        WAV = 19,
         [Description(@"application/zip")]
-        ZIP = 19,        //  anything
+        ZIP = 20,        //  anything
+        [Description(@"application/json")]
+        JSON = 21,        // data
 
         // AVI
         // MPG
         // webm
-
         // Other common types:
         // RTF, XML, TGA, TTF
-        // AIF, WAV, MP3
+        // AIF, MP3
         // MKV, SWF, MOV, 
-        // JSON, BZ2, ISO
+        // BZ2, ISO
         // CFG, INI, DAT, DB, CAL, CAB
         // CS, CPP, JS, CSS
 

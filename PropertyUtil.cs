@@ -260,6 +260,11 @@ namespace DotStd
             return propsCopied;
         }
 
+        public static int InjectProperties<T>(T toObj, IEnumerable<KeyValuePair<string, StringValues>> src)
+        {
+            return InjectProperties(toObj, new PropertyBagKeyValue(src));
+        }
+
         public static T CreateCloneT<T>(object fromObj)
         {
             // Create a clone of some object as a target type. Maybe a child type of fromObj.

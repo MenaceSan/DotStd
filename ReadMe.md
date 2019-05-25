@@ -8,3 +8,4 @@ util code that can be used for .NET Framework or .NET core.
 
 watch out for #if for stuff that needs fixing.
  
+ ¯\_(?)_/¯

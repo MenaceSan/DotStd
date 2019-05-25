@@ -8,7 +8,7 @@ namespace DotStd
 {
     public static class DataPage
     {
-        // Helper for paging of lists of data for Linq and EF.
+        // Helper for paging of lists of data for Linq and EF. SQL.
         // Allow deferred (server side) paging.
 
         private static IOrderedQueryable<T> OrderingHelper<T>(IQueryable<T> source, string propertyName, bool bSortAscending, bool thenByLevel)
@@ -124,7 +124,7 @@ namespace DotStd
 
         public int GetSkip()
         {
-            ValidState.ThrowIf(StartOfPage < 0 || PageSize <= 0);
+            ValidState.ThrowIf(StartOfPage < 0);    // assume PageSize > 0 ?
             return StartOfPage;
         }
 

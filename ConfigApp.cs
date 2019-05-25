@@ -40,6 +40,7 @@ namespace DotStd
         }
         public static int ToVersionInt(int v1, int v2, int v3)
         {
+            // Make a single version int from the standard 3 part version string.
             return v1*100000 + v2*1000 + v3;
         }
 
@@ -154,5 +155,8 @@ namespace DotStd
             // Are we actively being debugged?
             return System.Diagnostics.Debugger.IsAttached;
         }
+
+        public static bool IsInDocker { get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"; } }
+
     }
 }

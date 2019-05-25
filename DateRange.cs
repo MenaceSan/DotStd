@@ -383,7 +383,7 @@ namespace DotStd
         {
             // Create Date range aligned to month that includes dt. Inclusive.
             int y = dt.Year;
-            int m = dt.Month;
+            int m = dt.Month;   // 1 based. MonthId
             int daysInMonth = DateTime.DaysInMonth(y, m);
             Start = new DateTime(y, m, 1);
             End = new DateTime(y, m, daysInMonth);
@@ -394,7 +394,7 @@ namespace DotStd
             // Get a month range.
             // same as SetDatesForMonth
             int y = dt.Year;
-            int m = dt.Month;
+            int m = dt.Month;   // 1 based. MonthId
             int daysInMonth = DateTime.DaysInMonth(y, m);
             return new DateRange(new DateTime(y, m, 1),
                 new DateTime(y, m, daysInMonth));
@@ -404,7 +404,7 @@ namespace DotStd
         {
             // Set date range aligned to quarter.
             int y = dt.Year;
-            int m = dt.Month;    // 1 based
+            int m = dt.Month;    // 1 based. MonthId
             int q = (m - 1) / 3;  // quarter 0 based. 0 to 3
             Start = new DateTime(y, (q * 3) + 1, 1);
             End = Start.AddMonths(3).AddDays(-1);
