@@ -83,7 +83,7 @@ namespace DotStd
             for (; i >= 0; i--)
             {
                 char ch = cardNum[i];
-                if (!StringUtil.IsDigit(ch))
+                if (!StringUtil.IsDigit1(ch))
                     return false;
 
                 int curDigit = (ch - '0');

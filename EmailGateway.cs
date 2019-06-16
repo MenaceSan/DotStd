@@ -41,7 +41,7 @@ namespace DotStd
         public string Username { get; set; }    // AKA userName
         public string Password { get; set; }    // AKA password. might be encrypted??
 
-        public IValidatable<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
+        public IValidatorT<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
 
         public void Init(IPropertyGetter config)
         {
@@ -49,7 +49,7 @@ namespace DotStd
             PropertyUtil.InjectProperties(this, config, "Smtp:");
         }
 
-        public EmailGatewaySettings(ConfigInfoBase config = null, IValidatable<string> allowedFilter = null)
+        public EmailGatewaySettings(ConfigInfoBase config = null, IValidatorT<string> allowedFilter = null)
         {
             // No need to manually get GetMailSettings MailSettingsSectionGroup in .NET Framework. That is automatic.
             // https://hassantariqblog.wordpress.com/2017/03/20/asp-net-core-sending-email-with-gmail-account-using-asp-net-core-services/
@@ -84,7 +84,7 @@ namespace DotStd
             Settings = settings;
         }
 
-        public EmailGateway(ConfigInfoBase config, IValidatable<string> allowedFilter)
+        public EmailGateway(ConfigInfoBase config, IValidatorT<string> allowedFilter)
         {
             Settings = new EmailGatewaySettings(config, allowedFilter);
         }

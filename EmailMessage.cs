@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
-    public class EmailAddress : IValidatable<string>
+    public class EmailAddress : IValidatorT<string>
     {
         // helper to support System.Net.Mail.MailAddress
         // parse the email to get First and Last Names, display names.
@@ -50,6 +50,7 @@ namespace DotStd
 
         public bool IsValid(string email)
         {
+            // virtual
             return IsValidEmail(email);
         }
 

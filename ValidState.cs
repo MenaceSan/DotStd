@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DotStd
 {
-    public interface IValidatable<T>
+    public interface IValidatorT<T>
     {
         // This class is used to validate some other type. AKA Validator
         // Filter for valid strings/objects?

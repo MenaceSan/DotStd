@@ -38,12 +38,19 @@ namespace DotStd
 
         public static void ClearType(string cacheKeyPrefix)
         {
-            // This is VERY not efficient ???
+            // This is VERY NOT efficient !!
             // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
             // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
             // BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
 
             var cache = MemoryCache.Default;
+            if (cacheKeyPrefix == "")
+            {
+                // all.
+                cache.Trim(100);
+                return;
+            }
+
             foreach (var item in cache)
             {
                 if (item.Key.StartsWith(cacheKeyPrefix))
@@ -124,12 +131,12 @@ namespace DotStd
             // Clear a single object by key.
             ClearObj(id.ToString());
         }
-        public static void ClearType(string cacheKeyPrefix=null)
+        public static void ClearType(string cacheKeyPrefix = null)
         {
             // Clear this type or a sub set of this type.
             if (cacheKeyPrefix == null)
                 cacheKeyPrefix = nameof(T);
-            else 
+            else if (cacheKeyPrefix != "")
                 cacheKeyPrefix = MakeKey(cacheKeyPrefix);
             CacheData.ClearType(cacheKeyPrefix);
         }

@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace DotStd
 {
     public enum DateRelative
     {
-        // Range that is relative to the current date. In current users time zone and selected starting DoW.
-        // Used for reporting purposes. This, Last, Next
+        // Create a DateRange that is relative to the current date. Or some date in current users time zone and selected starting DoW.
+        // Used for reporting purposes. This, Last, Next - Week, Month, etc.
         // <member name="F:OfficeOpenXml.ConditionalFormatting.eExcelConditionalFormattingTimePeriodType.LastWeek">
         // <member name="F:Intuit.Ipp.Data.DateMacro.LastWeek">
 
@@ -17,12 +20,14 @@ namespace DotStd
         None = 2,       // Empty date range.
 
         [Description("Today")]
-        DSF,        // Current day so far. No future.
+        DSF,        // Current day so far. Not future.
         [Description("Week to Date")]
         WTD,
-        [Description("Moth to Date")]
+        [Description("Month to Date")]
         MTD,
+        [Description("Quarter to Date")]
         QTD,
+        [Description("Year to Date")]
         YTD,
 
         Today,          // Includes to the end of today.
@@ -38,6 +43,45 @@ namespace DotStd
         LastYear,
     }
 
+    public enum TimeUnitId : byte
+    {
+        // Time unit type. 
+        // Schedule can recur every Nth recurring (Interval) time unit.
+        // used by schedule.RecurTypeId
+        // used by app_job.RecurTypeId
+        // used by agency_sub_type.RecurTypeId
+
+        None = 0,       // just once. never again
+
+        MilliSec = 1,   // fractional seconds.
+        Seconds = 2,    // 
+        Minutes = 3,
+        Hours = 4,
+
+        Days = 5,      // Every day or every other day for time period.
+        Weeks = 6,     // can use bitmask of days of the week.
+
+        // Approximate unit times.
+        Months,        // On same day of month.
+        Quarters,
+        Years,         // do this once per year. on same day of year.
+    }
+
+    [Flags]
+    public enum DaysOfWeek : byte
+    {
+        // Bitmask of days of week.
+        // 0 = none. 
+        Sunday = (1 << (int)System.DayOfWeek.Sunday),   // =1, Sunday = 0
+        Monday = (1 << (int)System.DayOfWeek.Monday),
+        Tuesday = (1 << (int)System.DayOfWeek.Tuesday),
+        Wednesday = (1 << (int)System.DayOfWeek.Wednesday),
+        Thursday = (1 << (int)System.DayOfWeek.Thursday),
+        Friday = (1 << (int)System.DayOfWeek.Friday),
+        Saturday = (1 << (int)System.DayOfWeek.Saturday),
+        Any = 127,  // all days.
+    }
+
     /// <summary>
     /// Represents a range of two date/times. .NET has no native concept.
     /// </summary>
@@ -51,13 +95,14 @@ namespace DotStd
         public DateTime Start { get; set; }
 
         /// <summary>
-        /// Gets or Sets the date representing the end of this range.
+        /// Gets or Sets the date representing the end of this range. May be used as inclusive date (or not)
         /// </summary>
         public DateTime End { get; set; }
 
         public bool IsValidRange
         {
-            // Empty is valid.
+            // Is date range valid? 
+            // NOTE: Empty range is valid.
             get
             {
                 return !this.Start.IsExtremeDate() && !this.End.IsExtremeDate() && this.Start <= this.End;
@@ -67,7 +112,7 @@ namespace DotStd
         public TimeSpan TimeSpan
         {
             // Exclusive dates.
-            // NOTE: if IsExtremeDate() then this really isnt valid.
+            // NOTE: if IsExtremeDate() then this really isn't valid.
             get
             {
                 return this.End - this.Start;
@@ -111,7 +156,7 @@ namespace DotStd
 
         public DateRange(DateTime dt)
         {
-            // empty
+            // create empty range
             Start = dt;
             End = dt;
         }
@@ -125,7 +170,7 @@ namespace DotStd
             : this()
         {
             Start = start;
-            End = end.HasValue ? end.Value : DateTime.MaxValue;
+            End = end ?? DateTime.MaxValue;
         }
 
         /// <summary>
@@ -365,6 +410,7 @@ namespace DotStd
 
         public void SetDatesForWeek(DateTime dt, bool isStartDate_)
         {
+            // Create a week of inclusive dates.
             // date_ = start or end of week,
             dt = dt.Date;
             if (isStartDate_)
@@ -379,42 +425,272 @@ namespace DotStd
             }
         }
 
+        public void SetDatesForMonth(int year, int month)
+        {
+            // Create Date range aligned to month. Inclusive.
+            // month = 1 based. MonthId
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+            Start = new DateTime(year, month, 1);
+            End = new DateTime(year, month, daysInMonth);
+        }
+
         public void SetDatesForMonth(DateTime dt)
         {
             // Create Date range aligned to month that includes dt. Inclusive.
-            int y = dt.Year;
-            int m = dt.Month;   // 1 based. MonthId
-            int daysInMonth = DateTime.DaysInMonth(y, m);
-            Start = new DateTime(y, m, 1);
-            End = new DateTime(y, m, daysInMonth);
+            SetDatesForMonth(dt.Year, dt.Month);   // 1 based. MonthId
         }
 
-        public static DateRange GetMonth(DateTime dt)
+        public void SetDatesForQuarter(int year, int month)
         {
-            // Get a month range.
-            // same as SetDatesForMonth
-            int y = dt.Year;
-            int m = dt.Month;   // 1 based. MonthId
-            int daysInMonth = DateTime.DaysInMonth(y, m);
-            return new DateRange(new DateTime(y, m, 1),
-                new DateTime(y, m, daysInMonth));
+            // Set date range aligned to quarter. inclusive.
+            // month = 1 based. MonthId
+            int q = (month - 1) / 3;  // quarter 0 based. 0 to 3
+            Start = new DateTime(year, (q * 3) + 1, 1);
+            End = Start.AddMonths(3);
         }
 
         public void SetDatesForQuarter(DateTime dt)
         {
-            // Set date range aligned to quarter.
-            int y = dt.Year;
-            int m = dt.Month;    // 1 based. MonthId
-            int q = (m - 1) / 3;  // quarter 0 based. 0 to 3
-            Start = new DateTime(y, (q * 3) + 1, 1);
-            End = Start.AddMonths(3).AddDays(-1);
+            // Set date range aligned to quarter.  inclusive.
+            SetDatesForQuarter(dt.Year, dt.Month);    // 1 based. MonthId
         }
 
+        public void SetDatesForYear(int year)
+        {
+            // Create date range aligned to year. inclusive.
+            Start = new DateTime(year, 1, 1);
+            End = new DateTime(year, 12, 31);
+        }
         public void SetDatesForYear(DateTime dt)
         {
-            // Create range aligned to year.
-            Start = new DateTime(dt.Year, 1, 1);
-            End = new DateTime(dt.Year, 12, 31);
+            SetDatesForYear(dt.Year);
+        }
+
+        public static readonly string[] _Units = { // for TimeUnitId
+            null, null,     // once
+            "milliseconds", "every millisecond",
+            "seconds", "every second",
+            "minutes", "every minute",
+            "hours", "hourly",
+            "days", "daily",
+            "weeks", "weekly",
+            "months", "monthly",
+            "quarters", "quarterly",
+            "years", "yearly",
+        };
+
+        public static string GetRecurStr(DateTime start, TimeUnitId unitId, int interval = 1, DaysOfWeek dowBits = DaysOfWeek.Any)
+        {
+            // Describe the recurrence pattern. scheduled recurrence rules.
+            // Ignore that start may be in the future.
+
+            if (DateUtil.IsExtremeDate(start))
+                return "Never";
+
+            if (unitId <= TimeUnitId.None || unitId > TimeUnitId.Years)    // does not repeat.
+            {
+                // "Once at " + date time
+                return start.ToString();
+            }
+
+            if (interval <= 0)
+                interval = 1;
+
+            var sb = new StringBuilder();
+            int uniti = (int)unitId;
+            sb.Append(interval > 1 ? $"Every {interval} {_Units[uniti * 2]}" : _Units[(uniti * 2) + 1]);
+
+            switch (unitId)
+            {
+                case TimeUnitId.MilliSec:   // fractional seconds.
+                case TimeUnitId.Seconds:
+                case TimeUnitId.Minutes:
+                    return sb.ToString();   // done. // Say no more.
+
+                case TimeUnitId.Hours:
+                    if (start.Minute > 0)
+                    {
+                        sb.Append($" at {start.Minute} minutes past");    // minutes into the hour.
+                    }
+                    return sb.ToString();   // done.
+
+                case TimeUnitId.Days:     // daily. can use bitmask of days of the week.
+                    if (dowBits != 0 && dowBits != DaysOfWeek.Any)
+                    {
+                        // Only on specific days of the week.
+                        if (interval == 1)
+                        {
+                            sb.Clear();
+                            sb.Append("Every ");
+                        }
+                        else
+                        {
+                            sb.Append(" if ");
+                        }
+                        int dowBit = 1;
+                        bool hasBit = false;
+                        for (int i = 0; i < 7; i++, dowBit <<= 1)
+                        {
+                            if ((((int)dowBits) & dowBit) != 0)
+                            {
+                                if (hasBit)
+                                    sb.Append(",");
+                                sb.Append(((System.DayOfWeek)i).ToString());
+                                hasBit = true;
+                            }
+                        }
+                    }
+                    break;
+
+                case TimeUnitId.Weeks:     // a single day of the week.
+                    if (interval == 1)
+                    {
+                        sb.Clear();
+                        sb.Append($"Every {start.DayOfWeek.ToString()}");
+                        break;
+                    }
+                    sb.Append($"on {start.DayOfWeek.ToString()}");
+                    break;
+
+                // Approximate unit times.
+                case TimeUnitId.Months:        // On same day of month.
+                    if (interval == 1)
+                    {
+                        sb.Clear();
+                        sb.Append($"Every {Formatter.ToOrdinal(start.Day)} of the month");
+                        break;
+                    }
+                    sb.Append($" on {Formatter.ToOrdinal(start.Day)} of the month");
+                    break;
+
+                case TimeUnitId.Quarters:
+                    // Name the months ?? Jan, Apr, Jul, Oct
+                    sb.Append($" on {Formatter.ToOrdinal(start.Day)} of the month");
+                    break;
+
+                case TimeUnitId.Years:
+                    sb.Append($" on {start.ToString("MMM", CultureInfo.InvariantCulture)} {start.Day:D2}");
+                    break;
+
+                default:
+                    return "?"; // not valid for TimeUnitId
+            }
+
+            sb.Append($" at {start.Hour:D2}:{start.Minute:D2}");    // at hr:minutes into the day.
+            return sb.ToString();
+        }
+
+        public static readonly int[] _TimeUnits = { // for TimeUnitId
+            0,
+            1,  // mSec
+            1000,       // Sec
+            60*1000,        // Minute
+            60*60*1000,         // Hour
+            24*60*60*1000,      // Day
+            7*24*60*60*1000,    // TimeUnitId.Weeks
+            1,  // TimeUnitId.Months
+            3,  // Quarter
+            12, // Years
+        };
+        
+        public static bool IsDowSet(DaysOfWeek dowBits, DayOfWeek dayOfWeek)
+        {
+            // Is a DayOfWeek in the DaysOfWeek mask?
+            return (((int)dowBits) & (1 << ((int)dayOfWeek))) != 0;
+        }
+
+        public static DateTime GetNextRecur(DateTime now, DateTime start, TimeUnitId unitId, int interval = 1, DaysOfWeek dowBits = DaysOfWeek.Any)
+        {
+            // Get the next date / time in the sequence after now.
+            // start = anchor date. Was the last official time. for calculation of relative times, time of day, etc. kExtremeMax = never before
+            // interval = quantity of TimeUnitId
+            // dowBits = only on these days of the week.
+            // RETURN: kExtremeMax = never again.
+            // ASSUME times are GMT and have no DST weirdness.
+
+            if (DateUtil.IsExtremeDate(start))
+                return DateUtil.kExtremeMax;        // never
+            if (now < start)    // not until start date.
+                return start;
+
+            if (unitId <= TimeUnitId.None || unitId > TimeUnitId.Years)    // does not repeat.
+            {
+                return (now <= start) ? start : DateUtil.kExtremeMax;
+            }
+
+            if (interval <= 0)
+                interval = 1;
+
+            DateTime dtNext;
+
+            int timeUnits = _TimeUnits[(int)unitId];
+
+            if (unitId <= TimeUnitId.Weeks)
+            {
+                // Discreet/Exact time units.
+                long tickDiff = now.Ticks - start.Ticks;
+
+                long intervalUnits = (timeUnits * TimeSpan.TicksPerMillisecond) * interval;
+                long intervalsDiff = tickDiff / intervalUnits;
+
+                int intervalInc = ((tickDiff % intervalUnits) == 0) ? 0 : 1;    // increment?
+
+                dtNext = new DateTime(start.Ticks + ((intervalsDiff + intervalInc) * intervalUnits));
+
+                if (unitId == TimeUnitId.Days)
+                {
+                    // skips days if not on dowMask. if interval is multiple of 7 then this may never satisfy !!
+                    for (int i = 0; true; i++)
+                    {
+                        if (IsDowSet(dowBits, dtNext.DayOfWeek))    // good.
+                            break;
+                        if (i > 7)
+                            return DateUtil.kExtremeMax;        // never
+                        dtNext = dtNext.AddTicks(intervalUnits);
+                    }
+                }
+            }
+            else
+            {
+                // month based time. not exact/Discreet time units.
+                int monthsStart = start.Year * 12 + start.Month;
+                int monthsNow = now.Year * 12 + now.Month;
+                int monthsDiff = monthsNow - monthsStart;
+
+                int intervalUnits = timeUnits * interval;
+                int intervalsDiff = monthsDiff / intervalUnits;
+
+                int intervalInc = ((monthsDiff % intervalUnits) == 0 && start.Day == now.Day && start.TimeOfDay == now.TimeOfDay) ? 0 : 1;  // increment?
+
+                dtNext = start.AddMonths((intervalsDiff + intervalInc) * intervalUnits);
+            }
+
+            return dtNext;
+        }
+
+        public List<DateTime> GetRecursInRange(DateTime start, TimeUnitId unitId, int interval = 1, DaysOfWeek dowBits = DaysOfWeek.Any, int nMax = 128)
+        {
+            // Get list of dates that recur in this range. (inclusive)
+            // interval = quantity of TimeUnitId
+
+            var ret = new List<DateTime>();
+            DateTime now = this.Start;
+            DateTime dtPrev = DateUtil.kExtremeMin;
+
+            while (true)
+            {
+                DateTime dtNext = GetNextRecur(now, start, unitId, interval, dowBits);
+                System.Diagnostics.Debug.Assert(dtPrev != dtNext);
+                if (dtNext.IsExtremeDate() || dtNext > this.End)
+                    return ret;
+                ret.Add(dtNext);
+                if (ret.Count > nMax)    // we exceeded max requested returns?
+                {
+                    return ret;
+                }
+                dtPrev = dtNext;
+                now = dtNext.AddMilliseconds(1);    // next time.
+            }
         }
     }
 }

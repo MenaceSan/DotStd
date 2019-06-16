@@ -39,6 +39,7 @@ namespace DotStd
         }
 
         // Base64 *******************
+        // NOT the same as Base64Url.
 
         static Regex _regexBase64 = null;
         public static bool IsValidBase64(string s)

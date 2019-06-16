@@ -1,20 +1,20 @@
 using System;
-using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
 namespace DotStd
 {
-
+    /// <summary>
+    /// helper for dealing with assemblies.
+    /// </summary>
     public static class AssemblyUtil
     {
-        // helper for dealing with assemblies.
-
+        /// <summary>
+        /// Find assembly if its already loaded. Don't load it.
+        /// </summary>
+        /// <param name="name"> GetName e.g. 'System.Web' ignores version .</param>
         public static Assembly FindLoadedAssembly(string name)
         {
-            // Is this already loaded?
-            // e.g. name = "System.Web". ignores version ?
             // Assembly oAsm = Assembly.Load("System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
 
             Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
@@ -34,9 +34,11 @@ namespace DotStd
             return assembly;
         }
 
+        /// <summary>
+        ///  Get path for the assembly.
+        /// </summary>
         public static string GetAssemblyPath(Assembly assembly)
         {
-            // Get path for the assembly.
             // TODO Q: Is this the same as assembly.Location ??
             assembly = GetAssemblySafe(assembly);
             var uriBuilder = new UriBuilder(assembly.CodeBase);
@@ -52,7 +54,7 @@ namespace DotStd
         public static DateTime GetAssemblyLinkDate(Assembly assembly, TimeZoneInfo target = null)
         {
             // For display of the build date of some Assembly
-            // Get from PE header. 
+            // Get date from PE header. 
             // NOTE: .NET core doesnt use this, so just get file date.
             // https://upload.wikimedia.org/wikipedia/commons/1/1b/Portable_Executable_32_bit_Structure_in_SVG_fixed.svg
 
@@ -66,7 +68,7 @@ namespace DotStd
             var fi = new FileInfo(assembly.Location);
             var buffer = new byte[2048];
 
-            using (FileStream stream = fi.OpenRead()) 
+            using (FileStream stream = fi.OpenRead())
             {
                 stream.Read(buffer, 0, 2048);
 

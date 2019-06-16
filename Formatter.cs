@@ -48,7 +48,7 @@ namespace DotStd
 
         static readonly string[] kSizeSuffixes = { "", "K", "M", "G", "T", "P", "E", "Z", "Y" };
 
-        public static string ToSizeStr(long value, int decimalPlaces=1)
+        public static string ToSizeStr(long value, int decimalPlaces = 1)
         {
             // To metric quantity of bytes, meters or something else.
             if (value == 0) { return "0"; }
@@ -220,11 +220,13 @@ namespace DotStd
 
         public static string ReplaceTokenX(string body, IPropertyGetter props, string errorStr = null)
         {
-            // Replace a set of possible tokens from IPropertyGetter
+            // Replace a set of possible {{tokens}} from IPropertyGetter
 
             var sb = new StringBuilder();
             int i0 = 0;
             int i = 0;
+            bool ifTrue = true;     // part of some {{if(x)}} block ?
+
             while (true)
             {
                 int b1 = body.IndexOf(kBlockStart, i);
@@ -238,18 +240,37 @@ namespace DotStd
                 int b2 = n2 + kBlockEnd.Length;
                 i = b2;
 
-                string name = body.Substring(n1, n2 - n1);
-                object val = props.GetPropertyValue(name);
-                if (val == null)
+                string name = body.Substring(n1, n2 - n1);          // get the token.
+                if (name.StartsWith("if(") && name.EndsWith(")"))     // {{if(xxx)}}
                 {
-                    if (errorStr == null) // just leave errors.
-                        continue;
-                    val = errorStr;   // replace error with something.
+                    // special token is used to switch lines.
+                    name = name.Substring(3, name.Length - 4).Trim();
+                    ifTrue = Converter.ToBool(props.GetPropertyValue(name));
+                }
+                else if (name == "else")
+                {
+                    ifTrue = !ifTrue;
+                }
+                else if (name == "endif")
+                {
+                    ifTrue = true;
                 }
 
-                // replace text
-                sb.Append(body.Substring(i0, b1 - i0));
-                sb.Append(val.ToString());
+                if (ifTrue)
+                {
+                    object val = props.GetPropertyValue(name);
+                    if (val == null)
+                    {
+                        if (errorStr == null) // just leave errors.
+                            continue;
+                        val = errorStr;   // replace error with something.
+                    }
+
+                    // replace text
+                    sb.Append(body.Substring(i0, b1 - i0));
+                    sb.Append(val.ToString());
+                }
+
                 i0 = b2;
             }
 

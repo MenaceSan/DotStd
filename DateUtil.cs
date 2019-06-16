@@ -2,50 +2,12 @@
 
 namespace DotStd
 {
-    public enum TimeUnitId : byte
-    {
-        // Time unit type. 
-        // Schedule can recur every Nth recurring (Interval) time unit.
-        // used by schedule.RecurTypeId
-        // used by app_job.RecurTypeId
-        // used by agency_sub_type.RecurTypeId
-
-        None = 0,       // just once. never again
-
-        MilliSec = 1,   // fractional seconds.
-        Seconds = 2,    // 
-        Minutes = 3,
-        Hours = 4,
-
-        Days = 5,      // Every day or every other day for time period.
-        Weeks = 6,     // can use bitmask of days of the week.
-
-        // Approximate unit times.
-        Months,        // On same day of month.
-        Quarters,
-        Years,         // do this once per year. on same day of year.
-    }
-
-    [Flags]
-    public enum DaysOfWeek : byte
-    {
-        // Bitmask of days of week.
-        // 0 = none.
-        Sunday = (1 << (int)System.DayOfWeek.Sunday),
-        Monday = (1 << (int)System.DayOfWeek.Monday),
-        Tuesday = (1 << (int)System.DayOfWeek.Tuesday),
-        Wednesday = (1 << (int)System.DayOfWeek.Wednesday),
-        Thursday = (1 << (int)System.DayOfWeek.Thursday),
-        Friday = (1 << (int)System.DayOfWeek.Friday),
-        Saturday = (1 << (int)System.DayOfWeek.Saturday),
-        Any = 127,
-    }
-
     public enum MonthId : byte
     {
         // Month of the year.
-        // Oddly .NET System doesn't have this.
+        // Oddly .NET System doesn't define months.
         // like Microsoft.VisualBasic.MonthName
+        // Use cultural description from DateTime.ToString("MMM", CultureInfo.InvariantCulture)
 
         January = 1,
         February = 2,
@@ -63,7 +25,7 @@ namespace DotStd
 
     public static class DateUtil
     {
-        // Util for date and time.
+        // Utility for date and time.
         // System.DayOfWeek (same as Javascript) = Sunday is 0, Monday is 1,
         // NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
 
@@ -75,7 +37,7 @@ namespace DotStd
         public const int kHoursInWeek = 168;        // (7*24)
         public const int kMinutesInDay = 3600;      // 24*60 // Modulus for day time.
 
-        public const string kShortDate = "yyyy-dd-MM";  // default short data format. Similar to ToShortDateString() or ToString("d")
+        public const string kShortDate = "yyyy-dd-MM";  // default short data format. Similar to ToShortDateString() or ToString("d") (cultural)
 
         public static bool IsExtremeDate(DateTime dt)
         {
@@ -92,77 +54,16 @@ namespace DotStd
 
         public static double ToJavaTime(DateTime dt)
         {
-            // JavaScript time stamp is milliseconds past epoch
+            // JavaScript time stamp is milliseconds past kUnixEpoch
             if (IsExtremeDate(dt))
                 return 0;
             return (dt - kUnixEpoch).TotalMilliseconds;
         }
         public static DateTime FromJavaTime(double javaTimeStamp)
         {
-            // JavaScript time stamp is milliseconds past epoch
+            // JavaScript time stamp is milliseconds past epoch. NOT seconds like Unix time.
+            // Return UTC time.
             return kUnixEpoch.AddMilliseconds(javaTimeStamp);
-        }
-
-        public static bool IsRecurTime(DateTime dt, DateTime start, TimeUnitId unitId, int interval, DaysOfWeek dowBits)
-        {
-            // Is dt a DateTime that will recur on this schedule ?
-
-            if (interval <= 0)
-                interval = 1;
-
-            int intervalsDiff;  // quantity of TimeUnitId
-            bool isTime;
-
-            switch (unitId)
-            {
-                case TimeUnitId.None:     // does not repeat.
-                    intervalsDiff = 0; // ignored
-                    isTime = (dt.Date == start.Date);     // 1 time only
-                    break;
-                case TimeUnitId.Days:
-                    intervalsDiff = (dt - start).Days;  // how many days have passed since start?
-                    isTime = true;   // just test interval. its in range.
-                    break;
-                case TimeUnitId.Weeks:        
-                    intervalsDiff = (dt - start).Days / 7;  // how many weeks have passed since start? 
-                    isTime = (((int)dowBits) & ((int)dt.DayOfWeek)) != 0;
-                    break;
-                case TimeUnitId.Months:
-                    intervalsDiff = (dt.Month * dt.Year) - (start.Month * start.Year);    // how many months have passed since start?
-                    isTime = (dt.Day == start.Day);   // same day of month
-                    break;
-
-                case TimeUnitId.Quarters:
-                case TimeUnitId.Years:
-
-                default:
-                    return false;
-            }
-
-            if (!isTime)
-                return false;
-            if ((intervalsDiff % interval) != 0)
-                return false;
-
-            return true;
-        }
-
-        public static DateTime? GetNextRecur(DateTime? dt, TimeUnitId unitId, int interval, DaysOfWeek dowBits)
-        {
-            // Get the next date / time in the sequence.
-            // dt = anchor date. Was the last official time. for calculation of relative times. null = never before
-            // dowBits = only on these days of the week.
-
-            if (interval <= 0)
-                interval = 1;
-
-            DateTime now = DateTime.UtcNow;
-            if (dt == null || dt > now)
-            {
-                dt = now;
-            }
-
-            return dt;
         }
 
         public static string TimeSpanStr(TimeSpan ts)
@@ -241,6 +142,7 @@ namespace DotStd
         public static DayOfWeek ModDOW(DayOfWeek dow)
         {
             // modulus/wrap to force into valid range. 0 to 6 day of week.
+
             int d = (int)dow;
             if (d > 6)
             {

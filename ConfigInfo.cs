@@ -105,7 +105,7 @@ namespace DotStd
             // Configure a service by its interface .
             // ILogger is special.
             int hashCode = typeof(T).GetHashCode();
-            Services.Add(hashCode, service);
+            Services[hashCode] = service;
         }
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
@@ -114,6 +114,8 @@ namespace DotStd
         {
             // Prefix match ConfigMode.
             // match ConfigMode but allow extension. e.g. Dev1 is the same as Dev
+            if (ConfigMode == null)
+                return false;
             return ConfigMode.ToUpper().StartsWith(configMode.ToString());
         }
         public bool isConfigMode(string configMode)
@@ -145,7 +147,7 @@ namespace DotStd
             return o?.ToString();
         }
 
-        public ConfigInfoBase(IPropertyGetter configSource, string connectionStringName=null)
+        public ConfigInfoBase(IPropertyGetter configSource, string connectionStringName = null)
         {
             // Assign my config source. (file?)
             _ConfigSource = configSource;

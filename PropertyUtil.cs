@@ -250,12 +250,14 @@ namespace DotStd
             {
                 if (!propTo.CanWrite)
                     continue;
-                object val = from.GetPropertyValue(string.Concat(from_prefix, propTo.Name));    // has a matching prop?
-                if (val != null)
-                {
-                    propTo.SetValue(toObj, Converter.ChangeType(val, propTo.PropertyType), null); // ChangeType probably not needed?
-                    propsCopied++;
-                }
+                object valFrom = from.GetPropertyValue(string.Concat(from_prefix, propTo.Name));    // has a matching prop?
+                if (valFrom == null)
+                    continue;
+
+                object valTo = Converter.ChangeType(valFrom, propTo.PropertyType);
+
+                propTo.SetValue(toObj, valTo, null); // ChangeType probably not needed?
+                propsCopied++;
             }
             return propsCopied;
         }

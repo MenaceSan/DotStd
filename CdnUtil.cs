@@ -36,6 +36,10 @@ namespace DotStd
         public const string kMin = ".min.";     // is minified version ?
         public const string kMin2 = "-min.";    // alternate minified style.
 
+        // should i use a CDN at all ?
+        // can be used with <environment include="Development">
+        public static bool UseCdn { get; set; } = true;
+
         public static string GetNonMin(string n)
         {
             // Try to find the NON-minified version of the file. If it has one.
@@ -184,25 +188,18 @@ namespace DotStd
             return downloadCount;
         }
 
-        public static void AddCdnHost(string h, bool enable=true)
+        public static void AddCdnHost(string h, bool enable = true)
         {
             // Add a CDN host that i might optionally use.
 
         }
 
-        public static bool UseCdn()
-        {
-            // should i use a Cdn at all ?
-            // Similar to <environment include="Development">
-            return !ConfigApp.ConfigInfo.isConfigModeLike(DotStd.ConfigMode.DEV);
-        }
-
-        public static bool UseCdn(string relUrl)
+        public static bool UseCdnProvider(string relUrl)
         {
             // Use a particular Cdn server ?
-            // This may be used to check for enablement of any external service API. Google Maps, etc.
+            // This may be used to check for enable of external service API. Google Maps, etc.
 
-            if (!UseCdn())
+            if (!UseCdn)
                 return false;
 
             return true;
@@ -215,7 +212,7 @@ namespace DotStd
             // e.g. <script src='xxx'></script>
             // Use minified versions?
 
-            return null;
+            return n;
         }
 
         public static string GetCss(string n)
@@ -224,7 +221,7 @@ namespace DotStd
             // e.g. <link rel='stylesheet' href='xxx' />
             // If Cdn is enabled get it from there else get it from the local fallback/backup/failover.
 
-            return null;
+            return n;
         }
     }
 }

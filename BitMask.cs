@@ -13,6 +13,11 @@ namespace DotStd
 
         protected byte[] _binary;    // The raw bytes of the bitmap of unlimited length.
 
+        public BitMask(byte[] binary)
+        {
+            _binary = binary;   // clone it ?
+        }
+
         public BitMask(string base64String)
         {
             // init via Base64 string
@@ -95,7 +100,7 @@ namespace DotStd
             else if (bytePos >= _binary.Length)
             {
                 // Auto grow. If bitPos length is greater then the max length .  
-                var binary2 = new byte[bytePos+1];
+                var binary2 = new byte[bytePos + 1];
                 Buffer.BlockCopy(_binary, 0, binary2, 0, _binary.Length);
                 _binary = binary2;
             }
@@ -140,7 +145,7 @@ namespace DotStd
             //  else if the value is 1 return true. //User has rights to use the module
             return (result & 1) != 0; // to bool
         }
-         
+
         public override string ToString()
         {
             // Get Base64 string.

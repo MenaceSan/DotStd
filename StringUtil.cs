@@ -24,28 +24,30 @@ namespace DotStd
             return ifFalse;
         }
 
-        public static bool IsDigit(char ch)
+        public static bool IsDigit1(char ch)
         {
-            // is this char a number? 
-            // Regex regexDigit = new Regex("[^0-9]");
+            // is this char a basic number? like Regex regexDigit = new Regex("[^0-9]");
+            // NOT extended ascii, 1/2 etc.
 #if false   // false true 
             return ch >= '0' && ch <= '9';
 #else
             return char.IsDigit(ch);   // NOT char.IsNumber
 #endif
         }
-        public static bool IsUpper(char ch)
+        public static bool IsUpper1(char ch)
         {
-            // new Regex("[^A-Z]");
+            // is this char basic upper case? like new Regex("[^A-Z]");
+            // NOT extended ascii. Latin only.
 #if true   // false true 
             return (ch >= 'A' && ch <= 'Z');
 #else
             return char.IsUpper(ch);
 #endif
         }
-        public static bool IsLower(char ch)
+        public static bool IsLower1(char ch)
         {
-            // new Regex("[^a-z]");
+            // is this char basic lower case? like new Regex("[^a-z]");
+            // NOT extended ascii. Latin only.
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z');
 #else
@@ -53,8 +55,9 @@ namespace DotStd
 #endif
         }
 
-        public static bool IsAlpha(char ch)
+        public static bool IsAlpha1(char ch)
         {
+            // NOT extended ascii. Latin only.
             // new Regex("[^a-zA-Z]");
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
@@ -63,11 +66,12 @@ namespace DotStd
 #endif
         }
 
-        public static bool IsAlphaNumeric(char ch)
+        public static bool IsAlphaNumeric1(char ch)
         {
+            // NOT extended ascii. Latin only.
             // Regex("[^a-zA-Z0-9]")
 #if true   // false true 
-            return IsAlpha(ch) || IsDigit(ch);
+            return IsAlpha1(ch) || IsDigit1(ch);
 #else
             return char.IsLetterOrDigit(ch);
 #endif
@@ -75,30 +79,35 @@ namespace DotStd
 
         public static bool HasUpperCase(string str)
         {
+            // IsUpper for extended ascii 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsUpper(c));
         }
         public static bool HasLowerCase(string str)
         {
+            // IsLower for extended ascii 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsLower(c));
         }
 
         public static bool HasNumber(string str)
         {
+            // allow extended IsNumber for 1/2 etc
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsNumber(c));
         }
 
-        public static bool IsNumeric(string str)
+        public static bool IsNumeric1(string str)
         {
             // Does this string contain a simple integer number? no - or . 
+            // NOT extended IsNumber 1/2
             if (string.IsNullOrWhiteSpace(str))
                 return false;
-            return str.All(c => IsDigit(c));
+            return str.All(c => IsDigit1(c));
         }
 
         static Regex _regexNum2 = null;
         public static bool IsNumeric2(string str)
         {
             // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
+            // NOT extended IsNumber 1/2
             if (string.IsNullOrWhiteSpace(str))
                 return false;
             if (_regexNum2 == null)
@@ -108,19 +117,23 @@ namespace DotStd
             return !_regexNum2.IsMatch(str);
         }
 
-        public static bool IsAlphaNumeric(string str)
+        public static bool IsAlphaNumeric1(string str)
         {
             // _regexAlNum = new Regex("[^a-zA-Z0-9]");
+            // NOT extended ascii. Latin only.
+
             if (string.IsNullOrWhiteSpace(str))
                 return false;
-            return str.All(c => IsAlphaNumeric(c));
+            return str.All(c => IsAlphaNumeric1(c));
         }
 
         public static string GetNumericOnly(string sValue, bool bStopOnNonNumeric = false)
         {
             // filter out all non numeric chars. For telephone numbers?
+            // NOT extended ascii. Latin only.
             // AKA ToNumStr
             // return System.Text.RegularExpressions.Regex.Replace(sValue,"[^\d]", ""); or Regex.Replace(sValue, "[^0-9]", "")
+
             if (sValue == null)
                 return null;
             if (string.IsNullOrWhiteSpace(sValue))
@@ -130,7 +143,7 @@ namespace DotStd
             for (int i = 0; i < nLen; i++)
             {
                 char ch = sValue[i];
-                if (IsDigit(ch))
+                if (IsDigit1(ch))
                 {
                     sb.Append(ch);
                 }
@@ -143,6 +156,7 @@ namespace DotStd
         public static string GetAlphaNumericOnly(string sValue)
         {
             // filter out all non alpha numeric chars.
+            // NOT extended ascii. Latin only.
             // For comparing DLNum etc.
             // System.Text.RegularExpressions.Regex.Replace(sDL, "[^A-Za-z0-9]", "")
             // AKA ToAlNum
@@ -158,6 +172,36 @@ namespace DotStd
             if (s == null)
                 return s;
             return s.Trim();
+        }
+
+        public static int CompareSub(string s, int i, string sub, int len)
+        {
+            for (int j = 0; j < len; j++)
+            {
+                char ch1 = s[i + j];
+                char ch2 = sub[j];
+                if (ch1 != ch2)
+                {
+                    return ch1 - ch2;
+                }
+            }
+            return 0;
+        }
+
+        public static int CountSub(string s, string sub)
+        {
+            // count occurrences of sub in s.
+            int lenSub = sub.Length;
+            if (lenSub <= 0)
+                return 0;
+            int count = 0;
+            int len = s.Length - lenSub;
+            for (int i = 0; i <= len; i++)
+            {
+                if (CompareSub(s, i, sub, lenSub) == 0)
+                    count++;
+            }
+            return count;
         }
 
         public static string SubSafe(string s, int i, int lenTake = short.MaxValue)
@@ -251,13 +295,14 @@ namespace DotStd
             // make sure the first letter is lower case char. JavaScript names like this?
             if (string.IsNullOrEmpty(s))
                 return s;
-            if (!IsUpper(s[0]))
+            if (!IsUpper1(s[0]))
                 return s;
             return char.ToLower(s[0]) + s.Substring(1);
         }
-        
+
         public static string Initials(string nameString)
         {
+            // Make a name into initials.
             var initials = new Regex(@"(\b[a-zA-Z])[a-zA-Z]* ?");
             return initials.Replace(nameString, "$1");
         }

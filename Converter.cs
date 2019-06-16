@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace DotStd
 {
@@ -320,12 +323,18 @@ namespace DotStd
               t.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
         }
 
+        static object GetSingle(IEnumerable a)
+        {
+            var a2 = a.Cast<object>();
+            if (a2 == null || a2.Count() != 1)
+                return null;
+            return a2.Single();
+        }
+
         /// <remarks>
         /// This method exists as a workaround to System.Convert.ChangeType(Object, Type) which does not handle
         /// nullables as of version 2.0 (2.0.50727.42) of the .NET Framework.
-        /// Delete this when Convert.ChangeType is updated in a future .NET Framework to handle nullable types.
-        /// Behave as closely to Convert.ChangeType as possible.
-        /// This method was written by Peter Johnson at: http://aspalliance.com/author.aspx?uId=1026.
+        /// Try to be much more forgiving than Convert.ChangeType for enums, bool and int.
         /// </remarks>
         public static object ChangeType(object value, Type convertToType)
         {
@@ -335,6 +344,21 @@ namespace DotStd
             ValidState.ThrowIfNull(convertToType, nameof(convertToType));
             if (ValidState.IsNull(value))  // NULL or DBNull is always null.
                 return null;
+
+            // Array of a single value can act like the single value for my purposes.  
+            Type convertFromType = value.GetType();
+            TypeCode typeCodeFrom = Type.GetTypeCode(convertFromType);
+
+            if (typeCodeFrom == TypeCode.Object)    // NOT string. for 'StringValues'
+            {
+                IEnumerable array = value as IEnumerable;
+                if (array != null)
+                {
+                    value = GetSingle(array);
+                    if (value == null)  // Cant handle this.
+                        return null;
+                }
+            }
 
             // If it's not a nullable type, just pass through the parameters to Convert.ChangeType
             if (IsNullableType(convertToType))
@@ -358,9 +382,13 @@ namespace DotStd
             {
                 return ToBool(value);
             }
+            if (convertToType == typeof(int))
+            {
+                return ToInt(value);
+            }
             if (convertToType == typeof(string))
             {
-                return value.ToString();
+                return value.ToString();        // anything can be a string.
             }
 
             // Now that we've guaranteed conversionType is something Convert.ChangeType can handle (i.e. not a
