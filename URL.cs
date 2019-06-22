@@ -49,7 +49,7 @@ namespace DotStd
         static Regex _regexURL = null;
         public static bool IsValidURL(string url)
         {
-            // Stricter version of URL
+            // Stricter version of URL validation
             if (string.IsNullOrWhiteSpace(url))
                 return false;
             if (_regexURL == null)

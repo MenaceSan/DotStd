@@ -40,7 +40,7 @@ namespace DotStd
         GIF = 10,
         [Description(@"image/bmp")]
         BMP = 11,
-        [Description(@"image/x-ico")]
+        [Description(@"image/x-icon")]
         ICO = 12,
 
         [Description(@"text/csv")]

@@ -168,7 +168,7 @@ namespace DotStd
 
             // var host = Dns.GetHostEntry(Dns.GetHostName());
 
-            // Try to weed out any VistualBox or VPN adapters.
+            // Try to weed out any VirtualBox or VPN adapters.
             try
             {
                 using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))

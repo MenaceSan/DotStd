@@ -7,6 +7,7 @@ namespace DotStd
     public interface IValidatorT<T>
     {
         // This class is used to validate some other type. AKA Validator
+        // Should we just use Func<T, bool> ??
         // Filter for valid strings/objects?
         // like System.Web.UI.IValidator
 

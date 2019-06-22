@@ -7,7 +7,7 @@ namespace DotStd
     {
         // For the change audits.
         Error = -1,
-        None = 0,   // no changes.
+        None = 0,   // no changes. Just View ?
         Modify = 1,
         Add = 2,
         Delete = 3,

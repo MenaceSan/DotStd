@@ -13,20 +13,24 @@ namespace DotStd
     {
         public const string kSep = "."; // name separator for grouping. similar to unsupported 'regions'
 
+        public static string MakeKeyArgs(params object[] argsList)
+        {
+            // composite args for the key.
+            string keyArgs = string.Join(kSep, argsList);
+            if (keyArgs.Length > 16)    // Just hash it if it seems too large. DANGER ??
+                keyArgs = keyArgs.GetHashCode().ToString();
+            return keyArgs;
+        }
+
         /// <summary>
         /// Helper to make a cache key.
         /// </summary>
         /// <param name="list">operation name followed by arguments to make it unique.</param>
         /// <returns>A string represents the query</returns>
-        public static string MakeKey(string type, params string[] argsList)
+        public static string MakeKey(string type, params object[] argsList)
         {
             // build the string representation of some expression for the cache key. (AKA cacheKey)
-
-            string KeyArgs = string.Join(kSep, argsList);
-            if (KeyArgs.Length > 16)    // Just hash it if it seems too large. DANGER ??
-                KeyArgs = KeyArgs.GetHashCode().ToString();
-
-            return string.Concat(type, kSep, KeyArgs);    // ??? reverse this string to make hash more evenly distributed ?
+            return string.Concat(type, kSep, MakeKeyArgs(argsList));    // ??? reverse this string to make hash more evenly distributed ?
         }
 
         public static void ClearObj(string cacheKey)
@@ -110,12 +114,12 @@ namespace DotStd
             return Get(id.ToString());
         }
 
-        public static void Set(string id, T obj, int decaysec)
+        public static void Set(string id, T obj, int decaysec = 60)
         {
             string cacheKey = MakeKey(id);
             CacheData.Set(cacheKey, obj, decaysec);
         }
-        public static void Set(int id, T obj, int decaysec)
+        public static void Set(int id, T obj, int decaysec = 60)
         {
             Set(id.ToString(), obj, decaysec);
         }

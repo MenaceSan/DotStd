@@ -271,11 +271,11 @@ namespace DotStd
         public static string GetTimeStr(int minutes, bool ampm = false, bool space = true)
         {
             // Convert (0 based) minutes in the day to a military (or AMPM) time string.
-            // DateUtil.kMinutesInDay
+            // if (minutes > DateUtil.kMinutesInDay) then just wrap.
 
             if (minutes < 0)
                 return null;
-            int hours = minutes / 60;
+            int hours = (minutes / 60) % 24;
             minutes %= 60;
             if (ampm)
             {
@@ -290,6 +290,11 @@ namespace DotStd
                 // ignore hours > 24? or hours %= 24;
                 return string.Format("{0:D2}:{1:D2}", hours, minutes);
             }
+        }
+
+        public static string GetTimeStr(TimeSpan ts, bool ampm = false, bool space = true)
+        {
+            return GetTimeStr((int)ts.TotalMinutes, ampm, space);
         }
     }
 }

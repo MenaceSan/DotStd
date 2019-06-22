@@ -12,13 +12,15 @@ namespace DotStd
     {
         // Get a property that may be stored in many different ways.
         // e.g. Properties can be stored via object reflection, Dictionary, DataTable
-        // children are expressed via parent:child
+        // children names can be expressed via "parent:child" syntax
 
         object GetPropertyValue(string name);
     }
 
     public interface IPropertySetter
     {
+        // like IDynamicMetaObjectProvider, DynamicObject, ExpandoObject, etc.
+
         void SetPropertyValue(string name, object val);
     }
 
@@ -187,7 +189,7 @@ namespace DotStd
 
         public static object GetPropertyValue(object fromObj, string name)
         {
-            // Get 1 single prop value
+            // Get 1 single prop value via reflection.
             if (fromObj == null)
                 return null;
             Type fromType = fromObj.GetType();
@@ -199,7 +201,7 @@ namespace DotStd
 
         public static void SetPropertyValue(object toObj, string name, object value)
         {
-            // Set 1 single prop value
+            // Set 1 single prop value via reflection.
             if (toObj == null)
                 return;
             Type toType = toObj.GetType();

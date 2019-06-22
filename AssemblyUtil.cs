@@ -29,7 +29,7 @@ namespace DotStd
 
         public static Assembly GetAssemblySafe(Assembly assembly = null)
         {
-            if (assembly == null)
+            if (assembly == null)   // default to current assembly
                 assembly = System.Reflection.Assembly.GetExecutingAssembly();
             return assembly;
         }
