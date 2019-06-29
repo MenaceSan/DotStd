@@ -1,5 +1,6 @@
 using System;
-using System.Runtime.Caching;           // 4.6 ObjectCache, CacheItemPolicy
+using System.Runtime.Caching;
+// using System.Runtime.Caching;           // 4.6 ObjectCache, CacheItemPolicy
 
 namespace DotStd
 {

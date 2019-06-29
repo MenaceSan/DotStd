@@ -9,7 +9,7 @@ namespace DotStd
         Error = -1,
         None = 0,   // no changes. Just View ?
         Modify = 1,
-        Add = 2,
+        Add = 2,        // new record created. insert.
         Delete = 3,
     };
 

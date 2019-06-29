@@ -184,6 +184,7 @@ namespace DotStd
             }
             _message.Bcc.Add(a);
         }
+
         public void AddBCC(string s)
         {
             if (string.IsNullOrWhiteSpace(s))
@@ -194,6 +195,7 @@ namespace DotStd
                 AddBCC(EmailAddress.GetMailAddress(sMailTo));
             }
         }
+
         public void AddAttachment(Attachment a)
         {
             if (a == null)

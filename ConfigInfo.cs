@@ -57,16 +57,16 @@ namespace DotStd
         // Equiv to IHostingEnvironment.EnvironmentName
         public string ConfigMode { get; protected set; }    // What kAppsConfigMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
-        private IPropertyGetter _ConfigSource { get; set; }     // Get my config info from here.
-        private Dictionary<int, object> Services = new Dictionary<int, object>();
+        private readonly IPropertyGetter _ConfigSource;   // Get my config info from here.
+        private readonly Dictionary<int, object> Services = new Dictionary<int, object>();
 
         public string ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
 
         public object GetService(Type serviceType)  // IServiceProvider
         {
             // implement IServiceProvider
-            object serviceO;
-            if (Services.TryGetValue(serviceType.GetHashCode(), out serviceO))
+          
+            if (Services.TryGetValue(serviceType.GetHashCode(), out object serviceO))
             {
                 return serviceO;
             }
@@ -84,9 +84,8 @@ namespace DotStd
         {
             // My service locater. Like IServiceCollection.
             // e.g. ConfigApp.ConfigInfo.GetService<ILogger>()
-
-            object serviceO;
-            if (Services.TryGetValue(typeof(T).GetHashCode(), out serviceO))
+ 
+            if (Services.TryGetValue(typeof(T).GetHashCode(), out object serviceO))
             {
                 return (T)serviceO;
             }
@@ -97,7 +96,7 @@ namespace DotStd
                 SetService(serviceL);
                 return (T)serviceL;
             }
-            return default(T);
+            return default;
         }
 
         public void SetService<T>(T service) where T : class
@@ -110,7 +109,7 @@ namespace DotStd
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
 
-        public bool isConfigModeLike(ConfigMode configMode)
+        public bool IsConfigModeLike(ConfigMode configMode)
         {
             // Prefix match ConfigMode.
             // match ConfigMode but allow extension. e.g. Dev1 is the same as Dev
@@ -118,19 +117,19 @@ namespace DotStd
                 return false;
             return ConfigMode.ToUpper().StartsWith(configMode.ToString());
         }
-        public bool isConfigMode(string configMode)
+        public bool IsConfigMode(string configMode)
         {
             // Exact match ConfigMode
             return String.Compare(ConfigMode, configMode, StringComparison.OrdinalIgnoreCase) == 0;
         }
-        public bool isConfigMode(ConfigMode configMode)
+        public bool IsConfigMode(ConfigMode configMode)
         {
             // Exact match ConfigMode
-            return isConfigMode(configMode.ToString());
+            return IsConfigMode(configMode.ToString());
         }
-        public bool isConfigModeProd()
+        public bool IsConfigModeProd()
         {
-            return isConfigMode(DotStd.ConfigMode.PROD);
+            return IsConfigMode(DotStd.ConfigMode.PROD);
         }
 
         public virtual object GetPropertyValue(string name)
