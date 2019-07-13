@@ -5,12 +5,13 @@ namespace DotStd
 {
     public enum ChangeType
     {
+        // What type of access/change was this ?
         // For the change audits.
         Error = -1,
-        None = 0,   // no changes. Just View ?
-        Modify = 1,
-        Add = 2,        // new record created. insert.
-        Delete = 3,
+        None = 0,       // no changes. Just a view of this data. for HIPAA audit trail.
+        Modify = 1,     // Made a change to some field(s) in this record. AKA Change/Edit/Update
+        Add = 2,        // new record created. AKA Insert.
+        Delete = 3, 
     };
 
     [Serializable()]

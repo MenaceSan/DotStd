@@ -11,6 +11,8 @@ namespace DotStd
         // SQL features specific to MySql.
         // MySQL DAYOFWEEK() returns the week day number (1 for Sunday,2 for Monday …… 7 for Saturday )
 
+        public const string kDateFormat = "yyyy-MM-dd";     // If we must express a date as a string for database purposes, format it like this. Try NOT to use this. use DateTime instead.
+
         public static string GetDeleteSelectSQL(string table, string select, bool safe)
         {
             var sb = new StringBuilder();

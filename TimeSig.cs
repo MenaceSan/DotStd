@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DotStd
 {
@@ -18,9 +16,11 @@ namespace DotStd
     {
         public DateTime Time;   // the time Payload was signed. UTC.
         public byte[] Sig;     // The signature made with some external private key for Payload
+        // SigType ??   // What algorithms are used for Sig ? What public key ?
 
         public bool IsValid(byte[] publicKey)
         {
+            // Test if Sig and Time is valid for Payload.
             // Was this valid ?
             // TODO
             return false;

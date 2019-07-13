@@ -215,6 +215,7 @@ namespace DotStd
             // Inject all properties that match. (not fields or events) like IPropertySetter
             // fromObj is some type derived from T. may have many more props but we will ignore them. Only use T Props
             // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
+            // RETURN: propsCopiedfs. Caller should throw if this is not the correct number !
 
             if (fromObj == null)
                 return 0;

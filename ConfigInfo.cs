@@ -43,7 +43,7 @@ namespace DotStd
     public class ConfigInfoBase : IPropertyGetter, IServiceProvider
     {
         // Common config files stuff. Regardless of where the config info comes from.
-        // _ConfigSource Might be .NET core JSON or framework XML.
+        // abstracted _ConfigSource Might be .NET core JSON or framework XML.
         // Similar to IConfiguration
 
         public const string kApps = "Apps:";    // AKA appSettings

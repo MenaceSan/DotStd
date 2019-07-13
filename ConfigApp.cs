@@ -13,7 +13,7 @@ namespace DotStd
         public static int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
         public static int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
 
-        public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start.
+        public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start. AKA 'GUIThread'.
         public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;        // Equiv to IsInvokeRequired()
 
         private static string _AppName;
@@ -93,7 +93,7 @@ namespace DotStd
 
         public static string BaseDirectory
         {
-            // What is my install dir? i have resource files here.
+            // What is my install directory? i have resource files here.
             // Maybe Not a web app. don't use HttpContext.Current.Server.MapPath
             // Similar to IHostingEnvironment.ContentRootPath
 

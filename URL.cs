@@ -29,7 +29,7 @@ namespace DotStd
     {
         // Helper for URLs always use "/" as path separators.
         // similar to System.Uri or System.UriBuilder
-        // in Core use: WebUtility.UrlEncode()
+        // in Core use: WebUtility.UrlEncode() (was FormUrlEncodedContent)
 
         public const string kHttps = "https://";
         public const string kHttp = "http://";
@@ -165,7 +165,7 @@ namespace DotStd
                 {
                     sURL = sURL.Substring(sURL.LastIndexOf(kSep) + 1);
                 }
-                i = sURL.IndexOf("?");  // '#'
+                i = sURL.IndexOf("?");  // '#' // chop off args.
                 if (i >= 0)
                 {
                     sURL = sURL.Substring(0, i);
@@ -182,6 +182,7 @@ namespace DotStd
         {
             // build a local URL link with "Query" args. sPage can be empty.
             // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode()
+            // FormUrlEncodedContent already called.
 
             if (sPage == null)
                 sPage = "";

@@ -27,6 +27,7 @@ namespace DotStd
         // NOTE: LastRun can be set into the future to delay start.
         public DateTime LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
 
+        // enum TaskState ??
         public string LastResult { get; set; }      // what happened at/after LastRun? null = never run, "" = success or error description.
         public DateTime LastSuccess { get; set; }   // The last UTC start time we ran this and it succeeded. LastResult == ""
 

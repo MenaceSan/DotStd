@@ -15,7 +15,7 @@ namespace DotStd
 
         ANY = 0, // Don't care. give me all.
 
-        [Description("International")]        
+        [Description("International")]
         III = 1,
 
         [Description("United States")]
@@ -161,7 +161,7 @@ namespace DotStd
         YT,
 #endif
 
-        // More ... in other countries. Manually added.
+        // More ... in other countries. Manually or Db added.
     }
 
     [Serializable]
@@ -182,6 +182,7 @@ namespace DotStd
         // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
         public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
         public const double kIntDiv = 0.0000001;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
+        public const double kMeter = 0.000001;  // ~1m
 
         public const double kEarthRadiusMeters = 6371000.0;    // Approximate.
         public const int kEarthDistMax = 50000000;    // Max reasonable distance on Earth. Any distance greater is not on earth. (40,075 km circumference)
@@ -213,7 +214,7 @@ namespace DotStd
             // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
             get
             {
-                if (Latitude <= -90 || Latitude >= 90 ) // Poles are extreme.
+                if (Latitude <= -90 || Latitude >= 90) // Poles are extreme.
                     return true;
                 if (!IsValidLon(Longitude))
                     return true;
@@ -233,14 +234,18 @@ namespace DotStd
 
         public static string ToGeoUrlOsm(double lat, double lon)
         {
+            // Get OpenStreet Map
             return "http://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon;
         }
         public static string ToGeoUrlGoo(double lat, double lon)
         {
+            // Get Google Map
             return "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lon;
         }
+
         public static string ToGeoUrl(double lat, double lon, DeviceTypeId deviceTypeId)
         {
+            // Get Map
             // deviceTypeId = Getdevice
             if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows)
             {
@@ -263,15 +268,26 @@ namespace DotStd
                 return null;
             return ToInt(value.Value);
         }
-        public static double ToDoubleNOTUSED(int value)
+        public static double ToDouble(int value)
         {
             return value * kIntDiv;
         }
-        public static double? ToDoubleNOTUSED(int? value)
+        public static double? ToDouble(int? value)
         {
             if (value == null)
                 return null;
-            return ToDoubleNOTUSED(value.Value);
+            return ToDouble(value.Value);
+        }
+
+        public double GetDistance(double latitude, double longitude)
+        {
+            // Calculate the distance between.
+            // Haversine. // http://en.wikipedia.org/wiki/Haversine_formula
+
+            var su = Math.Sin((this.Latitude - latitude) * 0.5);
+            var sv = Math.Sin((this.Longitude - longitude) * 0.5);
+
+            return 2.0 * kEarthRadiusMeters * Math.Asin(Math.Sqrt((su * su) + (Math.Cos(latitude) * Math.Cos(this.Latitude) * sv * sv)));
         }
 
         public static double ParseValue(string v, int point)
