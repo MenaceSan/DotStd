@@ -151,7 +151,7 @@ namespace DotStd
             // Assign my config source. (file?)
             _ConfigSource = configSource;
             ConfigMode = GetSetting(kAppsConfigMode);
-            ValidState.ThrowIfNullOrWhiteSpace(ConfigMode, nameof(ConfigMode));  // MUST have ConfigMode
+            ValidState.ThrowIfWhiteSpace(ConfigMode, nameof(ConfigMode));  // MUST have ConfigMode
 
             if (connectionStringName != null)
             {

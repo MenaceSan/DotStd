@@ -205,6 +205,13 @@ namespace DotStd
             return val;
         }
 
+        public static DateTime ToDateTime(DateTime? dt)
+        {
+            if (!dt.HasValue || dt.IsExtremeDate())
+                return DateTime.MinValue;
+            return dt.Value;
+        }
+
         public static DateTime? ToDateTimeN(DateTime? dt)
         {
             // We use "" as null sometimes from the db. convert it back to null for storage in the db.

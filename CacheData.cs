@@ -1,25 +1,51 @@
+using Microsoft.Extensions.Caching.Memory;
 using System;
-using System.Runtime.Caching;
-// using System.Runtime.Caching;           // 4.6 ObjectCache, CacheItemPolicy
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
     /// <summary>
-    /// Wrapper/Helper for the .NET MemoryCache.Default. Has a single namespace that all share, so prefix keys by type.
+    /// Manage a process shared cache, prefix keys by type.
+    /// needs NuGet for Caching Support.
+    /// based on IMemoryCache for ASP .NET Core.
+    /// like the OLD .NET MemoryCache.Default. 
     /// M$ discourages using multiple Caches for typed caches. but regions are not supported so delete by type is not supported natively.
-    /// NOTE .NET Core and Std need NuGet for Caching Support.
-    /// similar to IMemoryCache for ASP core.
+    /// https://stackoverflow.com/questions/49176244/asp-net-core-clear-cache-from-imemorycache-set-by-set-method-of-cacheextensions/49425102#49425102
+    /// Similar to https://github.com/alastairtree/LazyCache?WT.mc_id=-blog-scottha
     /// </summary>
-    public static class CacheData
+
+    public class CacheData
     {
-        public const string kSep = "."; // name separator for grouping. similar to unsupported 'regions'
+        public const string kSep = "."; // name separator for grouping. similar to unsupported MemoryCache 'regions'
+
+        private static IMemoryCache _memoryCache;       // my global/shared instance of the Cache.
+        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.
+
+        public static void Init(IMemoryCache memoryCache)
+        {
+            // set memoryCache = my global instance of the Cache.
+            if (_memoryCache != null)
+            {
+                if (memoryCache == null)
+                    return;
+                // Is this intentional ?!
+            }
+            if (memoryCache == null)
+            {
+                // Make my own default MemoryCache.
+                memoryCache = new MemoryCache(new MemoryCacheOptions());
+            }
+            _memoryCache = memoryCache;
+        }
 
         public static string MakeKeyArgs(params object[] argsList)
         {
-            // composite args for the key.
-            string keyArgs = string.Join(kSep, argsList);
-            if (keyArgs.Length > 16)    // Just hash it if it seems too large. DANGER ??
-                keyArgs = keyArgs.GetHashCode().ToString();
+            // composite args for the key. Assume the key has a type/group prefix.
+            string keyArgs = string.Join(kSep, argsList);   // uses ToString() internally.
+            if (keyArgs.Length > 16)    // Just hash it if it seems too large. 
+                keyArgs = keyArgs.GetHashCode().ToString();     // danger of collision ?
             return keyArgs;
         }
 
@@ -31,36 +57,30 @@ namespace DotStd
         public static string MakeKey(string type, params object[] argsList)
         {
             // build the string representation of some expression for the cache key. (AKA cacheKey)
-            return string.Concat(type, kSep, MakeKeyArgs(argsList));    // ??? reverse this string to make hash more evenly distributed ?
+            return string.Concat(type, kSep, MakeKeyArgs(argsList));
         }
 
-        public static void ClearObj(string cacheKey)
+        private static void PostEvictionCallback(object cacheKey, object value, EvictionReason reason, object state)
         {
-            // Force clear the cache for a single object.
-            var cache = MemoryCache.Default;
-            cache.Remove(cacheKey);
+            // Memory cache uses this callback PostEvictionDelegate => its gone.
+            if (reason != EvictionReason.Replaced)
+            {
+                lock (_cacheKeys)
+                {
+                    _cacheKeys.Remove(cacheKey.ToString());
+                }
+            }
         }
 
-        public static void ClearType(string cacheKeyPrefix)
+        /// <inheritdoc cref="IMemoryCache.TryGetValue"/>
+        public static bool TryGetValue(string cacheKey, out object value)
         {
-            // This is VERY NOT efficient !!
-            // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
-            // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
-            // BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
-
-            var cache = MemoryCache.Default;
-            if (cacheKeyPrefix == "")
+            if (_memoryCache == null)
             {
-                // all.
-                cache.Trim(100);
-                return;
+                value = null;
+                return false;
             }
-
-            foreach (var item in cache)
-            {
-                if (item.Key.StartsWith(cacheKeyPrefix))
-                    cache.Remove(item.Key);
-            }
+            return _memoryCache.TryGetValue(cacheKey, out value);
         }
 
         /// <summary>
@@ -70,32 +90,142 @@ namespace DotStd
         public static object Get(string cacheKey)
         {
             // try to get the query result from the cache
-            var cache = MemoryCache.Default;
-            return cache.Get(cacheKey);
+            if (!TryGetValue(cacheKey, out object value))
+            {
+                // Debug.Assert(!_cacheKeys.Contains(cacheKey));
+                return null;
+            }
+            // Debug.Assert(_cacheKeys.Contains(cacheKey));
+            return value;
         }
 
-        // SetSlide()
+        /// <summary>
+        /// Create or overwrite a empty/blank entry in the cache and add key to Dictionary. IMemoryCache
+        /// </summary>
+        /// <param name="cacheKey">An object identifying the entry.</param>
+        /// <returns>The newly created <see cref="T:Microsoft.Extensions.Caching.Memory.ICacheEntry" /> instance.</returns>
+        private static ICacheEntry CreateEntry(string cacheKey)
+        {
+            // Create empty value for key. Value filled in by caller. like IMemoryCache.
+            // ASSUME lock (_cacheKeys)
+            if (_memoryCache == null)
+            {
+                Init(null);
+            }
+            ICacheEntry entry = _memoryCache.CreateEntry(cacheKey);
+            entry.RegisterPostEvictionCallback(PostEvictionCallback);       // CacheEntryExtensions
+            _cacheKeys.Add(cacheKey); // add or replace.
+            return entry;
+        }
 
         /// <summary>
-        /// Store some object in the cache. Assume it isn't already here??
+        /// Store/replace some object in the cache. Assume it isn't already here??
         /// </summary>
-        public static void Set(string cacheKey, object obj, int decaysec = 10)
+        public static void Set(string cacheKey, object value, int decaySec = 10)
         {
-            // obj cant be null, even though it might make sense.
-            // NOTE: cache time is Utc time. 
-
-            if (obj == null)
+            // obj CANT be null, even though it might make sense.
+            if (value == null)
                 return;
-            var cache = MemoryCache.Default;
-            var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.UtcNow.AddSeconds(decaysec) };
-            // var policy = new CacheItemPolicy() { SlidingExpiration = TimeSpan.FromSeconds(decaysec) };
-            cache.Set(cacheKey, obj, policy);
+            lock (_cacheKeys)
+            {
+                ICacheEntry entry = CreateEntry(cacheKey);
+                entry.Value = value;
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(decaySec);
+                entry.Dispose();    // This is what actually adds it to the cache. Weird.   
+            }
+        }
+
+        public static T GetOrCreate<T>(string cacheKey, Func<string, T> factory)
+        {
+            lock (_cacheKeys)
+            {
+                if (!TryGetValue(cacheKey, out var value))
+                {
+                    // Debug.Assert(!_cacheKeys.Contains(cacheKey));
+                    ICacheEntry entry = CreateEntry(cacheKey);
+                    value = factory(cacheKey);
+                    entry.Value = value;
+                    entry.Dispose();    // This is what actually adds it to the cache. Weird.
+                }
+                else
+                {
+                    // Debug.Assert(_cacheKeys.Contains(cacheKey));
+                }
+                return (T)value;
+            }
+        }
+
+        public static async Task<T> GetOrCreateAsync<T>(string cacheKey, Func<string, Task<T>> factory)
+        {
+            // async version of GetOrCreate
+
+            if (!TryGetValue(cacheKey, out object value))
+            {
+                value = await factory(cacheKey);        // NOT thread locked. but safe-ish.
+                lock (_cacheKeys)
+                {
+                    // Debug.Assert(!_cacheKeys.Contains(cacheKey));
+                    ICacheEntry entry = CreateEntry(cacheKey);
+                    entry.Value = value;
+                    entry.Dispose();    // This is what actually adds it to the cache. Weird.
+                }
+            }
+            else
+            {
+                // Debug.Assert(_cacheKeys.Contains(cacheKey));
+            }
+            return (T)value;
+        }
+
+        /// <inheritdoc cref="IMemoryCache.Remove"/>
+        public static void ClearKey(string cacheKey)
+        {
+            // Force clear the cache for a single object. AKA Remove, ClearObj                
+            if (_memoryCache == null)
+                return;
+            _memoryCache.Remove(cacheKey);  // This will call PostEvictionCallback().
+        }
+
+        public static void ClearAll()
+        {
+            lock (_cacheKeys)
+            {
+                var keys = _cacheKeys;  // must clone array as it is modified in callbacks to PostEvictionCallback().
+                _cacheKeys = new SortedSet<string>();
+                foreach (string cacheKey in keys)
+                    ClearKey(cacheKey);     // Will try to modify _cacheKeys
+            }
+        }
+
+        public static void ClearType(string cacheKeyPrefix)
+        {
+            // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
+            // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
+            // BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
+
+            if (string.IsNullOrWhiteSpace(cacheKeyPrefix))
+            {
+                // all. like cache.Trim(100);
+                ClearAll();
+                return;
+            }
+
+            lock (_cacheKeys)
+            {
+                string cacheKeyMax = cacheKeyPrefix + '~';  // + ASCII value 126
+                var keys = _cacheKeys.GetViewBetween(cacheKeyPrefix, cacheKeyMax).ToListDupe();  // get list that matches prefix. copied from _cacheKeys
+                foreach (string cacheKey in keys)
+                {
+                    ClearKey(cacheKey);     // will modify _cacheKeys
+                }
+            }
         }
     }
 
     public static class CacheObj<T> where T : class // : CacheData
     {
-        // Build on CacheData/MemoryCache.Default with Type
+        // A type specific variation of the global cache singleton CacheData.
+        // Build on CacheData with Type
 
         public static string MakeKey(string id)
         {
@@ -105,6 +235,9 @@ namespace DotStd
         public static T Get(string id)
         {
             // Find the object in the cache if possible.
+            if (id == null)       // shortcut.
+                return null;
+            ValidState.ThrowIfWhiteSpace(id, nameof(id));
             string cacheKey = MakeKey(id);
             object o = CacheData.Get(cacheKey);
             return (T)o;
@@ -125,24 +258,24 @@ namespace DotStd
             Set(id.ToString(), obj, decaysec);
         }
 
-        public static void ClearObj(string id)
+        public static void ClearKey(string id)
         {
             // Clear a single object by key.
             string cacheKey = MakeKey(id);
-            CacheData.ClearObj(cacheKey);
+            CacheData.ClearKey(cacheKey);
         }
-        public static void ClearObj(int id)
+        public static void ClearKey(int id)
         {
             // Clear a single object by key.
-            ClearObj(id.ToString());
+            ClearKey(id.ToString());
         }
         public static void ClearType(string cacheKeyPrefix = null)
         {
             // Clear this type or a sub set of this type.
             if (cacheKeyPrefix == null)
                 cacheKeyPrefix = nameof(T);
-            else if (cacheKeyPrefix != "")
-                cacheKeyPrefix = MakeKey(cacheKeyPrefix);
+            else if (!string.IsNullOrEmpty(cacheKeyPrefix))
+                cacheKeyPrefix = MakeKey(cacheKeyPrefix);   // A weird sub-group ?
             CacheData.ClearType(cacheKeyPrefix);
         }
     }

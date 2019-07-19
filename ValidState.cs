@@ -268,7 +268,7 @@ namespace DotStd
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <i>argument</i> is an empty string.</exception>
-        public static void ThrowIfNullOrEmpty(string argument, string name)
+        public static void ThrowIfEmpty(string argument, string name)
         {
             ThrowIfNull(argument, name);
             if (string.IsNullOrEmpty(argument))
@@ -282,7 +282,7 @@ namespace DotStd
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <i>argument</i> is either an empty string or contains only white space.</exception>
-        public static void ThrowIfNullOrWhiteSpace(string argument, string name)
+        public static void ThrowIfWhiteSpace(string argument, string name)
         {
             ThrowIfNull(argument, name);
             if (string.IsNullOrWhiteSpace(argument))
