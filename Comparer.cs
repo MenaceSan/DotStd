@@ -191,8 +191,8 @@ namespace DotStd
         {
             // Sort this list in memory. 
 
-            var property = typeof(T).GetProperty(sortColumn);
-            if (property == null)
+            PropertyInfo prop = typeof(T).GetProperty(sortColumn);
+            if (prop == null)
                 return src;
             int multiplier = sortDir == SortDirection.Descending ? -1 : 1;
 
@@ -200,8 +200,8 @@ namespace DotStd
             list.AddRange(src);
             list.Sort((t1, t2) =>
             {
-                var col1 = property.GetValue(t1);
-                var col2 = property.GetValue(t2);
+                var col1 = prop.GetValue(t1);
+                var col2 = prop.GetValue(t2);
                 return multiplier * Comparer<object>.Default.Compare(col1, col2);
             });
             return list;

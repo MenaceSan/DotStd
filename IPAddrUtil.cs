@@ -69,6 +69,7 @@ namespace DotStd
         // System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
 
         public static string kLocalHost = "127.0.0.1";  // IPAddress.Loopback = System.Net.IPAddress.Parse(kLocalHost) for ip4. 
+        public const int kMaxLen = 64;   // max reasonable length of string.
 
         public static uint ToUInt(IPAddress addr)
         {
@@ -171,7 +172,7 @@ namespace DotStd
             // Try to weed out any VirtualBox or VPN adapters.
             try
             {
-                using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+                using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
                 {
                     socket.Connect("8.8.8.8", 65530);
                     IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;

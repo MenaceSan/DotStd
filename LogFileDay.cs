@@ -6,6 +6,7 @@ namespace DotStd
     public class LogFileDay : LoggerBase
     {
         // Log stuff out to a file that changes daily.
+        // Thread safe.
 
         private DateTime _Day;      // What day was the last?
         private string _sFilePathDay;
@@ -60,6 +61,7 @@ namespace DotStd
             // open a log file for today , append or create.
             // check for Day transition
 
+            bool created = false;
             DateTime tDay = tNow.Date;
             if (tDay != _Day)
             {
@@ -69,9 +71,16 @@ namespace DotStd
 
                 // Trim old log files from this directory?
                 // TODO FileUtil.DirEmptyOld()
+                created = true;
             }
 
             StreamWriter w = File.AppendText(_sFilePathDay);
+
+            if (created)
+            {
+                // All log files should have this header.
+                w.WriteLine($"Log File Created '{tDay}'");
+            }
             return w;
         }
 
@@ -81,22 +90,22 @@ namespace DotStd
             return base.IsEnabled(level) && _sFilePathPrefix != null; // Log this?
         }
 
-        public override void LogEntry(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
+        public override void LogEntry(LogEntryBase entry)
         {
             // Override this
-            if (!IsEnabled(level))   // ignore this?
+            if (!IsEnabled(entry.Level))   // ignore this?
                 return;
             try
             {
                 DateTime tNow = DateTime.Now;       // local server time.
                 lock (this) using (var w = OpenLog(tNow))
                     {
-                        w.WriteLine("{0}{1}{2}", tNow.ToShortTimeString(), GetSeparator(level), message);
-                        if (!ValidState.IsEmpty(detail))
+                        w.WriteLine("{0}{1}{2}", tNow.ToShortTimeString(), GetSeparator(entry.Level), entry.Message);
+                        if (!ValidState.IsEmpty(entry.Detail))
                         {
-                            w.WriteLine("\t" + detail.ToString());
+                            w.WriteLine("\t" + entry.Detail.ToString());
                         }
-                        if (level >= LogLevel.Error)
+                        if (entry.Level >= LogLevel.Error)  // important messages should be flushed immediately. In case we crash.
                         {
                             w.Flush();
                         }

@@ -23,6 +23,13 @@ namespace DotStd
             return obj == null || string.IsNullOrWhiteSpace(obj.ToString());
         }
 
+        public static object GetPropertyValue(this object thisObject, string propertyName)
+        {
+            // Get a property via reflection from some acquired object. similar to 'dynamic' keyword.
+            // Just return null if property does not exist.
+            return PropertyUtil.GetPropertyValue(thisObject, propertyName);
+        }
+
         // int 
 
         public static int RoundTo(this int value, int roundTo)
@@ -205,7 +212,7 @@ namespace DotStd
             // LIKE Where(s => s.Field<string>(LookupColumn).ToUpper().StartsWith(filter))
             if (!source.Any() || string.IsNullOrEmpty(propertyName))
                 return source;
-            var propertyInfo = source.First().GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            PropertyInfo propertyInfo = source.First().GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             return source.Where(e => propertyInfo.GetValue(e, null).ToString().ToUpper().StartsWith(filterStart));
         }
 

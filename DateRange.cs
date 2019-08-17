@@ -248,13 +248,13 @@ namespace DotStd
         /// Converts the value of the current DateTimeRange object to a string of the format "Start - End"
         /// </summary>
         /// <returns>A string representation of the DateTimeRange.</returns>
-        /// <exception cref="System.ArgumentOutOfRangeException">
-        /// The date and time is outside the range of dates supported by the calendar
-        /// used by the current culture.
-        /// </exception>
-        public override string ToString()
+         public override string ToString()
         {
-            return "{0} - {1}".FormatInvariant(Start, End);
+            bool x1 = Start.IsExtremeDate();
+            bool x2 = End.IsExtremeDate();
+            if (x1 && x2)
+                return "";
+            return string.Concat(x1 ? "" : Start.ToString(), " - ", x2 ? "" : End.ToString());
         }
 
         /// <summary>
@@ -427,6 +427,5 @@ namespace DotStd
         {
             SetDatesForYear(dt.Year);
         }
-
     }
 }

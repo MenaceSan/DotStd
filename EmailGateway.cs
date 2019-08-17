@@ -18,15 +18,14 @@ namespace DotStd
         // OpenId Federated logins/validation are validated automatically. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
         // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-2.2
 
-        Microsoft = 5,      // Auth type. Azure is the same ?
+        Microsoft = 5,      // OpenId Auth type. Azure is the same ?
         Google = 6,         // Auth type name.
         Facebook = 7,
         Twitter = 8,        // NOT USED YET.
         LinkedIn = 9,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
         Apple = 10,         // NOT USED YET.
 
-        // etc.
-        // WordPress, GitHub, 
+        // WordPress, GitHub,  etc.
     }
 
     public class EmailGatewaySettings
@@ -127,8 +126,7 @@ namespace DotStd
 
         public bool PrepareToSend(EmailMessage oEmail)
         {
-            // Is this email valid to send ?
-            // allow override of this. 
+            // Is this EmailMessage valid to send ?
 
             if (!oEmail.isValidMessage())
                 return false;   // not valid to send.
@@ -150,7 +148,7 @@ namespace DotStd
 
             if (oMessage.To.Count <= 0)     // sent to no-one !
             {
-                return false;       // not valid to send.
+                return false;       // not valid to send if it has no dest.
             }
 
             return true;

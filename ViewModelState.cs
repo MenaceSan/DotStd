@@ -72,21 +72,13 @@ namespace DotStd
             return -1; // no such sPropName.
         }
 
-        private string GetPropValue(System.Reflection.PropertyInfo p)
+        public string GetPropValue(string propertyName)
         {
             //! Via reflection get the current value of a sPropName on _ObjectInstance.
-            if (p == null)
-                return null;
-            object oValue = p.GetValue(_ObjectInstance, null);
-            if (oValue == null)
+            object o = PropertyUtil.GetPropertyValue(_ObjectInstance, propertyName);
+            if (o == null)
                 return "";
-            return oValue.ToString();
-        }
-        public string GetPropValue(string memberName)
-        {
-            //! Via reflection get the current value of a sPropName on _ObjectInstance.
-            Type oType = _ObjectInstance.GetType();
-            return GetPropValue(oType.GetProperty(memberName));
+            return o.ToString();
         }
 
         public ViewPropertyAccess GetPropAccess(string memberName)

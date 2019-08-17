@@ -50,34 +50,73 @@ namespace DotStd
         None = 6,
     }
 
+    public class LogEntryBase
+    {
+        public string Message;
+        public LogLevel Level = LogLevel.Information;
+        public int UserId = ValidState.kInvalidId;  // id for a thread of work for this user/worker. GetCurrentThreadId() ?
+        public object Detail;       // extra information. that may be stored via ToString();
+
+        public LogEntryBase()       // props to be populated later.
+        { }
+
+        public LogEntryBase(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
+        {
+            Message = message;
+            Level = level;
+            UserId = userId;    // ValidState.IsValidId(userId) GetCurrentThreadId()
+            Detail = detail;
+        }
+    }
+
     public interface ILogger
     {
         // Emulate System.Diagnostics.WriteEntry
         // This can possibly be forwarded to NLog or Log4Net ?
         // similar to Microsoft.Extensions.Logging.ILogger
+        // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
 
-        bool IsEnabled(LogLevel eLevel = LogLevel.Information);
+        // Is this log message important enough to be logged?
+        bool IsEnabled(LogLevel level = LogLevel.Information);
 
-        // userId = thread of work. maybe userId ?
-        void LogEntry(string sMessage, LogLevel eLevel = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null);
+        // Log this. will check IsEnabled.
+        void LogEntry(LogEntryBase entry);
     }
 
     public class LoggerBase : ILogger
     {
         // Logging of events. base class.
         // Similar to System.Diagnostics.EventLog
+        // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
 
         protected LogLevel _FilterLevel = LogLevel.Debug;      // Only log stuff at this level and above in importance.
 
-        public LogLevel FilterLevel { get { return _FilterLevel; } }      // Only log stuff at this level and above in importance.
+        public LogLevel FilterLevel => _FilterLevel;         // Only log stuff at this level and above in importance.
 
         public void SetFilterLevel(LogLevel filterLevel)
         {
             _FilterLevel = filterLevel;
         }
 
-        public virtual bool IsEnabled(LogLevel level = LogLevel.Information)
+        public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
         {
+            // Not officially logged. Just debug console.
+            System.Diagnostics.Debug.WriteLine("Debug " + message);
+            // System.Diagnostics.Trace.WriteLine();
+        }
+
+        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
+        {
+            // an exception that I don't do anything about! NOT going to call LogException
+            // set a break point here if we want.
+            System.Diagnostics.Debug.WriteLine("DebugException " + subject + ":" + ex?.Message);
+            // Console.WriteLine();
+            // System.Diagnostics.Trace.WriteLine();
+        }
+
+        public virtual bool IsEnabled(LogLevel level = LogLevel.Information)    // ILogger
+        {
+            // ILogger Override this
             // Quick filter check to see if this type is logged. Check this first if the rendering would be heavy.
             return level >= _FilterLevel; // Log this?
         }
@@ -95,29 +134,41 @@ namespace DotStd
             }
         }
 
-        public virtual void LogEntry(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
+        public virtual void LogEntry(LogEntryBase entry)    // ILogger
         {
             // ILogger Override this
-            if (!IsEnabled(level))   // ignore this?
+            // default behavior = debug.
+
+            if (!IsEnabled(entry.Level))   // ignore this?
                 return;
 
-            if (ValidState.IsValidId(userId))
+            if (ValidState.IsValidId(entry.UserId))
             {
             }
-            if (detail!=null)
+            if (entry.Detail != null)
             {
 
             }
 
-            System.Diagnostics.Debug.WriteLine(GetSeparator(level) + message);
+            System.Diagnostics.Debug.WriteLine(GetSeparator(entry.Level) + entry.Message);
+        }
+
+
+        public void LogEntry(string message, LogLevel level = LogLevel.Information,
+            int userId = ValidState.kInvalidId,
+            object detail = null)
+        {
+            LogEntry(new LogEntryBase(message, level, userId, detail));
         }
 
         public void info(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
+            // Helper.
             LogEntry(message, LogLevel.Information, userId, detail);
         }
         public void warn(string message, int userId = ValidState.kInvalidId, object detail = null)
         {
+            // Helper.
             LogEntry(message, LogLevel.Warning, userId, detail);
         }
         public void debug(string message, int userId = ValidState.kInvalidId, object detail = null)
@@ -137,59 +188,27 @@ namespace DotStd
             LogEntry(message, LogLevel.Critical, userId, detail);
         }
 
-        public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
+        public static bool IsExceptionDetailLogged(LogLevel level)
         {
-            System.Diagnostics.Debug.WriteLine("Debug " + message);
-            // System.Diagnostics.Trace.WriteLine();
+            // Do i want to log full detail for an Exception?
+
+            if (level >= LogLevel.Error)    // Always keep stack trace etc for error.
+                return true;
+
+            // Is debug mode ?
+
+            return false;
         }
 
-        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
+        public virtual void LogException(Exception oEx, LogLevel level = LogLevel.Error, int userId = ValidState.kInvalidId)
         {
-            // an exception that I don't do anything about! NOT going to call LogException
-            // set a break point here if we want.
-            System.Diagnostics.Debug.WriteLine("DebugException " + subject + ":" + ex?.Message);
-            // Console.WriteLine();
-            // System.Diagnostics.Trace.WriteLine();
-        }
+            // Helper for Special logging for exceptions.
 
-        public virtual void LogException(Exception oEx, LogLevel level = LogLevel.Error, int userId = ValidState.kInvalidId, bool bWrapAndReRaise = false)
-        {
-            // Special logging for exceptions.
-            string strMessage;
-            switch (level)
-            {
-                case LogLevel.Information:
-                    // Normal has no logging just allows you to re-raise it to the front end.
-                    strMessage = oEx.Message;
-                    break;
-                case LogLevel.Error:
-                    // If in errors level we'll keep the error message
-                    strMessage = oEx.Message;
-                    LogEntry(strMessage, LogLevel.Error, userId, oEx.ToString());
-                    break;
-                case LogLevel.Critical:
-                    // If in debug build full error string
-                    strMessage = oEx.ToString();
-                    LogEntry(oEx.Message, LogLevel.Critical, userId, strMessage);
-                    break;
-                case LogLevel.Trace:
-                case LogLevel.Warning:
-                default:
-                    // If in debug build full error string
-                    strMessage = oEx.ToString();
-                    LogEntry(strMessage, LogLevel.Error, userId);
-                    break;
-            }
+            object detail = null;
+            if (IsExceptionDetailLogged(level))
+                detail = oEx;
 
-            // Should we wrap and re-raise the Exception?
-            if (bWrapAndReRaise)
-            {
-                // So that we see the actual error based on the Error Level create a new
-                // exception object and fill it.
-                var NewEx = new Exception(strMessage, oEx.InnerException);
-                // Send it to the caller
-                throw NewEx;
-            }
+            LogEntry(oEx.Message, LogLevel.Critical, userId, detail);
         }
     }
 }

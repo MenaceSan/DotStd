@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace DotStd
@@ -29,33 +30,33 @@ namespace DotStd
         // Just use reflection to get a properties value from an object. IPropertyGetter
         // Assume i CANNOT just add new props on the fly.
 
-        object Obj; // just use Type reflection on this.
-        public Type Type { get; set; }  // Maybe not the same as GetType().
+        object _Obj; // just use Type reflection on this.
+        public Type Type { get; set; }  // Maybe not the same as Obj.GetType().
 
         public PropertyBagObj()
         {
         }
-        public PropertyBagObj(object _Obj, Type _Type = null)
+        public PropertyBagObj(object obj, Type typeSrc = null)
         {
-            Obj = _Obj;
-            Type = _Type;
+            _Obj = obj;
+            Type = typeSrc;
         }
 
         public virtual object GetPropertyValue(string name)
         {
-            if (Obj == null)
+            if (_Obj == null)
                 return null;
 
             if (Type == null)
             {
-                Type = Obj.GetType();
+                Type = _Obj.GetType();   // use default type.
             }
 
-            var prop = Type.GetProperty(name);
+            PropertyInfo prop = Type.GetProperty(name);
             if (prop == null || !prop.CanRead)
                 return null;
 
-            return prop.GetValue(Obj, null);
+            return prop.GetValue(_Obj, null);
         }
 
         public virtual void SetPropertyValue(string name, object val)
@@ -65,14 +66,14 @@ namespace DotStd
 
             if (Type == null)
             {
-                Type = Obj.GetType();
+                Type = _Obj.GetType();
             }
 
-            var prop = Type.GetProperty(name);
+            PropertyInfo prop = Type.GetProperty(name);
             //if (prop == null || ! prop.CanWrite)   // throw ??
             //  return;
 
-            prop.SetValue(Obj, val);
+            prop.SetValue(_Obj, val);
         }
     }
 
@@ -81,22 +82,22 @@ namespace DotStd
         // a IPropertyGetter implemented as a Dictionary
         // Assume i CAN add new props on the fly.
 
-        Dictionary<string, object> Props;
+        Dictionary<string, object> _Props;
 
         public PropertyBagDic()
         {
         }
-        public PropertyBagDic(Dictionary<string, object> _Props)
+        public PropertyBagDic(Dictionary<string, object> props)
         {
-            Props = _Props;
+            this._Props = props;
         }
 
         private void CheckProps()
         {
             // if the dictionary doesn't yet exist then create it.
-            if (Props == null)
+            if (_Props == null)
             {
-                Props = new Dictionary<string, object>();
+                _Props = new Dictionary<string, object>();
             }
         }
 
@@ -110,17 +111,17 @@ namespace DotStd
                 if (!propFrom.CanRead)
                     continue;
                 object val = propFrom.GetValue(obj, null);
-                Props[propFrom.Name] = val;
+                _Props[propFrom.Name] = val;
             }
         }
 
         public virtual object GetPropertyValue(string name) // IPropertyGetter
         {
-            if (Props == null)
+            if (_Props == null)
                 return null;
 
             object val;
-            if (!Props.TryGetValue(name, out val))
+            if (!_Props.TryGetValue(name, out val))
                 return null;
 
             return val;
@@ -129,7 +130,7 @@ namespace DotStd
         public virtual void SetPropertyValue(string name, object val) // IPropertySetter
         {
             CheckProps();
-            Props[name] = val;
+            _Props[name] = val;
         }
     }
 
@@ -187,13 +188,15 @@ namespace DotStd
     {
         // util class for abstracting a property bag.
 
-        public static object GetPropertyValue(object fromObj, string name)
+        public static object GetPropertyValue(object fromObj, string propertyName)
         {
             // Get 1 single prop value via reflection.
+            // @return null if i cant get a value.
+
             if (fromObj == null)
                 return null;
             Type fromType = fromObj.GetType();
-            PropertyInfo prop = fromType.GetProperty(name);
+            PropertyInfo prop = fromType.GetProperty(propertyName);
             if (!prop.CanRead)
                 return null;
             return prop.GetValue(fromObj, null);
@@ -215,10 +218,13 @@ namespace DotStd
             // Inject all properties that match. (not fields or events) like IPropertySetter
             // fromObj is some type derived from T. may have many more props but we will ignore them. Only use T Props
             // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
-            // RETURN: propsCopiedfs. Caller should throw if this is not the correct number !
+            // RETURN: propsCopied . Caller should throw if this is not the correct number !
 
             if (fromObj == null)
                 return 0;
+
+            Type ignoreAttrType = typeof(IgnoreDataMemberAttribute);    // CHECK [IgnoreDataMember]
+
             int propsCopied = 0;
             Type toType = typeof(T);
             Type fromType = fromObj.GetType();
@@ -227,11 +233,16 @@ namespace DotStd
             foreach (PropertyInfo propTo in toType.GetProperties())
             {
                 if (!propTo.CanWrite)
-                    continue;
+                    continue;               
+
                 // Find eqiv prop by name.
                 PropertyInfo propFrom = sameType ? propTo : fromType.GetProperty(propTo.Name);
                 if (propFrom == null || !propFrom.CanRead)
                     continue;
+                object[] attrs2 = propFrom.GetCustomAttributes(ignoreAttrType, false);  // This was probably not populated correctly so ignore it.
+                if (attrs2.Length > 0)
+                    continue;
+
                 object val = propFrom.GetValue(fromObj, null);
                 propTo.SetValue(toObj, val, null);      // like IPropertySetter
                 propsCopied++;

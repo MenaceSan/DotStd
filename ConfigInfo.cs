@@ -64,7 +64,7 @@ namespace DotStd
 
         public object GetService(Type serviceType)  // IServiceProvider
         {
-            // implement IServiceProvider
+            // implement IServiceProvider. DI.
           
             if (Services.TryGetValue(serviceType.GetHashCode(), out object serviceO))
             {
@@ -101,7 +101,7 @@ namespace DotStd
 
         public void SetService<T>(T service) where T : class
         {
-            // Configure a service by its interface .
+            // Configure a service by its interface . used for DI registration.
             // ILogger is special.
             int hashCode = typeof(T).GetHashCode();
             Services[hashCode] = service;

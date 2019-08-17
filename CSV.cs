@@ -162,7 +162,8 @@ namespace DotStd
             // Build a list into a CSV line/string. T = string.
             // ShowProperties = header line
 
-            PropertyInfo[] propInfos = typeof(T).GetProperties();
+            System.Type fromType = typeof(T);
+            PropertyInfo[] propInfos = fromType.GetProperties();
             // ValidState.EnsureTrue(propInfos.Length > 0, "propInfos");  // THIS DOESNT COMPILE ?? WHY ?
 
             var sb = new StringBuilder();
@@ -195,7 +196,10 @@ namespace DotStd
                         {
                             sb.Append(",");
                         }
-                        object o = item.GetType().GetProperty(propInfos[j].Name).GetValue(item, null);
+                        PropertyInfo prop = fromType.GetProperty(propInfos[j].Name);
+                        if (!prop.CanRead)
+                            continue;
+                        object o = prop.GetValue(item, null);
                         if (o != null)
                         {
                             sb.Append(CSV.Encode1(o.ToString()));

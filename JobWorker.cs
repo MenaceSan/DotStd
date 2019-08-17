@@ -9,8 +9,9 @@ namespace DotStd
     {
         // Declare this as some job/task i want to execute from external source. checked in Compile.
         // Attach some attribute to the job/task so i can know more about it. Must accompany IJobWorker.
+        // https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/accessing-attributes-by-using-reflection
 
-        public string Name;
+        public string Name; // primary name
         public List<string> Aliases;
     }
 
