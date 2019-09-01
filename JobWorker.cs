@@ -12,7 +12,7 @@ namespace DotStd
         // https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/accessing-attributes-by-using-reflection
 
         public string Name; // primary name
-        public List<string> Aliases;
+        public List<string> Aliases;    // Other attribute tags.
     }
 
     public class JobState

@@ -70,7 +70,7 @@ namespace DotStd
 
             using (FileStream stream = fi.OpenRead())
             {
-                stream.Read(buffer, 0, 2048);
+                stream.Read(buffer, 0, 2048);   // Read first block.
 
                 int offset = BitConverter.ToInt32(buffer, kPeHeaderOffset);    // start of PE
                 int peSig = BitConverter.ToInt32(buffer, offset);   // Signature 0x50450000
@@ -79,16 +79,13 @@ namespace DotStd
                 if (secondsSince1970 <= 0) // .NET CORE has junk value. secondsSince1970 == -1551948072
                 {
                     // Just get the date on the file.
-
                     return fi.CreationTime;
                 }
-                else
-                {
-                    DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
-                    TimeZoneInfo tz = target ?? TimeZoneInfo.Local;
-                    DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, tz);
-                    return localTime;
-                }
+
+                DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
+                TimeZoneInfo tz = target ?? TimeZoneInfo.Local;
+                DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, tz);
+                return localTime;
             }
         }
     }

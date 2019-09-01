@@ -30,24 +30,10 @@ namespace DotStd
             }
         }
 
-        public static string ToVersionStr(int versionInt)
-        {
-            // take a version integer (for compare) and make a string for display.
-            // Format X.2.3 decimal digits. (Major.Minor.Build)
-            // kVersionInt to kVersionStr
-
-            return $"{versionInt / 100000}.{(versionInt / 1000) % 100}.{versionInt % 1000}";
-        }
-        public static int ToVersionInt(int v1, int v2, int v3)
-        {
-            // Make a single version int from the standard 3 part version string.
-            return v1*100000 + v2*1000 + v3;
-        }
-
         private static int AppVersion;  // (Major.Minor.Build) encoded as an int for sorting migration data.
         public static string AppVersionStr
         {
-            get { return ToVersionStr(AppVersion); }
+            get { return VersionUtil.ToVersionStr(AppVersion); }
         }
 
         private static bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?

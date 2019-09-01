@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -12,30 +11,75 @@ namespace DotStd
     {
         // Helper for Generic object serialization.
 
+        public const string kHexAlphabet = "0123456789ABCDEF";
+
         public static string ToHexStr(byte[] data)
         {
             // Loop through each byte[] and format each one as a hexadecimal string.
             // Similar to Convert.ToBase64String(). Consider using Base64 instead ?
+            // can use the MySQL UNHEX() function. in stored procs etc.
 
             // Create a new StringBuilder to collect the bytes and create a string.
             var sb = new StringBuilder();
             for (int i = 0; i < data.Length; i++)
             {
-                sb.Append(data[i].ToString("x2"));
+                byte b = data[i];
+                sb.Append(kHexAlphabet[(int)(b >> 4)]);
+                sb.Append(kHexAlphabet[(int)(b & 0xF)]);
             }
 
             // Return the hexadecimal string.
             return sb.ToString();
         }
 
+        public static int FromHexChar(char ch)
+        {
+            // UNHEX(ch)
+            // return: < 0 is bad char.
+            if (ch > 'f')
+                return -1;
+            if (ch >= 'a')
+                return 10 + (ch - 'a');
+            if (ch > 'F')
+                return -1;
+            if (ch >= 'A')
+                return 10 + (ch - 'A');
+            if (ch > '9')
+                return -1;
+            return ch - '0';
+        }
+
         public static byte[] FromHexStr(string str)
         {
-            // Ignore str.StartsWith("0x")
+            // convert hex string to byte[]
 
-            return Enumerable.Range(0, str.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(str.Substring(x, 2), 16))
-                     .ToArray(); ;
+            str = str.Trim();
+
+            int start = 0;
+            int len = str.Length & ~1;  // even numbers only.
+            if (str.StartsWith("0x"))       // ignore prefix.
+            {
+                start = 2;
+                len -= 2;
+            }
+
+            byte[] data = new byte[len / 2];
+
+            for (int i = start; i < len; i += 2)
+            {
+                int v1 = FromHexChar(str[i + 0]);
+                int v2 = FromHexChar(str[i + 1]);
+                if (v1 < 0 || v2 < 0)
+                {
+                    // shorten it.
+                    Array.Resize(ref data, i / 2);
+                    break;
+                }
+                v2 += v1 << 4;
+                data[i / 2] = (byte)(v2);
+            }
+
+            return data;
         }
 
         // Base64 *******************
@@ -70,16 +114,21 @@ namespace DotStd
             return ((lenBase64 * 3) / 4);
         }
 
+        public static string ToBase64String(byte[] b)
+        {
+            // convert to base64 string.             
+            return System.Convert.ToBase64String(b, 0, b.Length);
+        }
         public static string ToBase64String(Stream InputStream, int ContentLength)
         {
             // might be from HttpPostedFileBase
             Byte[] b = new byte[ContentLength];
             InputStream.Read(b, 0, b.Length);
-            return System.Convert.ToBase64String(b, 0, b.Length);
+            return ToBase64String(b);
         }
 
         // JSON *******************
-        // Don't include Newtonsoft JSON here.
+        // Don't include Newtonsoft JSON here. Its too heavy.
         // e.g. s = JsonConvert.SerializeObject(o, Formatting.None)
 
         public static bool IsJSON(string sValue)
@@ -91,7 +140,7 @@ namespace DotStd
             return sValue.StartsWith("[") || sValue.StartsWith("{");
         }
 
-        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values.
+        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values. e.g. "False"
         public const string kTrue = "true";     // JSON bool    
 
         public static string ToJSON(bool b)

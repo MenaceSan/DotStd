@@ -366,6 +366,11 @@ namespace DotStd
                         return null;
                 }
             }
+            if (typeCodeFrom == TypeCode.String && convertToType == typeof(byte[]))
+            {
+                if (value.ToString() == "...")   // Weird MySQL export thing.
+                    return null;
+            }
 
             // If it's not a nullable type, just pass through the parameters to Convert.ChangeType
             if (IsNullableType(convertToType))
@@ -385,6 +390,10 @@ namespace DotStd
                 return Enum.ToObject(convertToType, Converter.ToInt(value));
             }
 
+            if (convertToType == typeof(string))
+            {
+                return value.ToString();        // anything can be a string.
+            }
             if (convertToType == typeof(bool))   // Be more forgiving converting to bool. "1" = true.
             {
                 return ToBool(value);
@@ -392,10 +401,6 @@ namespace DotStd
             if (convertToType == typeof(int))
             {
                 return ToInt(value);
-            }
-            if (convertToType == typeof(string))
-            {
-                return value.ToString();        // anything can be a string.
             }
 
             // Now that we've guaranteed conversionType is something Convert.ChangeType can handle (i.e. not a

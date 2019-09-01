@@ -16,9 +16,10 @@ namespace DotStd
     /// Similar to https://github.com/alastairtree/LazyCache?WT.mc_id=-blog-scottha
     /// </summary>
 
-    public class CacheData
+    public static class CacheData
     {
         public const string kSep = "."; // name separator for grouping. similar to unsupported MemoryCache 'regions'
+        public const char kSepChar = '.'; // name separator for grouping. similar to unsupported MemoryCache 'regions'
 
         private static IMemoryCache _memoryCache;       // my global/shared instance of the Cache.
         private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.
@@ -197,7 +198,7 @@ namespace DotStd
             }
         }
 
-        public static void ClearType(string cacheKeyPrefix)
+        public static void ClearKeyPrefix(string cacheKeyPrefix)
         {
             // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
             // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
@@ -222,9 +223,9 @@ namespace DotStd
         }
     }
 
-    public static class CacheObj<T> where T : class // : CacheData
+    public static class CacheT<T> where T : class // : CacheData
     {
-        // A type specific variation of the global cache singleton CacheData.
+        // A Type specific variation of the global cache singleton CacheData.
         // Build on CacheData with Type
 
         public static string MakeKey(string id)
@@ -237,7 +238,7 @@ namespace DotStd
             // Find the object in the cache if possible.
             if (id == null)       // shortcut.
                 return null;
-            ValidState.ThrowIfWhiteSpace(id, nameof(id));
+            ValidState.ThrowIfWhiteSpace(id, nameof(id));       // must have id. else use GetSingleton
             string cacheKey = MakeKey(id);
             object o = CacheData.Get(cacheKey);
             return (T)o;
@@ -246,6 +247,11 @@ namespace DotStd
         {
             ValidState.ThrowIfBadId(id, nameof(id));       // should check this before now.
             return Get(id.ToString());
+        }
+        public static T GetSingleton()
+        {
+            // Get singleton.
+            return (T)CacheData.Get(typeof(T).Name);
         }
 
         public static void Set(string id, T obj, int decaysec = 60)
@@ -256,6 +262,10 @@ namespace DotStd
         public static void Set(int id, T obj, int decaysec = 60)
         {
             Set(id.ToString(), obj, decaysec);
+        }
+        public static void SetSingleton(T obj, int decaysec = 60)
+        {
+            CacheData.Set(typeof(T).Name, obj, decaysec);
         }
 
         public static void ClearKey(string id)
@@ -269,14 +279,20 @@ namespace DotStd
             // Clear a single object by key.
             ClearKey(id.ToString());
         }
-        public static void ClearType(string cacheKeyPrefix = null)
+        public static void ClearSingleton()
+        {
+            CacheData.ClearKey(typeof(T).Name);
+        }
+
+        public static void ClearKeyPrefix(string cacheKeyPrefix = null)
         {
             // Clear this type or a sub set of this type.
             if (cacheKeyPrefix == null)
                 cacheKeyPrefix = nameof(T);
             else if (!string.IsNullOrEmpty(cacheKeyPrefix))
                 cacheKeyPrefix = MakeKey(cacheKeyPrefix);   // A weird sub-group ?
-            CacheData.ClearType(cacheKeyPrefix);
+            CacheData.ClearKeyPrefix(cacheKeyPrefix);
         }
+
     }
 }

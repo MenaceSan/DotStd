@@ -46,7 +46,7 @@ namespace DotStd
         public static JobTracker FindJobTracker(string typeName, int userId)
         {
             // Find the job in the global name space.
-            return CacheObj<JobTracker>.Get(MakeKey(typeName, userId));
+            return CacheT<JobTracker>.Get(MakeKey(typeName, userId));
         }
 
         public bool IsCancelled
@@ -162,7 +162,7 @@ namespace DotStd
             {
                 this.Progress = this.Size; // true end.
             }
-            CacheObj<JobTracker>.Set(Key, this, 5 * 60);  // no need to hang around too long
+            CacheT<JobTracker>.Set(Key, this, 5 * 60);  // no need to hang around too long
         }
 
         public static JobTracker CreateJobTracker(string typeName, int userId, long size, bool cancelable = false)
@@ -174,7 +174,7 @@ namespace DotStd
             }
 
             string cacheKey = MakeKey(typeName, userId);
-            var job = CacheObj<JobTracker>.Get(cacheKey);
+            var job = CacheT<JobTracker>.Get(cacheKey);
             if (job == null)
             {
                 job = new JobTracker { JobTypeName = typeName, UserId = userId, Size = size, Progress = 0 };
@@ -196,7 +196,7 @@ namespace DotStd
                 job.Cancellation = new CancellationTokenSource();
             }
 
-            CacheObj<JobTracker>.Set(cacheKey, job, 24 * 60 * 60);    // update time
+            CacheT<JobTracker>.Set(cacheKey, job, 24 * 60 * 60);    // update time
             return job;
         }
     }

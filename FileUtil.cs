@@ -9,6 +9,7 @@ namespace DotStd
     {
         // Common IANA MIME types and related file extensions.
         // in table app_doc_type
+        // .NET defines many of these in MediaTypeNames
         // Get SVG icons from https://fileicons.org/?view=square-o
 
         [Description(@"application/octet-stream")]
@@ -61,7 +62,7 @@ namespace DotStd
         WAV = 19,
         [Description(@"application/zip")]
         ZIP = 20,        //  anything
-        [Description(@"application/json")]
+        [Description(@"application/json")]      // MediaTypeNames.Application.Json
         JSON = 21,        // data
 
         // AVI

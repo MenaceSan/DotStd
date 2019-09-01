@@ -142,6 +142,8 @@ namespace DotStd
 
         Check,      // Move is blocked because it results in check. '+'
         Blocked,    // Cant move here because of block by own piece or out of bounds.
+
+        Captured,   // This piece is captured and off the board. Can't move.
     }
 
     public class ChessPiece
@@ -226,6 +228,13 @@ namespace DotStd
             return false;
         }
 
+        public ChessMove[] GetMovesFor(ChessPieceId id)
+        {
+            // Get list of all moves. even Blocked ones.
+
+            return null;
+        }
+
         public ChessPosition[] GetValidMovesFor(ChessPieceId id)
         {
             // All Legal moves for a piece?
@@ -247,6 +256,7 @@ namespace DotStd
         private void MoveX(ChessPieceId id, ChessPosition pos)
         {
             // Move the piece with no tests for valid. Assume restore.
+            // No change of turn. No change to MoveNumber.
 
         }
 
@@ -264,7 +274,7 @@ namespace DotStd
             var posOld = GetPosition(id);  // Previous pos.
             MoveX(id, posNew);
 
-            MoveNumber++;
+            MoveNumber++;   // This was my turn.
             return true;    // good.
         }
     }

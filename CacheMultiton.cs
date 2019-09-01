@@ -5,7 +5,7 @@ namespace DotStd
 {
     public static class CacheMultiton<T> where T : class
     {
-        // Build on CacheObj<T> for Multiton pattern
+        // Build on CacheT<T> for Multiton pattern
         // https://en.wikipedia.org/wiki/Multiton_pattern
         // All users get the SAME version of the object! There is only one version of an object with the same 'Id'. It can be updated dynamically for all consumers.
         // This is a cache like CacheData that also has a weak reference to tell if the object might still be referenced some place.

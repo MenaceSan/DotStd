@@ -6,6 +6,8 @@ namespace DotStd
 {
     public static class ByteUtil
     {
+        // byte[] can also be stored/serialized as Base64 or UUCode/uuencode or yEnc. see SerializeUtil.
+
         public static bool IsNullOrZero(this byte[] val)
         {
             // similar to string.IsNullOrEmpty()

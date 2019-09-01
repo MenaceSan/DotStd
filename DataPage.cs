@@ -84,7 +84,7 @@ namespace DotStd
         public List<T> GetRows()
         {
             if (Rows is List<T>)
-                return (List<T>) Rows;
+                return (List<T>)Rows;
             return Rows.Cast<T>().ToList();
         }
 
@@ -101,6 +101,12 @@ namespace DotStd
                 this.RowsTotal = q.Count();     //  2 trips to db ??? TODO FIXME
             }
         }
+
+        public void SetEmpty()
+        {
+            Rows = new List<T>();
+        }
+
     }
 
     public class DataPageReq
