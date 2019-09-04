@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DotStd
@@ -34,6 +35,11 @@ namespace DotStd
         public const string kHttps = "https://";
         public const string kHttp = "http://";
         public const string kSep = "/";
+
+        public const string kArg = "?"; // start of args on URL.
+        public const string kArgSep = "&";  // sep args on URL.
+
+        // TODO AddReturnUrl and build args.
 
         public static bool IsHttpX(string sURL)
         {
@@ -125,7 +131,8 @@ namespace DotStd
 
         public static string Combine(params string[] array)
         {
-            // Like Path.Combine but for URLs
+            // Like Path.Combine() but for URLs
+
             var sb = new StringBuilder();
             int i = 0;
             bool endSep = false;
@@ -181,7 +188,7 @@ namespace DotStd
         public static string Make(string sPage, params string[] sArgs)
         {
             // build a local URL link with "Query" args. sPage can be empty.
-            // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode()
+            // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode() already called.
             // FormUrlEncodedContent already called.
 
             if (sPage == null)
@@ -191,11 +198,11 @@ namespace DotStd
             {
                 if (i == 0)
                 {
-                    sPage += "?";
+                    sPage += kArg;
                 }
                 else
                 {
-                    sPage += "&"; // arg usually in the form "X=Y"
+                    sPage += kArgSep; // arg usually in the form "X=Y"
                 }
                 sPage += x;
                 i++;
@@ -208,17 +215,14 @@ namespace DotStd
             // build a local URL link with paired "Query" args. sPage can be empty.
             if (sPage == null)
                 sPage = "";
+            string sep = kArg;
             for (int i = 0; i < sArgs.Length; i += 2)
             {
-                if (i == 0)
-                {
-                    sPage += "?";
-                }
-                else
-                {
-                    sPage += "&";
-                }
-                sPage += sArgs[i] + "=" + sArgs[i + 1];
+                if (string.IsNullOrWhiteSpace(sArgs[i + 1]))
+                    continue;
+                sPage += sep;  
+                sPage += sArgs[i] + "=" + WebUtility.UrlEncode(sArgs[i + 1]);
+                sep = kArgSep;
             }
             return sPage;
         }
