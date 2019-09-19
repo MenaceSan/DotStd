@@ -51,6 +51,7 @@ namespace DotStd
 
         public static T GetKeyT<TId>(TId id, int decaysec, Func<TId, T> factory)
         {
+            // Get object from cache and Load/Create it if needed.
             // NOTE: await Task<T> cant be done inside lock !???
             // TId = int or string.
             // like IMemoryCache GetOrCreate
@@ -111,7 +112,7 @@ namespace DotStd
 
         public static T Get(int id, int decaysec, Func<int, T> factory)
         {
-            // Find this object in the cache. Load it if it isn't present.
+            // Find this object in the cache. Load/Create it if it isn't present.
             // T loader(int)
             // like IMemoryCache GetOrCreate
 

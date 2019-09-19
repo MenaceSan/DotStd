@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -13,8 +14,7 @@ namespace DotStd
         // Similar to ASP Core IStringLocalizer
 
         bool SetFromLanguage(LanguageId fromLang);
-        string TranslateTo(string fromLangWords, LanguageId toLang);
-        string TranslateHtmlTo(string fromLangHtml, LanguageId toLang);
+        Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang);
     }
 
     public abstract class TranslatorBase : ITranslatorTo
@@ -25,7 +25,7 @@ namespace DotStd
         // Use the IHtmlLocalizer<T> implementation for resources that contain HTML.
         // NOTE: we might want to check the "Accept-Language" header on HTTP messages ?
 
-        protected LanguageId _fromLang = LanguageId.en;           // English is default.
+        protected LanguageId _fromLang = LanguageId.en;           // English is default source language.
 
         public static ulong GetHashCode(string s)
         {
@@ -41,24 +41,15 @@ namespace DotStd
             return true;
         }
 
-        public abstract string TranslateTo(string fromLangWords, LanguageId toLang);
-
-        public string TranslateHtmlTo(string fromLangHtml, LanguageId toLang)
-        {
-            // Break up XML/HTML and just translate the text contents.
-            // Ignore tags and elements. ignore {handlebars} ??
-
-            if (toLang == _fromLang)
-                return fromLangHtml;
-            return fromLangHtml;
-        }
+        public abstract Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang);
     }
-    
+
     public class TranslatorTest : TranslatorBase
     {
         // A dummy/test translator . takes English (or anything) and converts to a fake langauge with accented vowels.
         // LanguageId.test
         // Assume any caching happens at a higher level.
+        // TODO : ensure we dont double translate.
 
         static char[] _pairs = new char[] {     // Swap letters.
             'A', 'Ä', 'a', 'ä', // C4, E4
@@ -77,15 +68,16 @@ namespace DotStd
             'f', 'ƒ',       // 83
         };
 
-        public const char kStart = 'α'; // all test words start with .
-        public const char kEnd = 'Ω'; // all test words end with .
+        public const char kStart = 'α'; // all test words start with this.
+        public const char kEnd = 'Ω'; // all test words end with this. Assume this is not normal.
 
         public static bool IsTestLang(string s)
         {
+            // Has this string already been translated? This should not happen . indicate failure.
             return s.Contains(kEnd.ToString());
         }
 
-        public override string TranslateTo(string fromLangWords, LanguageId toLang)
+        public string TranslateText(string fromLangWords, LanguageId toLang)
         {
             if (toLang == _fromLang)
                 return fromLangWords;
@@ -99,8 +91,12 @@ namespace DotStd
             return fromLangWords;
         }
 
+        public override Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang)
+        {
+            return Task.FromResult(TranslateText(fromLangWords, toLang));
+        }
     }
-    
+
     public class TranslatorGoogle : TranslatorBase
     {
         // Wrap the Google translate service.
@@ -108,11 +104,13 @@ namespace DotStd
 
         public override bool SetFromLanguage(LanguageId fromLang)
         {
+            base.SetFromLanguage(fromLang);
             throw new NotImplementedException();
         }
 
-        public override string TranslateTo(string fromLangWords, LanguageId toLang)
+        public override Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang)
         {
+            // TODO IMPL
             throw new NotImplementedException();
         }
     }

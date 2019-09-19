@@ -47,13 +47,18 @@ namespace DotStd
 
         public static int GetDayStampInt(DateTime dt)
         {
-            // e.g. 20180302
+            // encode date as int. e.g. 20180302
             int iVal = dt.Year;
             iVal *= 100;
             iVal += dt.Month;
             iVal *= 100;
             iVal += dt.Day;
             return iVal;
+        }
+
+        public string GetName(DateTime dt)
+        {
+            return _sFilePathPrefix + GetDayStampInt(dt).ToString() + ".log";
         }
 
         TextWriter OpenLog(DateTime tNow)
@@ -63,15 +68,16 @@ namespace DotStd
 
             bool created = false;
             DateTime tDay = tNow.Date;
+ 
             if (tDay != _Day)
             {
                 _Day = tDay;
-                _sFilePathDay = _sFilePathPrefix + GetDayStampInt(_Day).ToString() + ".log";
+                _sFilePathDay = GetName(_Day) ;
                 DirUtil.DirCreateForFile(_sFilePathDay);
 
                 // Trim old log files from this directory?
                 // TODO FileUtil.DirEmptyOld()
-                created = true;
+                created = !File.Exists(_sFilePathDay);
             }
 
             StreamWriter w = File.AppendText(_sFilePathDay);
@@ -79,7 +85,7 @@ namespace DotStd
             if (created)
             {
                 // All log files should have this header.
-                w.WriteLine($"Log File Created '{tDay}'");
+                w.WriteLine($"Log File Created '{tDay.ToString("yyyy/MM/dd")}'");
             }
             return w;
         }
@@ -100,7 +106,7 @@ namespace DotStd
                 DateTime tNow = DateTime.Now;       // local server time.
                 lock (this) using (var w = OpenLog(tNow))
                     {
-                        w.WriteLine("{0}{1}{2}", tNow.ToShortTimeString(), GetSeparator(entry.Level), entry.Message);
+                        w.WriteLine("{0}{1}{2}", tNow.ToString("HH:mm:ss"), GetSeparator(entry.Level), entry.Message);
                         if (!ValidState.IsEmpty(entry.Detail))
                         {
                             w.WriteLine("\t" + entry.Detail.ToString());

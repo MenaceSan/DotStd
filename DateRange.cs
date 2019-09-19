@@ -14,7 +14,7 @@ namespace DotStd
         // <member name="F:OfficeOpenXml.ConditionalFormatting.eExcelConditionalFormattingTimePeriodType.LastWeek">
         // <member name="F:Intuit.Ipp.Data.DateMacro.LastWeek">
 
-        Custom = 0,     // maybe nothing.
+        Custom = 0,     // may be empty or arbitrary date range.
         [Description("All Dates")]
         All = 1,        // Any data i might have. no filter on time. Max Range.
         None = 2,       // Empty date range.
@@ -46,11 +46,10 @@ namespace DotStd
 
     /// <summary>
     /// Represents a range of two date/times. .NET has no native concept.
+    /// A range of DateTime. Might be just dates or full times. usually UTC.
     /// </summary>
     public struct DateRange : IEquatable<DateRange>
     {
-        // A range of DateTime. Might be just dates or full times. usually UTC.
-
         /// <summary>
         /// Gets or Sets the date representing the start of this range.
         /// </summary>
@@ -63,7 +62,7 @@ namespace DotStd
 
         public bool IsValidRange
         {
-            // Is date range valid? 
+            // Is date range valid? Not extreme or backwards.
             // NOTE: Empty range is valid.
             get
             {
@@ -71,10 +70,23 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// Gets the number of ticks in the range.
+        /// </summary>
+        public long Ticks
+        {
+            get
+            {
+                return this.End.Ticks - this.Start.Ticks;
+            }
+        }
+
+        /// <summary>
+        /// Gets TimeSpan for the range.
+        /// NOTE: Does not check IsExtremeDate().
+        /// </summary>
         public TimeSpan TimeSpan
         {
-            // Exclusive dates.
-            // NOTE: if IsExtremeDate() then this really isn't valid.
             get
             {
                 return this.End - this.Start;
@@ -85,7 +97,7 @@ namespace DotStd
         /// Gets the range of time only if the range is valid (e.g. Start less than End) else return 0.
         /// </summary>
         /// <returns>Integer minutes of time span. If span is not valid return 0.</returns>
-        public int SpanMinutesValid
+        public int TotalMinutesValid
         {
             get
             {
@@ -132,7 +144,7 @@ namespace DotStd
             : this()
         {
             Start = start;
-            End = end ?? DateTime.MaxValue;
+            End = end ?? DateTime.MaxValue; // infinite.
         }
 
         /// <summary>
@@ -155,6 +167,7 @@ namespace DotStd
 
         public void FixExtreme(bool inclusiveDefault)
         {
+            // Try to fix bad data.
             // Null/empty dates produce IsExtremeDate. do i want this to mean infinite range ?
             bool isStartEx = Start.IsExtremeDate();
             bool isEndEx = End.IsExtremeDate();
@@ -186,7 +199,7 @@ namespace DotStd
         }
 
         /// <summary>
-        /// Expand the range of time to include this date time.
+        /// Expand / union the range of time to include this date time.
         /// </summary>
         public void Add(DateTime dt)
         {
@@ -197,6 +210,9 @@ namespace DotStd
                 End = dt;
         }
 
+        /// <summary>
+        /// Expand / union the range of time to include this date time.
+        /// </summary>
         public void Add(DateRange dtr)
         {
             // Add / Union a date range to this.
@@ -208,9 +224,9 @@ namespace DotStd
 
 
         /// <summary>
-        /// Returns true if the specified DateTimes fall between the DateTimes of the range.
+        /// Returns true if the specified DateTime falls between the DateTimes of the range.
         /// </summary>
-        /// <param name="dates">An array of dates to check</param>
+        /// <param name="dateTime">date to check</param>
         /// <returns>
         /// true, if all dates supplied fall between the start DateTime and end DateTime of 
         /// the range and false otherwise.
@@ -248,7 +264,7 @@ namespace DotStd
         /// Converts the value of the current DateTimeRange object to a string of the format "Start - End"
         /// </summary>
         /// <returns>A string representation of the DateTimeRange.</returns>
-         public override string ToString()
+        public override string ToString()
         {
             bool x1 = Start.IsExtremeDate();
             bool x2 = End.IsExtremeDate();
@@ -317,12 +333,11 @@ namespace DotStd
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is DateRange))
+            if (obj is DateRange)
             {
-                return false;
+                return Equals((DateRange)obj);
             }
-
-            return Equals((DateRange)obj);
+            return false;
         }
 
         /// <summary>
@@ -373,7 +388,8 @@ namespace DotStd
         public void SetDatesForWeek(DateTime dt, bool isStartDate_)
         {
             // Create a week of inclusive dates.
-            // date_ = start or end of week,
+            /// <param name="dt">start or end of week</param>
+       
             dt = dt.Date;
             if (isStartDate_)
             {

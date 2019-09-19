@@ -49,7 +49,7 @@ namespace DotStd
 
         public static ulong GetKnuthHash(string read)
         {
-            // Very fast 64 bit string anti-collision hash. 
+            // Very fast 64 bit string anti-collision hash of a string. 
             // like object.GetHashCode() but 64 bit.
             // use 64 bits for lower hash collisions. 
             // ? Make this faster by doing 8 byte chunks?
@@ -139,6 +139,11 @@ namespace DotStd
             // leOutnBase64 = how big is the output base64 string. for db storage.
             int lenOutBin = SerializeUtil.FromBase64Len(lenOutBase64);
             return Convert.ToBase64String(GetHashSized(password, systemsecret, salt, id, lenOutBin));
+        }
+
+        public static int GetHashInt(ulong n)
+        {
+            return (int)(n ^ (n >> 32));   // Collapse Hash code.
         }
 
         public HashUtil(HashAlgorithm hasher)

@@ -25,7 +25,17 @@ namespace DotStd
         void SetPropertyValue(string name, object val);
     }
 
-    public class PropertyBagObj : IPropertyGetter, IPropertySetter
+    public abstract class PropertyBagBase : IPropertyGetter
+    {
+        public abstract object GetPropertyValue(string name);
+
+        public string ReplaceTokenX(string s, string errorStr = null)
+        {
+            return Formatter.ReplaceTokenX(s, this, errorStr);
+        }
+    }
+
+    public class PropertyBagObj : PropertyBagBase, IPropertySetter
     {
         // Just use reflection to get a properties value from an object. IPropertyGetter
         // Assume i CANNOT just add new props on the fly.
@@ -42,7 +52,7 @@ namespace DotStd
             Type = typeSrc;
         }
 
-        public virtual object GetPropertyValue(string name)
+        public override object GetPropertyValue(string name)
         {
             if (_Obj == null)
                 return null;
@@ -77,7 +87,7 @@ namespace DotStd
         }
     }
 
-    public class PropertyBagDic : IPropertyGetter, IPropertySetter
+    public class PropertyBagDic : PropertyBagBase, IPropertySetter
     {
         // a IPropertyGetter implemented as a Dictionary
         // Assume i CAN add new props on the fly.
@@ -115,7 +125,7 @@ namespace DotStd
             }
         }
 
-        public virtual object GetPropertyValue(string name) // IPropertyGetter
+        public override object GetPropertyValue(string name) // IPropertyGetter
         {
             if (_Props == null)
                 return null;
@@ -130,11 +140,11 @@ namespace DotStd
         public virtual void SetPropertyValue(string name, object val) // IPropertySetter
         {
             CheckProps();
-            _Props[name] = val;
+            _Props[name] = val; // overwrite if existing.
         }
     }
 
-    public class PropertyBagKeyValue : IPropertyGetter
+    public class PropertyBagKeyValue : PropertyBagBase
     {
         // use with this.Request.Form, IFormCollection
 
@@ -144,7 +154,7 @@ namespace DotStd
         {
             Row = row;
         }
-        public object GetPropertyValue(string name)
+        public override object GetPropertyValue(string name)
         {
             foreach (var x in Row)
             {
@@ -155,7 +165,7 @@ namespace DotStd
         }
     }
 
-    public class PropertyBagRow : IPropertyGetter
+    public class PropertyBagRow : PropertyBagBase
     {
         // a IPropertyGetter implemented as a DataRow
 
@@ -170,7 +180,7 @@ namespace DotStd
             Row = row;
         }
 
-        public virtual object GetPropertyValue(string name)
+        public override object GetPropertyValue(string name)
         {
             // Row.Table = provide field names for Row
 
@@ -213,7 +223,7 @@ namespace DotStd
             prop.SetValue(toObj, value);
         }
 
-        public static int InjectProperties<T>(T toObj, object fromObj)
+        public static int InjectProperties<T>(T toObj, object fromObj, List<string> ignored = null)
         {
             // Inject all properties that match. (not fields or events) like IPropertySetter
             // fromObj is some type derived from T. may have many more props but we will ignore them. Only use T Props
@@ -233,15 +243,21 @@ namespace DotStd
             foreach (PropertyInfo propTo in toType.GetProperties())
             {
                 if (!propTo.CanWrite)
-                    continue;               
+                    continue;
 
                 // Find eqiv prop by name.
                 PropertyInfo propFrom = sameType ? propTo : fromType.GetProperty(propTo.Name);
                 if (propFrom == null || !propFrom.CanRead)
                     continue;
+
+                // Stuff to ignore?
                 object[] attrs2 = propFrom.GetCustomAttributes(ignoreAttrType, false);  // This was probably not populated correctly so ignore it.
                 if (attrs2.Length > 0)
                     continue;
+                if (ignored != null && ignored.Contains(propTo.Name))
+                {
+                    continue;   // skip this.
+                }
 
                 object val = propFrom.GetValue(fromObj, null);
                 propTo.SetValue(toObj, val, null);      // like IPropertySetter

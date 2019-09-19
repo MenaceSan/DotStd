@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -86,6 +87,75 @@ namespace DotStd
             return ti.ToTitleCase(str).Trim();
         }
 
+        public static string ToLower1(string s)
+        {
+            // Opposite of Formatter.ToTitleCase()
+            // make sure the first letter is lower case char. JavaScript names like this?
+            if (string.IsNullOrEmpty(s))
+                return s;
+            if (!StringUtil.IsUpper1(s[0]))
+                return s;
+            return char.ToLower(s[0]) + s.Substring(1);
+        }
+
+        static readonly Dictionary<string, string> _SpecialPlurals = new Dictionary<string, string> {
+            { "word", "work" },
+            { "Work", "Work" },
+            { "fish", "fish" },
+            { "Fish", "Fish" },
+        };
+
+        public static string ToPlural(string text)
+        {
+            // Attempt to pluralize a word. Assume its not plural already.
+            // Preserve case.
+            // like PluralizationService.Pluralize(String)
+
+            if (string.IsNullOrWhiteSpace(text))
+                return text;
+
+            string pluralized;
+            if (_SpecialPlurals.TryGetValue(text, out pluralized))
+                return pluralized;
+
+            if (text.EndsWith("y", StringComparison.OrdinalIgnoreCase) &&
+                (text.Length <= 1 || !StringUtil.IsVowel(text[text.Length - 2])))
+            {
+                return text.Substring(0, text.Length - 1) + "ies";
+            }
+            else if (text.EndsWith("us", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // http://en.wikipedia.org/wiki/Plural_form_of_words_ending_in_-us
+                return text + "es";
+            }
+            else if (text.EndsWith("ss", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return text + "es";
+            }
+            else if (text.EndsWith("s", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return text;
+            }
+            else if (text.EndsWith("x", StringComparison.InvariantCultureIgnoreCase) ||
+                text.EndsWith("ch", StringComparison.InvariantCultureIgnoreCase) ||
+                text.EndsWith("sh", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return text + "es";
+            }
+            else if (text.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
+            {
+                return text.Substring(0, text.Length - 1) + "ves";
+            }
+            else if (text.EndsWith("fe", StringComparison.InvariantCultureIgnoreCase) && text.Length > 2)
+            {
+                return text.Substring(0, text.Length - 2) + "ves";
+            }
+            else
+            {
+                return text + "s";
+            }
+        }
+
         public static string ToBaseN(long value, int toBase)
         {
             // convert to a string number radix base X, 2,8,10,16, etc..
@@ -127,7 +197,7 @@ namespace DotStd
             return result;
         }
 
-        public static string Join(string separator, params string[] array)
+        public static string JoinN(string separator, params string[] array)
         {
             // join with separator = "," but skip nulls and empties.
 
@@ -144,6 +214,13 @@ namespace DotStd
             // Puts together first,middle,last names separated by spaces. Always capitalize.
             // ignores null, whitespace. 
             return JoinTitles(" ", array);
+        }
+
+        public static string Initials(string nameString)
+        {
+            // Make a name into initials.
+            var initials = new Regex(@"(\b[a-zA-Z])[a-zA-Z]* ?");
+            return initials.Replace(nameString, "$1");
         }
 
         public static string GetYN(bool yn)
@@ -182,22 +259,35 @@ namespace DotStd
             return sOut.ToString();
         }
 
-        public static string GetFirstLine(string s, int iLenMax = 128)
+        public static string GetFirstLine(string s, out int lenLine)
         {
-            // get the first line of a multi line string.
-            int iLen = s.Length;
-            if (iLen < iLenMax)
-                iLenMax = iLen;
-            iLen = s.IndexOf(Environment.NewLine);
-            if (iLen > 0 && iLen < iLenMax)
-                iLenMax = iLen;
-            iLen = s.IndexOf("\n");
-            if (iLen > 0 && iLen < iLenMax)
-                iLenMax = iLen;
-            iLen = s.IndexOf("\r");
-            if (iLen > 0 && iLen < iLenMax)
-                iLenMax = iLen;
-            return s.Substring(0, iLenMax);
+            // get the first line of a multi line string. use any Environment.NewLine (\n,\r, \r\n)
+            // out lenLine = len of first line including NL.
+
+            int len = s.IndexOf("\n");
+            if (len < 0)
+            {
+                len = s.IndexOf("\r");
+            }
+
+            if (len < 0)
+            {
+                len = lenLine = s.Length;
+            }
+            else if (len == 0)
+            {
+                lenLine = 1;
+            }
+            else
+            {
+                lenLine = len + 1;
+                if (s[len - 1] == '\r')
+                {
+                    len--;
+                }
+            }
+
+            return s.Substring(0, len);
         }
 
         public static string ReplaceToken0(string body, string token, string value)

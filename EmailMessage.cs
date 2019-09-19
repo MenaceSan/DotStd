@@ -207,7 +207,7 @@ namespace DotStd
         //{
         // System.Web
         // If the message body is html we need to convert plain text to html format.
-        //  return HttpUtility.HtmlEncode(s).Replace("\r\n", "<br />");
+        //  return WebUtility.HtmlEncode(s).Replace("\r\n", "<br />");
         //}
     }
 }

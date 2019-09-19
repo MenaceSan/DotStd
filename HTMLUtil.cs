@@ -10,7 +10,7 @@ namespace DotStd
         // Helper functions for formatting HTML.
         // compliment Encode, Decode
         // In some ways HTML can be treated like XML except for some exceptions. (some non closed tags, literals, some encoding)
-        // Use HttpUtility.HtmlEncode() to encode a string to proper HTML. Though FormUrlEncodedContent is for URL args.
+        // Use WebUtility.HtmlEncode() to encode a string to proper HTML. Though FormUrlEncodedContent is for URL args.
 
         public const string kNBSP = "&nbsp;";   // HTML non breaking space
 

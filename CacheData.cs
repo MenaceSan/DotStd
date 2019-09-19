@@ -254,18 +254,18 @@ namespace DotStd
             return (T)CacheData.Get(typeof(T).Name);
         }
 
-        public static void Set(string id, T obj, int decaysec = 60)
+        public static void Set(string id, T obj, int decaySec = 60)
         {
             string cacheKey = MakeKey(id);
-            CacheData.Set(cacheKey, obj, decaysec);
+            CacheData.Set(cacheKey, obj, decaySec);
         }
-        public static void Set(int id, T obj, int decaysec = 60)
+        public static void Set(int id, T obj, int decaySec = 60)
         {
-            Set(id.ToString(), obj, decaysec);
+            Set(id.ToString(), obj, decaySec);
         }
-        public static void SetSingleton(T obj, int decaysec = 60)
+        public static void SetSingleton(T obj, int decaySec = 60)
         {
-            CacheData.Set(typeof(T).Name, obj, decaysec);
+            CacheData.Set(typeof(T).Name, obj, decaySec);
         }
 
         public static void ClearKey(string id)

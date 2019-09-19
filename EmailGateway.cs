@@ -25,7 +25,7 @@ namespace DotStd
         LinkedIn = 9,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
         Apple = 10,         // NOT USED YET.
 
-        // WordPress, GitHub,  etc.
+        // WordPress, GitHub,  etc. https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers/tree/dev/src
     }
 
     public class EmailGatewaySettings

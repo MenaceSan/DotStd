@@ -77,14 +77,21 @@ namespace DotStd
 #endif
         }
 
+        public const string Vowels = "aeiouAEIOU";
+
+        public static bool IsVowel(char ch)
+        {
+            return Vowels.IndexOf(ch) >= 0;
+        }
+
         public static bool HasUpperCase(string str)
         {
-            // IsUpper for extended ascii 
+            // IsUpper for extended ASCII 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsUpper(c));
         }
         public static bool HasLowerCase(string str)
         {
-            // IsLower for extended ascii 
+            // IsLower for extended ASCII 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsLower(c));
         }
 
@@ -289,22 +296,5 @@ namespace DotStd
             return FieldRight(s, size, '0');
         }
 
-        public static string ToLower1(string s)
-        {
-            // Opposite of ToTitleCase()
-            // make sure the first letter is lower case char. JavaScript names like this?
-            if (string.IsNullOrEmpty(s))
-                return s;
-            if (!IsUpper1(s[0]))
-                return s;
-            return char.ToLower(s[0]) + s.Substring(1);
-        }
-
-        public static string Initials(string nameString)
-        {
-            // Make a name into initials.
-            var initials = new Regex(@"(\b[a-zA-Z])[a-zA-Z]* ?");
-            return initials.Replace(nameString, "$1");
-        }
     }
 }

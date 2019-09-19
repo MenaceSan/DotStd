@@ -48,6 +48,6 @@ namespace DotStd
         // a sample, measurement, reading, point, value,
 
         DataUnit Unit { get; set; }
-        object Value { get; set; }
+        object Value { get; set; }      // double ?
     }
 }
