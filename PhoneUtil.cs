@@ -15,6 +15,7 @@ namespace DotStd
     public static class PhoneUtil
     {
         // Manage string phone numbers . encode/decode formatting.
+        // https://www.twilio.com/blog/validating-phone-numbers-effectively-with-c-and-the-net-frameworks
 
         public static bool IsValidPhone(string phone, bool isOptional=false)
         {

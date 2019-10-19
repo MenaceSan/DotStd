@@ -13,7 +13,7 @@ namespace DotStd
         Unknown = 0,  // unknown.
         LandLine,       // No SMS
 
-        // free email gateways we know about.
+        // free US email gateways (to SMS) we know about.
         ATT,
         Boost,
         Cricket,
@@ -57,11 +57,11 @@ namespace DotStd
 
         public void SendSms(PhoneCarrierId carrierId, string number, string subject, string body)
         {
-            // Via email. 
+            // Via email. Will impose an odd style on the Text message.
             // Will look like: (empty subject is not allowed)
             // FRM: email name
             // SUBJ: xxx
-            // MSG: stuff in body.
+            // MSG: stuff in body. (optional)
             // Any responses will be back to the sender email.
 
         }

@@ -15,7 +15,7 @@ namespace DotStd
         public static Dictionary<string, WeakReference> _WeakRefs = new Dictionary<string, WeakReference>();  // use this to tell if the object might still be referenced by someone even though the cache has aged out.
         public static DateTime _LastFlushTime = DateTime.MinValue;      // Flush dead stuff out of the _WeakRefs cache eventually.
 
-        public static void FlushDead()
+        internal static void FlushDead()
         {
             // Periodically flush the disposed weak refs.
             // Throttle calling this using FlushDeadTick()
@@ -39,13 +39,12 @@ namespace DotStd
             }
         }
 
-        public static void FlushDeadTick()
+        public static void FlushDeadTick(DateTime utcNow)
         {
             // Make sure we don't call FlushDead too often. throttle
-            DateTime now = DateTime.UtcNow;
-            if ((now - _LastFlushTime).TotalMinutes < 2)    // throttle.
+            if ((utcNow - _LastFlushTime).TotalMinutes < 2)    // throttle.
                 return;
-            _LastFlushTime = now;
+            _LastFlushTime = utcNow;
             FlushDead();
         }
 
@@ -102,7 +101,7 @@ namespace DotStd
 
                 if (obj != null)
                 {
-                    // store it in cache. refresh decaysec.
+                    // store it in cache. refresh decaySec.
                     CacheData.Set(cacheKey, obj, decaysec);
                 }
 

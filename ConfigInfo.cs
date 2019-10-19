@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DotStd
 {
     public enum ConfigMode
     {
-        //! What type of deployment config is this ? Can have sub categories. Postfix by number for sub type.
+        //! What type of deployment config is this ? AKA Environment.
+        //! Can have sub categories. Postfix by number for sub type.
         //! Assume upper case. 
         //! Similar to .NET Core IHostingEnvironment.IsDevelopment or IHostingEnvironment.EnvironmentName
 
+        [Description("Development")]
         DEV,        // local deploy of code, maybe shared db or local db. May have variations, Dev3, Dev2 etc. AKA "Development" in Core
         TEST,       // Testing server for QA people usually.
         STAGING,    // Optional staging server, More public access. Some projects skip this mode.
+        [Description("Production")]
         PROD,       // prod server seen by customers. AKA "Production" in Core
     }
 
@@ -48,7 +52,7 @@ namespace DotStd
 
         public const string kApps = "Apps:";    // AKA appSettings
         public const string kConnectionStrings = "ConnectionStrings:";      // ConnectionStrings to db.
-        public const string kSmtp = "Smtp:";    // configure how to send emails.
+        public const string kSmtp = "Smtp:";    // configure how to send emails. Old XML config had weird format.
 
         public const string kAppsConfigMode = "Apps:ConfigMode";       // What mode is this app running? Tag in appSettings. AKA EnvironmentName
         public const string kAppsLogFileDir = "Apps:LogFileDir";       // Where to put my local log files.

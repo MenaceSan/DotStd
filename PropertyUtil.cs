@@ -41,15 +41,17 @@ namespace DotStd
         // Assume i CANNOT just add new props on the fly.
 
         object _Obj; // just use Type reflection on this.
-        public Type Type { get; set; }  // Maybe not the same as Obj.GetType().
+        public Type Type { get; set; }  // Maybe not the same as Obj.GetType()
+        public bool IsCaseSensative { get; set; } = true;
 
         public PropertyBagObj()
         {
         }
-        public PropertyBagObj(object obj, Type typeSrc = null)
+        public PropertyBagObj(object obj, Type typeSrc = null, bool isCaseSensative = true)
         {
             _Obj = obj;
             Type = typeSrc;
+            IsCaseSensative = isCaseSensative;
         }
 
         public override object GetPropertyValue(string name)
@@ -62,7 +64,8 @@ namespace DotStd
                 Type = _Obj.GetType();   // use default type.
             }
 
-            PropertyInfo prop = Type.GetProperty(name);
+            PropertyInfo prop = IsCaseSensative ? Type.GetProperty(name)
+                : Type.GetProperty(name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);  
             if (prop == null || !prop.CanRead)
                 return null;
 

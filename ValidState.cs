@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace DotStd
 {
     public interface IValidatorT<T>
     {
-        // This class is used to validate some other type. AKA Validator
+        // This class is used to validate some other class type. AKA Validator
         // Should we just use Func<T, bool> ??
         // Filter for valid strings/objects?
         // like System.Web.UI.IValidator
@@ -110,7 +111,7 @@ namespace DotStd
 
         public static bool IsTrue(string s)
         {
-            if (string.Compare(s, "true", true) == 0)
+            if (string.Compare(s, SerializeUtil.kTrue, true) == 0)
                 return true;
             if (string.Compare(s, "t", true) == 0)
                 return true;
@@ -123,7 +124,7 @@ namespace DotStd
 
         public static bool IsFalse(string s)
         {
-            if (string.Compare(s, "false", true) == 0)
+            if (string.Compare(s, SerializeUtil.kFalse, true) == 0)
                 return true;
             if (string.Compare(s, "f", true) == 0)
                 return true;
@@ -146,11 +147,11 @@ namespace DotStd
             return id.ToInt() != kInvalidId;
         }
 
-        public const string kUniqueAllowX = "_@.-+"; // special allowed.
+        public const string kUniqueAllowX = "_@.-+"; // special allowed chars.
 
         public static bool IsValidUnique(string s)
         {
-            // Is unique string valid ? might be email ?
+            // Is string valid as a unique id ? might be email ?
             // This should be a proper unique string for Uid. 
             // Can be used to detect proper property/field names from untrusted sources. e.g. Grid column sort.
             // AlphNumeric + "_@.-+" ONLY NOT "," 
@@ -169,7 +170,7 @@ namespace DotStd
                     continue;
                 if (ch >= '0' && ch <= '9')
                     continue;
-                if (kUniqueAllowX.IndexOf(ch) >= 0)      // allowed.
+                if (kUniqueAllowX.IndexOf(ch) >= 0)      // allowed special chars.
                     continue;
                 return false;   // bad char.
             }
@@ -181,6 +182,7 @@ namespace DotStd
         public void AddError(string nameField, string error)
         {
             // Record some error. nameField = nameof(x);
+            // nameField = "" = global error.
             this.ValidLevel = ValidLevel.Fail;
             Fields.Add(nameField, new ValidField { MemberName = nameField, Description = error, Level = ValidLevel.Fail });
         }
@@ -203,6 +205,15 @@ namespace DotStd
 
         //*********************
         // Internal assertions for code.
+
+        public static void AssertTrue(bool isTrue, string msg = "")
+        {
+            // Internal check. No throw. record for debug purposes.
+            if (isTrue)
+                return;
+
+            Debug.WriteLine("AssertTrue FAIL " + msg);
+        }
 
         public static void ThrowIf(bool isBad, string msg = null)
         {
@@ -299,7 +310,7 @@ namespace DotStd
         // Similar to ASP ModelState.TryValidateModel
         // like System.Web.UI.IValidator
 
-        // Name ?
+        // Name ? // all objects support a name property ?
         // Save // Persist object to db ?
 
         ValidState GetValidState();

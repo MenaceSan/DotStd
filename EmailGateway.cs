@@ -30,25 +30,26 @@ namespace DotStd
 
     public class EmailGatewaySettings
     {
-        // Send email settings.
+        // Email Send settings.
         // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
         // https://developer.telerik.com/featured/new-configuration-model-asp-net-core/
         // Similar to System.Net.Configuration.SmtpNetworkElement from MailSettingsSectionGroup, 
         // like .NET framework <system.net> GetMailSettings as default for SmtpClient. no action required.
         // system.net/mailSettings/smtp
 
-        public string Host { get; set; }  // AKA host
-        public int Port { get; set; }       // 587; or 25
+        public string Host { get; set; }  // AKA host, 
+        public int Port { get; set; }       // (ushort) for SMTP 587 or 25.
         public string Username { get; set; }    // AKA userName
-        public string Password { get; set; }    // AKA password. might be encrypted??
+        public string Password { get; set; }    // AKA password. might be encrypted?
+        public bool EnableSsl { get; set; } = true;
 
         public IValidatorT<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
 
         public void Init(IPropertyGetter config)
         {
             // like config._Configuration.Bind(this);
-            PropertyUtil.InjectProperties(this, config, "Smtp:");
-        }
+            PropertyUtil.InjectProperties(this, config, ConfigInfoBase.kSmtp);
+        }      
 
         public EmailGatewaySettings(ConfigInfoBase config = null, IValidatorT<string> allowedFilter = null)
         {
@@ -63,7 +64,7 @@ namespace DotStd
             AllowedFilter = config.IsConfigModeProd() ? null : allowedFilter;     // Can we send email to anybody ? ignore white list in prod mode.
 
             // Search for email config in AppSettings.json for .NET Core.
-            if (config.GetSetting("Smtp:Host") != null)
+            if (config.GetSetting(ConfigInfoBase.kSmtp + "Host") != null)
             {
                 Init(config);
             }

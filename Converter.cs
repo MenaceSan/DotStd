@@ -152,7 +152,7 @@ namespace DotStd
 
         public static long ToLong(object o)
         {
-            // Used for NPI
+            // Used for NPI. 10 digit integer. https://en.wikipedia.org/wiki/National_Provider_Identifier
             if (ValidState.IsNull(o))
                 return 0;
 

@@ -212,7 +212,7 @@ namespace DotStd
             // LIKE Where(s => s.Field<string>(LookupColumn).ToUpper().StartsWith(filter))
             if (!source.Any() || string.IsNullOrEmpty(propertyName))
                 return source;
-            PropertyInfo propertyInfo = source.First().GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             return source.Where(e => propertyInfo.GetValue(e, null).ToString().ToUpper().StartsWith(filterStart));
         }
 

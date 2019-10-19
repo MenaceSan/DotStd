@@ -53,7 +53,8 @@ namespace DotStd
         public int RecurInterval = 1;    // TimeUnitId interval skips. e.g. 2 with unit day = every 2 days.
         public DaysOfWeek DowBits = DaysOfWeek.Any; // only on these days of the week.
 
-        public static readonly string[] _Units = { // for TimeUnitId
+        public static readonly string[] _Units =  // for TimeUnitId
+        {
             null, null,     // once
             "milliseconds", "every millisecond",
             "seconds", "every second",

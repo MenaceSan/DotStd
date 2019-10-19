@@ -80,7 +80,7 @@ namespace DotStd
         public static string BaseDirectory
         {
             // What is my install directory? i have resource files here.
-            // Maybe Not a web app. don't use HttpContext.Current.Server.MapPath
+            // i may be a web app or not. don't use HttpContext.Current.Server.MapPath
             // Similar to IHostingEnvironment.ContentRootPath
 
             get
@@ -142,7 +142,7 @@ namespace DotStd
             return System.Diagnostics.Debugger.IsAttached;
         }
 
-        public static bool IsInDocker { get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"; } }
+        public static bool IsInDocker { get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue; } }
 
     }
 }
