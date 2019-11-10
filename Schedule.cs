@@ -5,12 +5,13 @@ using System.Text;
 
 namespace DotStd
 {
-    public enum TimeUnitId : byte
+    public enum TimeUnitId // : byte // NOTE: EF Pomelo will throw 'Specified cast is not valid' exception if we use this directly with byte backed type !!!
     {
         // Time unit type. 
         // Schedule can recur every Nth recurring (Interval) time unit.
         // used by schedule.RecurUnitId
         // used by app_job.RecurUnitId
+        
 
         None = 0,       // just once. never again
 
@@ -29,7 +30,7 @@ namespace DotStd
     }
 
     [Flags]
-    public enum DaysOfWeek : byte
+    public enum DaysOfWeek // : byte // NOTE: EF Pomelo will throw "Specified cast is not valid' exception if we use this directly with byte backed type !!!
     {
         // Bitmask of days of week.
         // 0 = none. 

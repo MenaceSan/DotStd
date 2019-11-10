@@ -17,6 +17,7 @@ namespace DotStd
 
         proper = 0,     // non-translatable proper name.
 
+        [Description("Default")]    // default langauge.
         native = 1,     // The native language of the app, whatever that might be.
 
         [Description("English")]    // English

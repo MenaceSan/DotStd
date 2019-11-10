@@ -121,7 +121,7 @@ namespace DotStd
             {
                 _regexNum2 = new Regex(@"^\s*\-?\d+(\.\d+)?\s*$");
             }
-            return !_regexNum2.IsMatch(str);
+            return _regexNum2.IsMatch(str);
         }
 
         public static bool IsAlphaNumeric1(string str)

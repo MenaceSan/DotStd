@@ -145,7 +145,7 @@ namespace DotStd
 
         public string GetSetting(string name)
         {
-            // GetPropertyValue cast to string.
+            // GetPropertyValue cast to string. null = not present.
             var o = GetPropertyValue(name);
             return o?.ToString();
         }

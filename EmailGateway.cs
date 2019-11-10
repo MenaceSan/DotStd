@@ -1,34 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace DotStd
 {
-    public enum EmailStatusId
-    {
-        // Test if SMS or email works.
-        // used by user_phone.StatusId, user_email.StatusId
 
-        Untested = 0,           // No idea if email or SMS is valid.
-
-        TestMessageSent = 1,    // Waiting for confirm handshake.
-        ReConfirmAddress = 2,      // a re-confirm has been sent.
-        ConfirmedAddress = 3,          // got confirm back at some DateTime. (maybe old)
-
-        // OpenId Federated logins/validation are validated automatically. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
-        // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-2.2
-
-        Microsoft = 5,      // OpenId Auth type. Azure is the same ?
-        Google = 6,         // Auth type name.
-        Facebook = 7,
-        Twitter = 8,        // NOT USED YET.
-        LinkedIn = 9,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
-        Apple = 10,         // NOT USED YET.
-
-        // WordPress, GitHub,  etc. https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers/tree/dev/src
-    }
-
-    public class EmailGatewaySettings
+    public class EmailGatewaySettings   // IOptions
     {
         // Email Send settings.
         // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
@@ -49,7 +27,7 @@ namespace DotStd
         {
             // like config._Configuration.Bind(this);
             PropertyUtil.InjectProperties(this, config, ConfigInfoBase.kSmtp);
-        }      
+        }
 
         public EmailGatewaySettings(ConfigInfoBase config = null, IValidatorT<string> allowedFilter = null)
         {
@@ -71,7 +49,7 @@ namespace DotStd
         }
     }
 
-    public class EmailGateway
+    public class EmailGateway : IMessageSender<EmailMessage>
     {
         // Send email.
         // helper for System.Net.Mail.SmtpClient For use with EmailMessage
@@ -125,15 +103,16 @@ namespace DotStd
             return true;
         }
 
-        public bool PrepareToSend(EmailMessage oEmail)
+        public bool PrepareToSend(EmailMessage msg)
         {
             // Is this EmailMessage valid to send ?
-
-            if (!oEmail.isValidMessage())
+            if (msg == null)
+                return false;
+            if (!msg.isValidMessage())
                 return false;   // not valid to send.
 
             // filter external emails for debug/test mode.
-            MailMessage oMessage = oEmail.GetMailMessage();
+            MailMessage oMessage = msg.GetMailMessage();
             if (Settings.AllowedFilter != null)
             {
                 for (int i = oMessage.To.Count - 1; i >= 0; i--)
@@ -155,27 +134,27 @@ namespace DotStd
             return true;
         }
 
-        public string Send(EmailMessage oEmail)
+        public string Send(EmailMessage msg)
         {
             // This can throw on error.
             // Make sure at least one Valid point of contact is provided
             // return error message or null = success.
 
-            if (!PrepareToSend(oEmail))      // Is it valid?
+            if (!PrepareToSend(msg))      // Is it valid?
                 return "Incomplete email cannot be sent";
             if (!InitClient())
                 return "The system is not configured to send email";
-            _client.Send(oEmail.GetMailMessage());
+            _client.Send(msg.GetMailMessage());
             return null;    // ok
         }
 
-        public string SendSafe(EmailMessage oEmail)
+        public string SendSafe(EmailMessage msg)
         {
             // safe send. no throw.
             // return error message or null = success.
             try
             {
-                return Send(oEmail);
+                return Send(msg);
             }
             catch (Exception ex)
             {
@@ -185,24 +164,24 @@ namespace DotStd
             }
         }
 
-        public async Task<string> SendAsync(EmailMessage oEmail)
+        public async Task<string> SendAsync(EmailMessage msg)
         {
             // return error message or null = success.
-            if (!PrepareToSend(oEmail))      // Is it valid?
+            if (!PrepareToSend(msg))      // Is it valid?
                 return "Incomplete email cannot be sent";
             if (!InitClient())
                 return "The system is not configured to send email";
-            await _client.SendMailAsync(oEmail.GetMailMessage());
+            await _client.SendMailAsync(msg.GetMailMessage());
             return null;    // ok
         }
 
-        public async Task<string> SendSafeAsync(EmailMessage oEmail)
+        public async Task<string> SendSafeAsync(EmailMessage msg)
         {
             // safe send.  no throw.
             // return error message or null = success.
             try
             {
-                return await SendAsync(oEmail);
+                return await SendAsync(msg);
             }
             catch (Exception ex)
             {
@@ -211,5 +190,11 @@ namespace DotStd
                 return ex.Message;
             }
         }
+
+        public Task<string> SendAsync(IMessageBase msg)
+        {
+            return SendAsync(msg as EmailMessage);
+        }
+
     }
 }

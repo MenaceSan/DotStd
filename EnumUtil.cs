@@ -19,7 +19,9 @@ namespace DotStd
             if (type == null)
                 return false;
             string name = value.ToString();
-            if (string.IsNullOrWhiteSpace(name) || StringUtil.IsNumeric2(name))
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+            if (StringUtil.IsNumeric2(name))    // will create a fake member if its a number ! block that.
                 return false;
             return type.GetMember(name) != null;
         }

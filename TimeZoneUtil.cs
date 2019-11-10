@@ -29,8 +29,8 @@ namespace DotStd
         AST = -(4 * 60),       // -240 = +1 hour from EST
 
         UTC = 1,        // No DST.
-        GMT = 2,        // uses DST.
-        ChunkSize = 15,     // ASSUME all zones are in this chunk size.
+        GMT = 12,        // uses DST.
+        // ChunkSize = 15,     // ASSUME all zones are in 15 minute chunk size.
 
         [Description("Australian Western Standard Time (UTC+8:00)")]
         AWST = (8 * 60),        // 480

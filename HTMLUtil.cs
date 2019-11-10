@@ -11,40 +11,54 @@ namespace DotStd
         // compliment Encode, Decode
         // In some ways HTML can be treated like XML except for some exceptions. (some non closed tags, literals, some encoding)
         // Use WebUtility.HtmlEncode() to encode a string to proper HTML. Though FormUrlEncodedContent is for URL args.
+        // NOTE: Use select2 for option lists with icons.
 
         public const string kNBSP = "&nbsp;";   // HTML non breaking space
 
         public const string kCommentOpen = "<!--";
         public const string kCommentClose = "-->";
 
-        public static string DecodeEntities2( string src)
+        public static string DecodeEntities2(string src)
         {
             // replace Non standard entities with chars. HTML is not the same as XML.
             // Replacing "&nbsp;" with "&#160;" since "&nbsp;" is not XML standard
-            // NOTE: XmlReader is vulnerable to attacks from entity creation. XSS. OK in .Net 4.0+ but use DtdProcessing.Prohibit.
+            // NOTE: XmlReader is vulnerable to attacks from entity creation. XSS. OK in .Net 4.0+ but use DtdProcessing.Prohibit !!
 
             src = src.Replace(kNBSP, " ");
             src = src.Replace("&eacute;", "é");
             src = src.Replace("&trade;", "™");
-            
+
             return src;
+        }
+
+        public const string kSelected = "selected ";
+
+        public static string GetOptStr(string value, string desc, string extra)
+        {
+            // get HTML for <select>
+            // construct HTML "<option value='1'>Main</option>");
+            // like TupleKeyValue
+            return string.Concat("<option ", extra, "value='", value, "'>", desc, "</option>");
         }
 
         public static string GetOptStr(string value, string desc, bool selected = false)
         {
-            // for <select>
-            // construct HTML "<option value='1'>Main</option>");
-            // like TupleKeyValue
-            return string.Concat("<option ", selected ? "selected " : string.Empty, "value='", value, "'>", desc, "</option>");
+            // construct HTML 
+            return GetOptStr(value, desc, selected ? kSelected : string.Empty);
         }
 
         public static string GetOptStr(int value, string desc, bool selected = false)
         {
             // construct HTML 
-            // like TupleIdValue
             return GetOptStr(value.ToString(), desc, selected);
         }
- 
+
+        public static string GetOptStr(TupleIdValue n, bool selected = false)
+        {
+            // construct HTML 
+            return GetOptStr(n.Id, n.Value, selected);
+        }
+
         public static string GetOptStr(Enum n, bool selected = false)
         {
             // construct HTML 

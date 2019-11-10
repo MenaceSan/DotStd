@@ -64,12 +64,28 @@ namespace DotStd
                 Type = _Obj.GetType();   // use default type.
             }
 
+            // Parse out a sub property after the . (or [ ?)
+            string nameChild = null;
+            int i = name.IndexOf('.');
+            if (i >= 0)
+            {
+                nameChild = name.Substring(i + 1);
+                name = name.Substring(0, i);
+            }
+
             PropertyInfo prop = IsCaseSensative ? Type.GetProperty(name)
-                : Type.GetProperty(name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);  
+                : Type.GetProperty(name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             if (prop == null || !prop.CanRead)
                 return null;
 
-            return prop.GetValue(_Obj, null);
+            object obj = prop.GetValue(_Obj, null);
+            if (nameChild != null && obj != null)
+            {
+                // Assume obj has properties of its own.
+                return (new PropertyBagObj(obj)).GetPropertyValue(nameChild);
+            }
+
+            return obj;
         }
 
         public virtual void SetPropertyValue(string name, object val)

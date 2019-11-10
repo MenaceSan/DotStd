@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Mail;
-using System.Text.RegularExpressions;
 
 namespace DotStd
 {
-    public class EmailMessage   // : IValidatable
+    public class EmailMessage : IMessageBase // : IValidatable
     {
         // Helper for System.Net.Mail.MailMessage
         // Send Emails used for : password reset, password recovery, instant reports, etc. 
@@ -51,13 +50,14 @@ namespace DotStd
 
         public void AddMailTo(MailAddress a)
         {
+            // add to a list of destination addresses.
             // Don't allow dupes.
             if (a == null)
                 return;
             foreach (var x in _message.To)
             {
                 if (String.Compare(x.Address, a.Address, StringComparison.OrdinalIgnoreCase) == 0)
-                    return; // already here.
+                    return; // already here. don't dupe it.
             }
             _message.To.Add(a);
         }

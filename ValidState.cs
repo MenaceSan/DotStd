@@ -97,7 +97,7 @@ namespace DotStd
             // DateTime.MinValue might qualify ?
             // NOTE: 0 value is not the same as empty.
 
-            if (IsNull(obj) || String.IsNullOrEmpty(obj.ToString()))
+            if (IsNull(obj) || string.IsNullOrEmpty(obj.ToString()))
                 return true;
             return false;
         }
@@ -107,6 +107,11 @@ namespace DotStd
             if (IsNull(obj) || String.IsNullOrWhiteSpace(obj.ToString()))
                 return true;
             return false;
+        }
+
+        public static bool IsNullOrDefault<T>(T obj)
+        {
+            return obj == null || obj.Equals(default(T));
         }
 
         public static bool IsTrue(string s)

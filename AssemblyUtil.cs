@@ -55,7 +55,7 @@ namespace DotStd
         {
             // For display of the build date of some Assembly
             // Get date from PE header. 
-            // NOTE: .NET core doesnt use this, so just get file date.
+            // NOTE: .NET core doesn't use this, so just get file date.
             // https://upload.wikimedia.org/wikipedia/commons/1/1b/Portable_Executable_32_bit_Structure_in_SVG_fixed.svg
 
             assembly = GetAssemblySafe(assembly);

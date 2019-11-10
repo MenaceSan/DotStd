@@ -8,12 +8,12 @@ namespace DotStd
     [Serializable()]
     public enum CountryId
     {
-        // ISO codes for Countries that we care about. CountryCode
+        // ISO codes for Countries that we care about. CountryCode. NOT the same as calling/dialing codes.
         // from the table geo_country
         // https://www.ncbi.nlm.nih.gov/books/NBK7249/
         // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
 
-        ANY = 0, // Don't care. give me all.
+        ANY = 0,    // Don't care. give me all.
 
         [Description("International")]
         III = 1,
@@ -171,9 +171,9 @@ namespace DotStd
         // Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
         // Can be serialized directly from the JSON poco. 
 
-        public double Latitude { get; set; }     // AKA latitude
-        public double Longitude { get; set; }    // AKA longitude
-        public float? Altitude { get; set; }     // optional AKA altitude
+        public double Latitude { get; set; }     // AKA latitude. degrees (360).
+        public double Longitude { get; set; }    // AKA longitude. degrees (360).
+        public float? Altitude { get; set; }     // optional AKA altitude. meters.
 
         public const int kLonMax = 180;
 
@@ -182,15 +182,15 @@ namespace DotStd
         // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
         public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
         public const double kIntDiv = 0.0000001;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
-        public const double kMeter = 0.000001;  // ~1m
 
-        public const double kEarthRadiusMeters = 6371000.0;    // Approximate.
+        public const double kEarthRadiusMeters = 6371000.0;    // Approximate. or 6378137 ?
         public const int kEarthDistMax = 50000000;    // Max reasonable distance on Earth. Any distance greater is not on earth. (40,075 km circumference)
 
-        public const double kDeg2Rad = Math.PI / 180.0;    // degrees to Radians 
+        public const double kDeg2Rad = Math.PI / 180.0;    // multiply for degrees to Radians 
 
         // https://gis.stackexchange.com/questions/142326/calculating-longitude-length-in-miles
-        public const double kMet2Deg = 111000.0;   // Meters to degrees
+        public const double kMet2Deg = 111000.0;      // Meters to degrees. approximate for reverse Haversine.
+        public const double kDeg2Met = 0.000001;      // ~1m in degrees. reverse of kMet2Deg. approximate for reverse Haversine.
 
         public static bool IsValidLat(double x)
         {
@@ -210,7 +210,7 @@ namespace DotStd
         }
         bool IsExtreme
         {
-            // !IsValid or May be Valid but not normal value.
+            // !IsValid or May be Valid but not normal value. Might be bad value.
             // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
             get
             {
@@ -260,34 +260,62 @@ namespace DotStd
 
         public static int ToInt(double value)
         {
+            // Convert degrees (360) to int.
             return (int)(value * kIntMult);
         }
         public static int? ToInt(double? value)
         {
+            // Convert degrees (360) to int.
             if (value == null)
                 return null;
             return ToInt(value.Value);
         }
         public static double ToDouble(int value)
         {
+            // Convert int to degrees (360).
             return value * kIntDiv;
         }
         public static double? ToDouble(int? value)
         {
+            // Convert int to degrees (360).
             if (value == null)
                 return null;
             return ToDouble(value.Value);
         }
 
+        public int GetLatInt()
+        {
+            return ToInt(this.Latitude);
+        }
+        public int GetLonInt()
+        {
+            return ToInt(this.Longitude);
+        }
+
+        public static bool IsNear(double value1, double value2, double range)
+        {
+            return Math.Abs(value1 - value2) < range; 
+        }
+
         public double GetDistance(double latitude, double longitude)
         {
-            // Calculate the distance between.
+            // Calculate the distance between this and that.
             // Haversine. // http://en.wikipedia.org/wiki/Haversine_formula
 
-            var su = Math.Sin((this.Latitude - latitude) * 0.5);
-            var sv = Math.Sin((this.Longitude - longitude) * 0.5);
+            var su = Math.Sin((this.Latitude - latitude) * 0.5 * kDeg2Rad);
+            var sv = Math.Sin((this.Longitude - longitude) * 0.5 * kDeg2Rad);
 
-            return 2.0 * kEarthRadiusMeters * Math.Asin(Math.Sqrt((su * su) + (Math.Cos(latitude) * Math.Cos(this.Latitude) * sv * sv)));
+            return 2.0 * kEarthRadiusMeters * Math.Asin(Math.Sqrt((su * su) + (Math.Cos(latitude * kDeg2Rad) * Math.Cos(this.Latitude * kDeg2Rad) * sv * sv)));
+        }
+
+        public GeoLocation GetMove(double bearing, double distance)
+        {
+            // Implementation of the reverse of Haversine formula.  https://gist.github.com/shayanjm/451a3242685225aa934b
+            // Takes one set of latitude/longitude as a start point, a bearing, and a distance, and returns the resultant lat/long pair.
+            // bearing in radians.
+            // distance in meters.
+
+            return new GeoLocation { };
         }
 
         public static double ParseValue(string v, int point)

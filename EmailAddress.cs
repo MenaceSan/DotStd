@@ -39,12 +39,14 @@ namespace DotStd
 
             try
             {
+                // Does this check if the domain hostname resolves in the DNS?
                 var addr = new System.Net.Mail.MailAddress(email);
                 return addr.Address == email;
             }
             catch
             {
-                return false;   // throw on fail.
+                // catch throw on fail.
+                return false;   
             }
         }
 
