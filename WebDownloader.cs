@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Net;
 using System.IO;
-using System.Net.Security;
 
 namespace DotStd
 {
     public class WebDownloader
     {
-        // helper to pull a file from some HTTP server.
-        // Progress similar to System.IProgress<float>.Report
+        // helper to pull a file from some HTTP or FTP server.
+        // Has Progress similar to System.IProgress<float>.Report
 
         public string SrcURL { get; set; }
         public string DestPath { get; set; }    // local dest file path.
-        public string UserString { get; set; }  // User can store any string value here for context.
 
-        public event ProgressEventHandler ProgressEvent;        // Called as the download progresses.
-        public delegate void ProgressEventHandler(long nSizeCurrent, long nSizeTotal);
+        public event Progress2.EventHandler ProgressEvent;        // Called as the download progresses. Report
 
         public event FailedEventHandler FailedEvent;
         public delegate void FailedEventHandler(Exception ex);
@@ -23,11 +20,10 @@ namespace DotStd
         public WebDownloader()
         {
         }
-        public WebDownloader(string srcUrl, string dstPath, string sUserString = "")
+        public WebDownloader(string srcUrl, string dstPath)
         {
             SrcURL = srcUrl;
             DestPath = dstPath;
-            UserString = sUserString;
         }
 
         public void DownloadFileRaw(bool allowRedirect = false)
@@ -65,7 +61,7 @@ namespace DotStd
                 reqH.UseDefaultCredentials = true;
                 reqH.Date = DateTime.UtcNow;
 
-                // reqH.Timeout = 5000;
+                // reqH.Timeout = 5000;67
                 reqH.Method = "GET";
                 reqH.Headers.Set(HttpRequestHeader.CacheControl, "max-age=0, no-cache, no-store");
 

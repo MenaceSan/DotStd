@@ -41,6 +41,7 @@ namespace DotStd
 
         public static void FlushDeadTick(DateTime utcNow)
         {
+            // Periodically flush the disposed weak refs.
             // Make sure we don't call FlushDead too often. throttle
             if ((utcNow - _LastFlushTime).TotalMinutes < 2)    // throttle.
                 return;

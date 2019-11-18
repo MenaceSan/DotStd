@@ -131,16 +131,19 @@ namespace DotStd
 
         public static string Combine(params string[] array)
         {
-            // Like Path.Combine() but for URLs
+            // Like Path.Combine() but for URLs. CombineUrl. Ignore nulls.
+            // Does not add an end or start /
 
             var sb = new StringBuilder();
             int i = 0;
-            bool endSep = false;
+            bool endSep = false; // last entry ends with sep?
+
             foreach (string a in array)
             {
-                if (string.IsNullOrWhiteSpace(a))    // doesnt count
+                if (string.IsNullOrWhiteSpace(a))    // doesnt count. skip it.
                     continue;
-                bool startSep = a.StartsWith(kSep);
+
+                bool startSep = a.StartsWith(kSep); // next entry starts with sep?
                 if (i > 0 && endSep && startSep)
                 {
                     sb.Append(a.Substring(1));

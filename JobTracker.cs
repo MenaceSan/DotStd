@@ -7,8 +7,7 @@ namespace DotStd
         // Track some long process/job/task that is running async on the server.
         // Web browser can periodically request updates to its progress.
         // HangFire might do this better? use SignalR ?  
-        // Similar to System.Progress<T>
-
+ 
         // TODO Push updates to UI ? So we dont have the UI polling for this?
 
         private string JobTypeName { get; set; }        // Id for what am i doing ? e.g. nameof(x) not friendly name. 
@@ -17,8 +16,7 @@ namespace DotStd
         public bool IsComplete { get; private set; }    // code exited. fail or success.
         public string FailureMsg { get; private set; }  // null = ok, else i failed and returned prematurely.
 
-        private long Size { get; set; }         // arbitrary estimated total size.
-        private long Progress { get; set; }     // how much of Size is done? updated by worker.
+        private Progress2 Progress = new Progress2();
 
         private CancellationTokenSource Cancellation { get; set; }   // we can try to cancel this?
 
@@ -81,13 +79,7 @@ namespace DotStd
                 Cancellation?.Cancel();
             }
         }
-
-        public int GetProgressPercent()
-        {
-            // %
-            return (int)((this.Progress * 100) / Size);
-        }
-
+ 
         public static string GetProgressPercent(string typeName, int userId, bool cancel)
         {
             // Find some async job in the namespace and get its status.
@@ -107,51 +99,26 @@ namespace DotStd
             {
                 job.Cancel();
             }
-            return job.GetProgressPercent().ToString() + "% Complete";
+            return job.Progress.GetPercent().ToString() + "% Complete";
         }
 
         public void SetStartSize(long size)
         {
             // Estimated size of the job to be done.
-            if (size <= 0)
-                size = 1;
-            this.Progress = 0;
-            this.Size = size;
+            Progress.SetSize(size);
         }
-
-        public void SetProgress(long progress)
-        {
-            // Called by worker to say what is done so far.
-            if (progress < 0 || progress > Size)
-            {
-                Progress = Size;
-            }
-            else
-            {
-                Progress = progress;
-            }
-        }
+ 
 
         public void AddStartSize(long size)
         {
             // We discovered the job is bigger.
-            if (size <= 0)
-                size = 1;
-            this.Size += size;
+            this.Progress.AddSize(size);
         }
 
         public void AddProgress(int length)
         {
             // a chunk has been completed.
-            if (length < 0)
-            {
-                return;
-            }
-            this.Progress += length;
-            if (this.Progress > this.Size)
-            {
-                this.Progress = this.Size;
-            }
+            Progress.Add(length);
         }
 
         public void SetComplete()
@@ -160,7 +127,7 @@ namespace DotStd
             IsComplete = true;
             if (!IsCancelled)
             {
-                this.Progress = this.Size; // true end.
+                this.Progress.SetEnd(); // true end.
             }
             CacheT<JobTracker>.Set(Key, this, 5 * 60);  // no need to hang around too long
         }
@@ -177,7 +144,7 @@ namespace DotStd
             var job = CacheT<JobTracker>.Get(cacheKey);
             if (job == null)
             {
-                job = new JobTracker { JobTypeName = typeName, UserId = userId, Size = size, Progress = 0 };
+                job = new JobTracker { JobTypeName = typeName, UserId = userId, Progress = new Progress2(size) };
             }
             else if (job.IsComplete)
             {

@@ -21,6 +21,8 @@ namespace DotStd
         public const string kSep = "."; // name separator for grouping. similar to unsupported MemoryCache 'regions'
         public const char kSepChar = '.'; // name separator for grouping. similar to unsupported MemoryCache 'regions'
 
+        public const int kSecond = 1;       // multiplier for seconds.
+
         private static IMemoryCache _memoryCache;       // my global/shared instance of the Cache.
         private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.
 
@@ -122,7 +124,7 @@ namespace DotStd
         /// <summary>
         /// Store/replace some object in the cache. Assume it isn't already here??
         /// </summary>
-        public static void Set(string cacheKey, object value, int decaySec = 10)
+        public static void Set(string cacheKey, object value, int decaySec = 10 * kSecond)
         {
             // obj CANT be null, even though it might make sense.
             if (value == null)
@@ -254,16 +256,16 @@ namespace DotStd
             return (T)CacheData.Get(typeof(T).Name);
         }
 
-        public static void Set(string id, T obj, int decaySec = 60)
+        public static void Set(string id, T obj, int decaySec = 60 * CacheData.kSecond)
         {
             string cacheKey = MakeKey(id);
             CacheData.Set(cacheKey, obj, decaySec);
         }
-        public static void Set(int id, T obj, int decaySec = 60)
+        public static void Set(int id, T obj, int decaySec = 60 * CacheData.kSecond)
         {
             Set(id.ToString(), obj, decaySec);
         }
-        public static void SetSingleton(T obj, int decaySec = 60)
+        public static void SetSingleton(T obj, int decaySec = 60 * CacheData.kSecond)
         {
             CacheData.Set(typeof(T).Name, obj, decaySec);
         }

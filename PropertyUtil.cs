@@ -5,7 +5,6 @@ using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace DotStd
 {
@@ -14,6 +13,7 @@ namespace DotStd
         // Get a property that may be stored in many different ways.
         // e.g. Properties can be stored via object reflection, Dictionary, DataTable
         // children names can be expressed via "parent:child" syntax
+        // Similar to C# dynamic objects.
 
         object GetPropertyValue(string name);
     }

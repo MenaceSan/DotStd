@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -11,6 +13,8 @@ namespace DotStd
         // like GetKnuthHash
         // https://stackoverflow.com/questions/8820399/c-sharp-4-0-how-to-get-64-bit-hash-code-of-given-string
         // https://github.com/brandondahler/Data.HashFunction/blob/master/src/System.Data.HashFunction.xxHash/xxHash_Implementation.cs
+
+        // TODO
 
         public ulong Value { get; private set; }   // output short cut.
 
@@ -61,6 +65,21 @@ namespace DotStd
                 hashedValue *= 3074457345618258799ul;
             }
             return hashedValue;
+        }
+
+        public async Task<byte[]> GetHashStreamAsync(Stream stream)
+        {
+            // like HashAlgorithm.ComputeHash(Stream) but async
+
+            var buffer = new byte[8192];
+            int bytesRead;
+
+            // compute the hash on 8KiB blocks
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+                _Hasher.TransformBlock(buffer, 0, bytesRead, buffer, 0);
+
+            _Hasher.TransformFinalBlock(buffer, 0, bytesRead);
+            return _Hasher.Hash;
         }
 
         public byte[] GetHashFile(string filename)

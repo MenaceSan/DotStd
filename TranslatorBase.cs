@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -7,19 +10,27 @@ namespace DotStd
 {
     interface ITranslatorTo
     {
-        // translate from some set language to some other language.
+        // Translate from some source language to some other language.
         // May use underlying cache. 
-        // fromLangWords may be scraped from MVC razor pages etc. 
-        // Ignored or filtered stuff : XML may be filtered out, {0} may be filtered. 
+        // Ignored or filtered stuff : <XML> may be filtered out, {0} may be filtered. 
         // Similar to ASP Core IStringLocalizer
 
+        // What languages are available to translate to ?
         bool SetFromLanguage(LanguageId fromLang);
-        Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang);
+
+        // What languages are available to translate to? LanguageId as string, Name of language in fromLang.
+        Task<List<TupleKeyValue>> GetToLanguages();
+
+        // Translate some text.
+        Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
+
+        // Translate a batch of texts.
+        Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native);
     }
 
     public abstract class TranslatorBase : ITranslatorTo
     {
-        // Base implementation of a translation engine.
+        // Base implementation of a translation engine. provider
         // Similar to ASP IStringLocalizer<AboutController> _localizer;
         // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.2
         // Use the IHtmlLocalizer<T> implementation for resources that contain HTML.
@@ -41,7 +52,20 @@ namespace DotStd
             return true;
         }
 
-        public abstract Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang);
+        public abstract Task<List<TupleKeyValue>> GetToLanguages();
+
+        public abstract Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
+
+        public virtual async Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native)
+        {
+            // Just treat the batch as a bunch of singles if i cant optimize this.
+            var lst = new List<string>();
+            foreach (string txt in fromTexts)
+            {
+                lst.Add(await TranslateTextAsync(txt, toLang));
+            }
+            return lst;
+        }
     }
 
     public class TranslatorTest : TranslatorBase
@@ -52,66 +76,234 @@ namespace DotStd
         // TODO : ensure we dont double translate.
 
         static char[] _pairs = new char[] {     // Swap letters.
+
             'A', 'Ä', 'a', 'ä', // C4, E4
-            'E', 'Ë', 'e', 'ë', // CB, EB
-            'I', 'Ï', 'i', 'ï', // CF, EF
-            'O', 'Ö', 'o', 'ö', // 
-            'U', 'Ü', 'u', 'ü', // 
-            'Y', 'Ÿ', 'y', 'ÿ', // 9F, FF
-
+            'B', 'ß', 'b', 'Ƅ',
             'C', 'Ç', 'c', 'ç',     // C7,
+            'D', 'Ð', 'd', 'đ',     // D0
+            'E', 'Ë', 'e', 'ë', // CB, EB
+            'F', 'Ƒ', 'f', 'ƒ',       // 83
+            'G', 'Ĝ', 'g', 'ğ',
+            'H', 'Ħ', 'h', 'ħ',
+            'I', 'Ï', 'i', 'ï', // CF, EF
+            'J', 'Ĵ', 'j', 'ĵ',
+            'K', 'Ķ', 'k', 'ķ',
+            'L', 'Ĺ', 'l', 'ĺ',
+            'm', 'ʍ',
             'N', 'Ñ', 'n', 'ñ',     // D1,
+            'O', 'Ö', 'o', 'ö', // 
+            'P', 'Ƥ', 'p', 'ƥ',
+            'q', 'ʠ',
+            'R', 'Ʀ',
             'S', 'Š', 's', 'š',     // 8A, 9A
+            'T', 'Ť', 't', 'ŧ',
+            'U', 'Ü', 'u', 'ü', // 
+            'V', 'Ɣ',
+            'W', 'Ŵ', 'w', 'ŵ',
+            'X', 'Ӽ', 'x', 'ӽ',
+            'Y', 'Ÿ', 'y', 'ÿ', // 9F, FF
             'Z', 'Ž', 'z', 'ž',     // 8E, 
-
-            'D', 'Ð',       // D0
-            'f', 'ƒ',       // 83
         };
 
-        public const char kStart = 'α'; // all test words start with this.
-        public const char kEnd = 'Ω'; // all test words end with this. Assume this is not normal.
+        public const char kStart = 'α'; // all test words start with this. Assume this is not normal.
+        public const char kEnd = '¡'; // all test words end with this. Assume this is not normal. IsTestLang
 
         public static bool IsTestLang(string s)
         {
             // Has this string already been translated? This should not happen . indicate failure.
-            return s.Contains(kEnd.ToString());
+            return s.Contains(kStart.ToString());
         }
 
-        public string TranslateText(string fromLangWords, LanguageId toLang)
+        public override Task<List<TupleKeyValue>> GetToLanguages()
         {
-            if (toLang == _fromLang)
-                return fromLangWords;
+            return Task.FromResult(new List<TupleKeyValue> { new TupleKeyValue(LanguageId.test) });
+        }
+
+        const string kChildOpen = "{<(";        // braces must match for escapes.
+        const string kChildClose = "}>)";
+
+        private char TranslateLetter(char ch)
+        {
+            for (int i = 0; i < _pairs.Length; i++)
+            {
+                if (_pairs[i] == ch)
+                    return _pairs[i + 1];
+            }
+            return ch;
+        }
+
+        public string TranslateText(string fromText, LanguageId toLang = LanguageId.native)
+        {
+            // Sync translate.
+            if (toLang == _fromLang)    // nothing to do.
+                return fromText;
 
             // Throw if the text is already translated. NO double translation.
-            ValidState.ThrowIf(IsTestLang(fromLangWords));
+            ValidState.ThrowIf(IsTestLang(fromText));
 
-            //string result;
+            var escapes = new Stack<char>();
+            char escapeClose = '\0';     // What char closes the escape.
+            int wordStart = -1;
 
-            //ValidState.ThrowIf(!IsTestLang(result));
-            return fromLangWords;
+            var sb = new StringBuilder();
+            for (int i = 0; i < fromText.Length; i++)
+            {
+                char ch = fromText[i];
+                bool wasEscaped = escapeClose != '\0';
+
+                if (ch == escapeClose)   // end of escape block.
+                {
+                    escapeClose = escapes.Count > 0 ? escapes.Pop() : '\0';
+                }
+                else
+                {
+                    int j = kChildOpen.IndexOf(ch);
+                    if (j >= 0)     // new escape block.
+                    {
+                        if (wasEscaped)
+                            escapes.Push(escapeClose);
+                        escapeClose = kChildClose[j];
+                    }
+                }
+
+                if (!wasEscaped)
+                {
+                    bool isLetter = char.IsLetter(ch);
+                    if (isLetter)
+                    {
+                        ch = TranslateLetter(ch);
+                    }
+
+                    if (wordStart >= 0) // was in a word.
+                    {
+                        if (!isLetter)  // end of word.
+                        {
+                            sb.Append(kEnd);
+                            wordStart = -1;
+                        }
+                    }
+                    else // was not in a word.
+                    {
+                        if (isLetter) // start of new word.
+                        {
+                            if (i < fromText.Length - 1 && char.IsLetter(fromText[i + 1]))  // only for multi char words.
+                            {
+                                sb.Append(kStart);
+                                wordStart = i;
+                            }
+                        }
+                    }
+                }
+
+                sb.Append(ch);
+            }
+
+            string result = sb.ToString();
+            ValidState.ThrowIf(!IsTestLang(result));
+            return result;    // result fromText
         }
 
-        public override Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang)
+        public override Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
         {
-            return Task.FromResult(TranslateText(fromLangWords, toLang));
+            // not async.
+            return Task.FromResult(TranslateText(fromText, toLang));
         }
     }
 
-    public class TranslatorGoogle : TranslatorBase
+    public class TranslatorGoogleRaw : TranslatorBase
     {
         // Wrap the Google translate service.
         // Assume any caching happens at a higher level.
+        // Raw = Bypass Google NuGet "Google.Cloud.Translation.V2"
+        // Will ignore HTML tags.
+
+        // https://codelabs.developers.google.com/codelabs/cloud-translation-csharp/index.html?index=..%2F..index#5
+        // https://stackoverflow.com/questions/2246017/using-google-translate-in-c-sharp
+        // https://cloud.google.com/translate/ https://cloud.google.com/translate/docs/translating-text
+
+        // You will only be allowed to translate about 100 words per hour using the free API. If you abuse this, Google API will return a 429 (Too many requests) error.
+
+        public string _ApiKey; // send this to Google for commercial usage.
 
         public override bool SetFromLanguage(LanguageId fromLang)
         {
-            base.SetFromLanguage(fromLang);
-            throw new NotImplementedException();
+            return base.SetFromLanguage(fromLang);
         }
 
-        public override Task<string> TranslateTextAsync(string fromLangWords, LanguageId toLang)
+        public override Task<List<TupleKeyValue>> GetToLanguages()
         {
-            // TODO IMPL
-            throw new NotImplementedException();
+            // What languages does this provider support ?
+            var langs = new List<TupleKeyValue>
+            {
+                new TupleKeyValue(LanguageId.ru),
+                new TupleKeyValue(LanguageId.de),
+                new TupleKeyValue(LanguageId.es),
+                new TupleKeyValue(LanguageId.fr),
+            };
+            return Task.FromResult(langs);
+        }
+
+        public async Task<string> TranslateSingleAsync(string fromText, LanguageId toLang = LanguageId.native)
+        {
+            // use the older single sentence format.
+            const string baseUrl = "https://translate.googleapis.com/translate_a/single";
+
+            string fromTextEnc = WebUtility.UrlEncode(fromText);
+            string url = $"{baseUrl}?client=gtx&sl={_fromLang}&tl={toLang}&dt=t&q={fromTextEnc}";
+
+            using (var client = new HttpClient())
+            {
+                if (_ApiKey != null)
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, _ApiKey);
+                }
+
+                byte[] byteArray = await client.GetByteArrayAsync(url);
+                string json = Encoding.UTF8.GetString(byteArray, 0, byteArray.Length);  // read System.Text.Encoding.UTF8
+
+                // e.g. json = [[["Hallo","Hello",null,null,1]],null,"en"]
+                const int kOffset = 4;
+
+                string toText = json.Substring(kOffset, json.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
+                return toText;
+            }
+        }
+
+        public async Task<string> TranslateJsonAsync(string fromEnc, LanguageId toLang = LanguageId.native)
+        {
+            // use the newer JSON format.
+            const string baseUrl = "https://translation.googleapis.com/language/translate/v2";
+
+            string url = $"{baseUrl}?client=gtx&sl={_fromLang}&tl={toLang}&dt=t&q={fromEnc}";
+
+            using (var client = new HttpClient())
+            {
+                if (_ApiKey != null)
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, _ApiKey);
+                }
+
+                byte[] byteArray = await client.GetByteArrayAsync(url);
+                string json = Encoding.UTF8.GetString(byteArray, 0, byteArray.Length);  // read System.Text.Encoding.UTF8
+
+                // e.g. json = [[["Hallo","Hello",null,null,1]],null,"en"]
+                const int kOffset = 4;
+
+                string toText = json.Substring(kOffset, json.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
+                return toText;
+            }
+        }
+
+        public override async Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
+        {
+            try
+            {
+                return await TranslateSingleAsync(fromText, toLang);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

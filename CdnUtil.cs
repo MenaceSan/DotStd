@@ -16,7 +16,7 @@ namespace DotStd
 
     public class CdnConfig
     {
-        // TODO List of Cdn servers used.
+        // TODO List of CDN servers to be used. (or none)
 
     }
 
@@ -34,7 +34,7 @@ namespace DotStd
 
         public const string kDataLibAttr = "data-lib-";      // If i pulled the lib from Bower (for developers not really for CDN consumers)
         public const string kMin = ".min.";     // is minified version ?
-        public const string kMin2 = "-min.";    // alternate minified style.
+        public const string kMin2 = "-min.";    // alternate minified naming style.
 
         // should i use a CDN at all ?
         // can be used with <environment include="Development">
@@ -64,6 +64,7 @@ namespace DotStd
 
         public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
+            // Done at startup. not async?
             // 1. Read the HTML/XML file kAll from Resource.
             // 2. Pull all files from the CDN that we want locally as backups/fallback.
             // 3. Write out the local stuff to outDir. e.g. "wwwroot/cdn"
@@ -72,7 +73,7 @@ namespace DotStd
                 return 0;
 
             int downloadCount = 0;
-            XDocument doc = XDocument.Load(cdnAllFilePath);     // Use HTML agility pack to deal with proper encoding??
+            XDocument doc = XDocument.Load(cdnAllFilePath);     // TODO: Use HTML agility pack to deal with proper encoding??
 
             // pull all 'link' and 'script' elements
             foreach (XNode node in doc.DescendantNodes())
@@ -148,10 +149,10 @@ namespace DotStd
                 // Pull/Get the file. 
                 downloadCount++;
                 LoggerBase.DebugEntry($"Get '{src.Value}'");
-                var dl = new WebDownloader(src.Value, dstPath);
+                var dl = new HttpDownloader(src.Value, dstPath);
 
                 // CDN can get "OperationCanceledException: The operation was canceled."
-                dl.DownloadFileRaw(true);  // Assume dir is created on demand.
+                dl.DownloadFile(true);  // Assume dir is created on demand.
 
                 if (integrity == null)
                 {
@@ -179,8 +180,8 @@ namespace DotStd
                     if (dstDev == null || dstDev.Value != dst.Value)
                     {
                         dstPath = (dstDev != null) ? GetPhysPathFromWeb(dstDev.Value) : GetNonMin(dstPath);
-                        var dl2 = new WebDownloader(GetNonMin(src.Value), dstPath);
-                        dl2.DownloadFileRaw();
+                        var dl2 = new HttpDownloader(GetNonMin(src.Value), dstPath);
+                        dl2.DownloadFile();
                     }
                 }
             }

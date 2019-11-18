@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DotStd
@@ -186,18 +188,20 @@ namespace DotStd
             }
         }
 
-        public static async Task<string> FindIPAddrExternal2()
+        public static async Task<string> FindIPAddrExternal2(CancellationToken token)
         {
             // Use an external service to find my public IP address. May throw.
             // only works if: System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
             // https://stackoverflow.com/questions/3253701/get-public-external-ip-address
             try
             {
-                using (var wc = new WebClient())
+                using (var client = new HttpClient())
                 {
-                    // externalip = wc.DownloadString("http://bot.whatismyipaddress.com"); // Hangs ??
-                    // externalip = wc.DownloadString("http://icanhazip.com");  // Hangs ??
-                    string externalip = await wc.DownloadStringTaskAsync("https://ipinfo.io/ip");
+                    // string url = "http://bot.whatismyipaddress.com"; // Hangs ??
+                    // string url = "http://icanhazip.com";  // Hangs ??
+                    string url = "https://ipinfo.io/ip";
+                    HttpResponseMessage response = await client.GetAsync(url, token);
+                    string externalip = await response.Content.ReadAsStringAsync(); 
                     return externalip.Trim();
                 }
             }
@@ -208,9 +212,9 @@ namespace DotStd
             }
         }
 
-        public static async Task<IPAddress> FindIPAddrExternal()
+        public static async Task<IPAddress> FindIPAddrExternal(CancellationToken token)
         {
-            string externalip = await FindIPAddrExternal2();
+            string externalip = await FindIPAddrExternal2(token);
             IPAddress addr;
             if (!IPAddress.TryParse(externalip, out addr))
             {

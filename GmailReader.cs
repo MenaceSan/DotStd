@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -27,17 +28,20 @@ namespace DotStd
 
         public async Task<List<GmailMessage>> ReadMessages()
         {
-            // get responses back from the free SMS email gateway.
+            // get responses back from the free email gateway.
 
             try
             {
-                // Logging in Gmail server to get data
-                using (var objClient = new System.Net.WebClient())
+                var httpClientHandler = new HttpClientHandler()
                 {
-                    objClient.Credentials = _Credentials;
+                    Credentials = _Credentials,
+                };
 
+                // Logging in Gmail server to get data
+                using (var client = new HttpClient(httpClientHandler))
+                {
                     // reading data and converting to string
-                    byte[] respRaw = await objClient.DownloadDataTaskAsync(@"https://mail.google.com/mail/feed/atom");
+                    byte[] respRaw = await client.GetByteArrayAsync(@"https://mail.google.com/mail/feed/atom");
                     string response = Encoding.UTF8.GetString(respRaw);
                     response = response.Replace(@"<feed version=""0.3"" xmlns=""http://purl.org/atom/ns#"">", @"<feed>");
 

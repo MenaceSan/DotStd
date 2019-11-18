@@ -39,5 +39,9 @@ namespace DotStd
         {
             Key = key; Value = name;
         }
+        public TupleKeyValue(Enum e)
+        {
+            Key = e.ToString(); Value = e.ToDescription();
+        }
     }
 }

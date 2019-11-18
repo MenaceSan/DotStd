@@ -232,6 +232,13 @@ namespace DotStd
             return String.Concat(Latitude.ToString(), ",", Longitude.ToString());
         }
 
+        public bool IsEqual2(GeoLocation x)
+        {
+            if (x == null)
+                return false;
+            return Latitude == x.Latitude && Longitude == x.Longitude;
+        }
+
         public static string ToGeoUrlOsm(double lat, double lon)
         {
             // Get OpenStreet Map
@@ -314,6 +321,8 @@ namespace DotStd
             // Takes one set of latitude/longitude as a start point, a bearing, and a distance, and returns the resultant lat/long pair.
             // bearing in radians.
             // distance in meters.
+
+            // TODO
 
             return new GeoLocation { };
         }

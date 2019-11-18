@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Net;
-using System.IO;
-using System.Threading.Tasks;
+using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -229,20 +228,14 @@ namespace DotStd
         public string m_sResponse;  // Raw response.
         public PostalCode1 m_z;        // parsed m_sResponse.
 
-        private static async Task<string> RequestStringAsync(string sReqUrl)
+        private static async Task<string> RequestStringAsync(string url)
         {
-            // Blocking call to get the string response to a HTTP query.
+            // async call to get the string response to a HTTP query.
 
-            var oRequest = WebRequest.Create(sReqUrl);
-
-            var oResponse = await oRequest.GetResponseAsync();
-
-            Stream dataStream = oResponse.GetResponseStream();
-            using (var oReader = new StreamReader(dataStream))
+            using (var client = new HttpClient())
             {
-                // Save the actual response
-                return await oReader.ReadToEndAsync();
-            }
+                return await client.GetStringAsync(url);
+            }        
         }
 
         public async Task QueryUSPS(string sPostalCode)
@@ -250,9 +243,9 @@ namespace DotStd
             // TODO
             // Ask USPS about the Postal code.
             // USPS (need to be sending mail)
-            string sServer = "http://production.shippingapis.com/ShippingAPI.dll";  // Test
+            string urlServer = "http://production.shippingapis.com/ShippingAPI.dll";  // Test
             const string sUserID = "771LMGHO5723";
-            string sReq = $"{sServer}?API=CityStateLookup&XML=<CityStateLookupRequest%20USERID=\"{sUserID}\"><ZipCode ID=\"0\"><Zip5>{sPostalCode}</Zip5></ZipCode></CityStateLookupRequest>";
+            string sReq = $"{urlServer}?API=CityStateLookup&XML=<CityStateLookupRequest%20USERID=\"{sUserID}\"><ZipCode ID=\"0\"><Zip5>{sPostalCode}</Zip5></ZipCode></CityStateLookupRequest>";
             m_sResponse = await RequestStringAsync(sReq);
             // TODO populate m_z
             m_z = new PostalCode1 { PostalCode = sPostalCode };

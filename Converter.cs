@@ -12,10 +12,10 @@ namespace DotStd
     {
         // Convert from some (unknown) type object to a known type.
         // Data type converter. usually for database derived objects. Deal with null and DBNull?
-        // Similar to System.Convert.To*() or System.Convert.ChangeType()
+        // Similar to System.Convert.To*() or System.Convert.ChangeType() but more forgiving.
         // NOTE: NEVER allow untrusted sources to serialize to object/any types. This is an injection attack!
 
-        public const char kMinus2 = '−';      // Weird char sometimes used as minus. '-'
+        public const char kMinus2 = '−';      // Weird alternate char sometimes used as minus. '-'
 
         private static void ThrowConvertException()
         {
@@ -145,7 +145,7 @@ namespace DotStd
                 if (ch < '0' || ch > '9')
                     break;
                 leadSpace = false;  // found a non space.
-                val = val * 10 + (ch - '0');
+                val = (val * 10) + (ch - '0');
             }
             return val;
         }

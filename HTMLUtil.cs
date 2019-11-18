@@ -87,32 +87,6 @@ namespace DotStd
             sb.Append("</ul>");
             return sb.ToString();
         }
-
-        public static string Post(string url, string prams)
-        {
-            // prams = already encoded params. e.g. "f=1&b=2"
-            // Similar to WebClient.UploadValues()
-            // https://stackoverflow.com/questions/4088625/net-simplest-way-to-send-post-with-data-and-read-response
-
-            System.Net.WebRequest req = System.Net.WebRequest.Create(url);
-            // req.Proxy = new System.Net.WebProxy(ProxyString, true);
-            //Add these, as we're doing a POST
-            req.ContentType = "application/x-www-form-urlencoded";
-            req.Method = "POST";
-            //We need to count how many bytes we're sending. 
-            //Post'ed Faked Forms should be name=value&
-            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(prams);
-            req.ContentLength = bytes.Length;
-
-            System.IO.Stream os = req.GetRequestStream();
-            os.Write(bytes, 0, bytes.Length); //Push it out there
-            os.Close();
-
-            System.Net.WebResponse resp = req.GetResponse();
-            if (resp == null)
-                return null;
-            var sr = new System.IO.StreamReader(resp.GetResponseStream());
-            return sr.ReadToEnd().Trim();
-        }
+ 
     }
 }
