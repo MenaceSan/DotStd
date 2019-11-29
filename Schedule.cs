@@ -204,7 +204,7 @@ namespace DotStd
             // ASSUME times are GMT and have no DST weirdness.
 
             if (DateUtil.IsExtremeDate(start))
-                return DateUtil.kExtremeMax;        // never
+                return DateUtil.kExtremeMax;        // never start
             if (now < start)    // not until start date.
                 return start;
 

@@ -201,6 +201,7 @@ namespace DotStd
                     // string url = "http://icanhazip.com";  // Hangs ??
                     string url = "https://ipinfo.io/ip";
                     HttpResponseMessage response = await client.GetAsync(url, token);
+                    response.EnsureSuccessStatusCode();
                     string externalip = await response.Content.ReadAsStringAsync(); 
                     return externalip.Trim();
                 }

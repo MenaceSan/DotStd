@@ -64,12 +64,13 @@ namespace DotStd
 
         public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
-            // Done at startup. not async?
+            // Make sure all my CDN based resources are up to date.
+            // Called at startup. not async?
             // 1. Read the HTML/XML file kAll from Resource.
             // 2. Pull all files from the CDN that we want locally as backups/fallback.
             // 3. Write out the local stuff to outDir. e.g. "wwwroot/cdn"
 
-            if (!File.Exists(cdnAllFilePath))
+            if (!File.Exists(cdnAllFilePath))       // get my list from here.
                 return 0;
 
             int downloadCount = 0;

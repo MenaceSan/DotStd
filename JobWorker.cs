@@ -34,9 +34,9 @@ namespace DotStd
         public int RunningAppId { get; set; } = ValidState.kInvalidId;  // 0 = not running. else its currently running. (as far as we know on ConfigApp.AppId);
 
         // NOTE: LastRun can be set into the future to delay start.
-        public DateTime LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
+        public DateTime? LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
         public string LastResult { get; set; }      // what happened at/after LastRun? null = never run, "" = success or error description summary.
-        public DateTime LastSuccess { get; set; }   // The last UTC start time we ran this and it succeeded. LastResult == ""
+        public DateTime? LastSuccess { get; set; }   // The last UTC start time we ran this and it succeeded. LastResult == ""
 
         public bool IsRunning
         {

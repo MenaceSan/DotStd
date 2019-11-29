@@ -30,7 +30,8 @@ namespace DotStd
         // NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
 
         public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
-        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesnt like the UTC stuff in ?? null !!!
+        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesnt like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
+
         public static readonly DateTime kUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);     // JavaScript epoch.
         public static readonly DateTime kExtremeMax = new DateTime(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's.  
 

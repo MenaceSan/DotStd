@@ -10,7 +10,7 @@ namespace DotStd
 
         public async Task<string> GetWeatherJson(string apiKey)
         {
-            // Get JSON blob for the weather near some Location.
+            // Get a JSON blob for the weather near some Location.
             const string baseUrl = "http://api.openweathermap.org/data/2.5/weather";
 
             using (var client = new HttpClient())

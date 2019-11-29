@@ -254,7 +254,7 @@ namespace DotStd
         {
             // Get Map
             // deviceTypeId = Getdevice
-            if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows)
+            if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows10)
             {
                 return ToGeoUrlGoo(lat, lon); // Unknown/Windows
             }

@@ -78,7 +78,7 @@ namespace DotStd
             {
                 // Create a default logger. never return null.
                 ILogger serviceL = new LoggerBase();    // just log to the debugger by default.
-                SetService(serviceL);
+                AddService(serviceL);
                 return serviceL;
             }
             return null;
@@ -97,13 +97,13 @@ namespace DotStd
             {
                 // Create a default logger. never return null.
                 ILogger serviceL = new LoggerBase();    // just log to the debugger by default.
-                SetService(serviceL);
+                AddService(serviceL);
                 return (T)serviceL;
             }
             return default;
         }
 
-        public void SetService<T>(T service) where T : class
+        public void AddService<T>(T service) where T : class
         {
             // Configure a service by its interface . used for DI registration.
             // ILogger is special.

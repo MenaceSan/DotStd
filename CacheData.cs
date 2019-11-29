@@ -21,10 +21,10 @@ namespace DotStd
         public const string kSep = "."; // name separator for grouping. similar to unsupported MemoryCache 'regions'
         public const char kSepChar = '.'; // name separator for grouping. similar to unsupported MemoryCache 'regions'
 
-        public const int kSecond = 1;       // multiplier for seconds.
+        public const int kSecond = 1;       // multiplier for seconds. for debug.
 
         private static IMemoryCache _memoryCache;       // my global/shared instance of the Cache.
-        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.
+        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.???
 
         public static void Init(IMemoryCache memoryCache)
         {
@@ -45,7 +45,7 @@ namespace DotStd
 
         public static string MakeKeyArgs(params object[] argsList)
         {
-            // composite args for the key. Assume the key has a type/group prefix.
+            // composite args for a cache key. Assume the key has a type/group prefix.
             string keyArgs = string.Join(kSep, argsList);   // uses ToString() internally.
             if (keyArgs.Length > 16)    // Just hash it if it seems too large. 
                 keyArgs = keyArgs.GetHashCode().ToString();     // danger of collision ?
@@ -116,8 +116,8 @@ namespace DotStd
                 Init(null);
             }
             ICacheEntry entry = _memoryCache.CreateEntry(cacheKey);
-            entry.RegisterPostEvictionCallback(PostEvictionCallback);       // CacheEntryExtensions
             _cacheKeys.Add(cacheKey); // add or replace.
+            entry.RegisterPostEvictionCallback(PostEvictionCallback);       // CacheEntryExtensions
             return entry;
         }
 
@@ -295,6 +295,5 @@ namespace DotStd
                 cacheKeyPrefix = MakeKey(cacheKeyPrefix);   // A weird sub-group ?
             CacheData.ClearKeyPrefix(cacheKeyPrefix);
         }
-
     }
 }

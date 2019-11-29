@@ -15,7 +15,7 @@ namespace DotStd
 
     public class HttpDownloader
     {
-        // Use HttpClient instead of WebClient
+        // Use HttpClient to pull data. instead of WebClient
 
         public string SrcURL { get; set; }
         public string DestPath { get; set; }    // local dest file path.
@@ -54,7 +54,7 @@ namespace DotStd
                     DateTime lastEvent = DateTime.UtcNow;
                     const int kBlockSize = 8192;
                     long? totalBytes1 = response.Content.Headers.ContentLength;    // may not be known/sent.
-                    bool isEstimated = totalBytes1 == null;
+                    bool isEstimated = totalBytes1 == null; // we dont know the total size ?
                     long totalBytes = totalBytes1 ?? kBlockSize;
 
                     using (Stream contentStream = await response.Content.ReadAsStreamAsync())
@@ -116,7 +116,7 @@ namespace DotStd
         
         public void DownloadFile(bool allowRedirect = false)
         {
-            // Get some HTTP/HTTPS URL and put in local file.
+            // Get some HTTP/HTTPS URL and put in local file. NOT async.
             DownloadFileAsync(allowRedirect).Wait();
         }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -8,12 +9,14 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
-    interface ITranslatorTo
+    public interface ITranslatorProvider
     {
-        // Translate from some source language to some other language.
+        // Translate from some source language to some target language.
         // May use underlying cache. 
         // Ignored or filtered stuff : <XML> may be filtered out, {0} may be filtered. 
         // Similar to ASP Core IStringLocalizer
+
+        LanguageId FromLangId { get; }
 
         // What languages are available to translate to ?
         bool SetFromLanguage(LanguageId fromLang);
@@ -28,7 +31,7 @@ namespace DotStd
         Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native);
     }
 
-    public abstract class TranslatorBase : ITranslatorTo
+    public abstract class TranslatorBase : ITranslatorProvider
     {
         // Base implementation of a translation engine. provider
         // Similar to ASP IStringLocalizer<AboutController> _localizer;
@@ -46,6 +49,8 @@ namespace DotStd
             return HashUtil.GetKnuthHash(s);
         }
 
+        public LanguageId FromLangId => _fromLang;
+
         public virtual bool SetFromLanguage(LanguageId fromLang)
         {
             _fromLang = fromLang;
@@ -58,6 +63,7 @@ namespace DotStd
 
         public virtual async Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native)
         {
+            // translate a batch of texts.
             // Just treat the batch as a bunch of singles if i cant optimize this.
             var lst = new List<string>();
             foreach (string txt in fromTexts)
@@ -70,10 +76,10 @@ namespace DotStd
 
     public class TranslatorTest : TranslatorBase
     {
-        // A dummy/test translator . takes English (or anything) and converts to a fake langauge with accented vowels.
+        // A dummy/test translator . takes English (or anything) and converts to a fake language with accented vowels.
         // LanguageId.test
         // Assume any caching happens at a higher level.
-        // TODO : ensure we dont double translate.
+        // TODO : ensure we don't double translate.
 
         static char[] _pairs = new char[] {     // Swap letters.
 
@@ -214,38 +220,43 @@ namespace DotStd
     {
         // Wrap the Google translate service.
         // Assume any caching happens at a higher level.
-        // Raw = Bypass Google NuGet "Google.Cloud.Translation.V2"
-        // Will ignore HTML tags.
+        // Raw = Bypass Google NuGet "Google.Cloud.Translation.V2" library.
+        // Translator Will ignore embedded HTML tags.
 
         // https://codelabs.developers.google.com/codelabs/cloud-translation-csharp/index.html?index=..%2F..index#5
         // https://stackoverflow.com/questions/2246017/using-google-translate-in-c-sharp
-        // https://cloud.google.com/translate/ https://cloud.google.com/translate/docs/translating-text
+        // https://cloud.google.com/translate/
+        // https://cloud.google.com/translate/docs/translating-text
 
         // You will only be allowed to translate about 100 words per hour using the free API. If you abuse this, Google API will return a 429 (Too many requests) error.
 
-        public string _ApiKey; // send this to Google for commercial usage.
-
-        public override bool SetFromLanguage(LanguageId fromLang)
-        {
-            return base.SetFromLanguage(fromLang);
-        }
+        public string ApiKey; // send this to Google for commercial usage.
 
         public override Task<List<TupleKeyValue>> GetToLanguages()
         {
             // What languages does this provider support ?
+            // TODO support this properly ?? ask Google for the list.
             var langs = new List<TupleKeyValue>
             {
                 new TupleKeyValue(LanguageId.ru),
                 new TupleKeyValue(LanguageId.de),
                 new TupleKeyValue(LanguageId.es),
                 new TupleKeyValue(LanguageId.fr),
+                new TupleKeyValue(LanguageId.ja),
+                new TupleKeyValue(LanguageId.pt),
+                new TupleKeyValue(LanguageId.it),
+                new TupleKeyValue(LanguageId.fa),
             };
             return Task.FromResult(langs);
         }
 
         public async Task<string> TranslateSingleAsync(string fromText, LanguageId toLang = LanguageId.native)
         {
-            // use the older single sentence format.
+            // use the older single sentence format. additional sentences are ignored.
+
+            if (toLang == _fromLang)    // nothing to do.
+                return fromText;
+
             const string baseUrl = "https://translate.googleapis.com/translate_a/single";
 
             string fromTextEnc = WebUtility.UrlEncode(fromText);
@@ -253,43 +264,50 @@ namespace DotStd
 
             using (var client = new HttpClient())
             {
-                if (_ApiKey != null)
+                if (ApiKey != null)
                 {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, _ApiKey);
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
                 }
 
-                byte[] byteArray = await client.GetByteArrayAsync(url);
-                string json = Encoding.UTF8.GetString(byteArray, 0, byteArray.Length);  // read System.Text.Encoding.UTF8
+                byte[] bytesResp = await client.GetByteArrayAsync(url);
+                string jsonResp = Encoding.UTF8.GetString(bytesResp, 0, bytesResp.Length);  // read System.Text.Encoding.UTF8
 
-                // e.g. json = [[["Hallo","Hello",null,null,1]],null,"en"]
+                // e.g. jsonResp = [[["Hallo","Hello",null,null,1]],null,"en"]
                 const int kOffset = 4;
 
-                string toText = json.Substring(kOffset, json.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
+                string toText = jsonResp.Substring(kOffset, jsonResp.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
                 return toText;
             }
         }
 
+        const string kUrlGoogTrans = "https://translation.googleapis.com/language/translate/v2";
+
         public async Task<string> TranslateJsonAsync(string fromEnc, LanguageId toLang = LanguageId.native)
         {
             // use the newer JSON format.
-            const string baseUrl = "https://translation.googleapis.com/language/translate/v2";
+            // https://cloud.google.com/translate/docs/basic/translating-text
 
-            string url = $"{baseUrl}?client=gtx&sl={_fromLang}&tl={toLang}&dt=t&q={fromEnc}";
+            if (toLang == _fromLang)    // nothing to do.
+                return fromEnc;
 
             using (var client = new HttpClient())
             {
-                if (_ApiKey != null)
+                if (ApiKey != null)
                 {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, _ApiKey);
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
                 }
 
-                byte[] byteArray = await client.GetByteArrayAsync(url);
-                string json = Encoding.UTF8.GetString(byteArray, 0, byteArray.Length);  // read System.Text.Encoding.UTF8
+                string json = JsonConvert.SerializeObject(new { q = fromEnc, source = LanguageId.en.ToString(), target = toLang.ToString() });        // format = "text"
+                var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
 
-                // e.g. json = [[["Hallo","Hello",null,null,1]],null,"en"]
-                const int kOffset = 4;
+                HttpResponseMessage resp = await client.PostAsync(kUrlGoogTrans, content);
+                resp.EnsureSuccessStatusCode();
 
-                string toText = json.Substring(kOffset, json.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
+                string respStr = await resp.Content.ReadAsStringAsync();
+                dynamic respObj = JsonConvert.DeserializeObject(respStr);
+
+                // detectedSourceLanguage
+                string toText = respObj.data.translations[0].translatedText;
                 return toText;
             }
         }
@@ -298,12 +316,51 @@ namespace DotStd
         {
             try
             {
-                return await TranslateSingleAsync(fromText, toLang);
+                if (ApiKey == null)
+                    return await TranslateSingleAsync(fromText, toLang);
+                else
+                    return await TranslateJsonAsync(fromText, toLang);
             }
             catch
             {
                 return null;
             }
+        }
+
+        public override async Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native)
+        {
+            // translate a batch of texts.
+
+            if (toLang == _fromLang)    // nothing to do.
+                return null;
+
+            var lstResp = new List<string>();
+
+            using (var client = new HttpClient())
+            {
+                if (ApiKey != null)
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                }
+
+                object req = new { q = fromTexts, target = toLang.ToString() };
+                string json = JsonConvert.SerializeObject(req);
+                var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
+
+                HttpResponseMessage resp = await client.PostAsync(kUrlGoogTrans, content);
+                resp.EnsureSuccessStatusCode();
+
+                string respStr = await resp.Content.ReadAsStringAsync();
+                dynamic respObj = JsonConvert.DeserializeObject(respStr);
+
+                // detectedSourceLanguage
+                foreach (dynamic tran in respObj.data.translations)
+                {
+                    lstResp.Add(tran.translatedText);
+                }
+            }
+
+            return lstResp;
         }
     }
 }
