@@ -122,11 +122,9 @@ namespace DotStd
 
         public override Task<List<TupleKeyValue>> GetToLanguages()
         {
+            // What languages do i translate to?
             return Task.FromResult(new List<TupleKeyValue> { new TupleKeyValue(LanguageId.test) });
         }
-
-        const string kChildOpen = "{<(";        // braces must match for escapes.
-        const string kChildClose = "}>)";
 
         private char TranslateLetter(char ch)
         {
@@ -147,56 +145,35 @@ namespace DotStd
             // Throw if the text is already translated. NO double translation.
             ValidState.ThrowIf(IsTestLang(fromText));
 
-            var escapes = new Stack<char>();
-            char escapeClose = '\0';     // What char closes the escape.
             int wordStart = -1;
 
             var sb = new StringBuilder();
             for (int i = 0; i < fromText.Length; i++)
             {
                 char ch = fromText[i];
-                bool wasEscaped = escapeClose != '\0';
 
-                if (ch == escapeClose)   // end of escape block.
+                bool isLetter = char.IsLetter(ch);
+                if (isLetter)
                 {
-                    escapeClose = escapes.Count > 0 ? escapes.Pop() : '\0';
-                }
-                else
-                {
-                    int j = kChildOpen.IndexOf(ch);
-                    if (j >= 0)     // new escape block.
-                    {
-                        if (wasEscaped)
-                            escapes.Push(escapeClose);
-                        escapeClose = kChildClose[j];
-                    }
+                    ch = TranslateLetter(ch);
                 }
 
-                if (!wasEscaped)
+                if (wordStart >= 0) // was in a word.
                 {
-                    bool isLetter = char.IsLetter(ch);
-                    if (isLetter)
+                    if (!isLetter)  // end of word.
                     {
-                        ch = TranslateLetter(ch);
+                        sb.Append(kEnd);
+                        wordStart = -1;
                     }
-
-                    if (wordStart >= 0) // was in a word.
+                }
+                else // was not in a word.
+                {
+                    if (isLetter) // start of new word.
                     {
-                        if (!isLetter)  // end of word.
+                        if (i < fromText.Length - 1 && char.IsLetter(fromText[i + 1]))  // only for multi char words.
                         {
-                            sb.Append(kEnd);
-                            wordStart = -1;
-                        }
-                    }
-                    else // was not in a word.
-                    {
-                        if (isLetter) // start of new word.
-                        {
-                            if (i < fromText.Length - 1 && char.IsLetter(fromText[i + 1]))  // only for multi char words.
-                            {
-                                sb.Append(kStart);
-                                wordStart = i;
-                            }
+                            sb.Append(kStart);
+                            wordStart = i;
                         }
                     }
                 }
@@ -216,12 +193,12 @@ namespace DotStd
         }
     }
 
-    public class TranslatorGoogleRaw : TranslatorBase
+    public class TranslatorGoogleRest : TranslatorBase
     {
         // Wrap the Google translate service.
         // Assume any caching happens at a higher level.
-        // Raw = Bypass Google NuGet "Google.Cloud.Translation.V2" library.
-        // Translator Will ignore embedded HTML tags.
+        // Rest = Bypass Google  "Google.Cloud.Translation.V2" NuGet library.
+        // Translator Will ignore embedded HTML tags?
 
         // https://codelabs.developers.google.com/codelabs/cloud-translation-csharp/index.html?index=..%2F..index#5
         // https://stackoverflow.com/questions/2246017/using-google-translate-in-c-sharp
@@ -264,9 +241,10 @@ namespace DotStd
 
             using (var client = new HttpClient())
             {
-                if (ApiKey != null)
+                if (!string.IsNullOrWhiteSpace(ApiKey))
                 {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                    url += "&key=" + ApiKey;
                 }
 
                 byte[] bytesResp = await client.GetByteArrayAsync(url);
@@ -290,17 +268,19 @@ namespace DotStd
             if (toLang == _fromLang)    // nothing to do.
                 return fromEnc;
 
+            string url = kUrlGoogTrans;
             using (var client = new HttpClient())
             {
-                if (ApiKey != null)
+                if (!string.IsNullOrWhiteSpace(ApiKey))
                 {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                    url += "?key=" + ApiKey;
                 }
 
                 string json = JsonConvert.SerializeObject(new { q = fromEnc, source = LanguageId.en.ToString(), target = toLang.ToString() });        // format = "text"
                 var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
 
-                HttpResponseMessage resp = await client.PostAsync(kUrlGoogTrans, content);
+                HttpResponseMessage resp = await client.PostAsync(url, content);
                 resp.EnsureSuccessStatusCode();
 
                 string respStr = await resp.Content.ReadAsStringAsync();
@@ -316,7 +296,7 @@ namespace DotStd
         {
             try
             {
-                if (ApiKey == null)
+                if (string.IsNullOrWhiteSpace(ApiKey))
                     return await TranslateSingleAsync(fromText, toLang);
                 else
                     return await TranslateJsonAsync(fromText, toLang);
@@ -335,19 +315,21 @@ namespace DotStd
                 return null;
 
             var lstResp = new List<string>();
+            string url = kUrlGoogTrans;
 
             using (var client = new HttpClient())
             {
-                if (ApiKey != null)
+                if (!string.IsNullOrWhiteSpace(ApiKey))
                 {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                    url += "?key=" + ApiKey;
                 }
 
                 object req = new { q = fromTexts, target = toLang.ToString() };
                 string json = JsonConvert.SerializeObject(req);
                 var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
 
-                HttpResponseMessage resp = await client.PostAsync(kUrlGoogTrans, content);
+                HttpResponseMessage resp = await client.PostAsync(url, content);
                 resp.EnsureSuccessStatusCode();
 
                 string respStr = await resp.Content.ReadAsStringAsync();

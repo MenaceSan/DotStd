@@ -7,14 +7,16 @@ namespace DotStd
     {
         // Manage string phone numbers . encode/decode formatting.
         // Similar to Google phone number parser. PhoneNumbers. libphonenumber-csharp
+        // max size = 15 digits + + sign = 16 digits.
 
         // https://www.twilio.com/blog/validating-phone-numbers-effectively-with-c-and-the-net-frameworks
         // https://www.twilio.com/docs/glossary/what-e164
         // https://en.wikipedia.org/wiki/National_conventions_for_writing_telephone_numbers
+        // https://www.itu.int/ITU-D/treg/Events/Seminars/2010/Ghana10/pdf/Session2.pdf
 
         public const int kCodeUSA = 1;  // CallingCode
-        public const ulong kMax = 10000000000ul;
-        public const ulong kMin = 999999ul;
+        public const ulong kMax = 10000000000ul;    // 10 to 14 digits theoretically.
+        public const ulong kMin = 999999ul;     // never less than 
 
         public int CountryCode { get; set; } = kCodeUSA;   // We get the country part of the Phone number. 1 = USA. NOT the same as CountryId. AKA CallingCode
         public ulong NationalNumber { get; set; }   // Get number without country code. (NOT in PhoneNumberFormat.E164 format)

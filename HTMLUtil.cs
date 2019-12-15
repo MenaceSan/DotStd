@@ -25,6 +25,7 @@ namespace DotStd
             // NOTE: XmlReader is vulnerable to attacks from entity creation. XSS. OK in .Net 4.0+ but use DtdProcessing.Prohibit !!
 
             src = src.Replace(kNBSP, " ");
+            src = src.Replace("&copy;", "©");
             src = src.Replace("&eacute;", "é");
             src = src.Replace("&trade;", "™");
 
@@ -33,7 +34,7 @@ namespace DotStd
 
         public const string kSelected = "selected ";
 
-        public static string GetOptStr(string value, string desc, string extra)
+        public static string GetOpt(string value, string desc, string extra)
         {
             // get HTML for <select>
             // construct HTML "<option value='1'>Main</option>");
@@ -41,29 +42,29 @@ namespace DotStd
             return string.Concat("<option ", extra, "value='", value, "'>", desc, "</option>");
         }
 
-        public static string GetOptStr(string value, string desc, bool selected = false)
+        public static string GetOpt(string value, string desc, bool selected = false)
         {
             // construct HTML 
-            return GetOptStr(value, desc, selected ? kSelected : string.Empty);
+            return GetOpt(value, desc, selected ? kSelected : string.Empty);
         }
 
-        public static string GetOptStr(int value, string desc, bool selected = false)
+        public static string GetOpt(int value, string desc, bool selected = false)
         {
             // construct HTML 
-            return GetOptStr(value.ToString(), desc, selected);
+            return GetOpt(value.ToString(), desc, selected);
         }
 
-        public static string GetOptStr(TupleIdValue n, bool selected = false)
+        public static string GetOpt(TupleIdValue n, bool selected = false)
         {
             // construct HTML 
-            return GetOptStr(n.Id, n.Value, selected);
+            return GetOpt(n.Id, n.Value, selected);
         }
 
-        public static string GetOptStr(Enum n, bool selected = false)
+        public static string GetOpt(Enum n, bool selected = false)
         {
             // construct HTML 
             // Get a value from enum to populate a HTML select list option.
-            return GetOptStr(n.ToInt(), n.ToDescription(), selected);
+            return GetOpt(n.ToInt(), n.ToDescription(), selected);
         }
 
         public static bool IsCommentLine(string s)

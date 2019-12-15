@@ -4,19 +4,19 @@ using System.ComponentModel;
 
 namespace DotStd
 {
-    public enum ConfigMode
+    public enum EnvironMode
     {
-        //! What type of deployment config is this ? AKA Environment.
+        //! What type of deployment Environment is this ? AKA EnvironmentName.
         //! Can have sub categories. Postfix by number for sub type.
         //! Assume upper case. 
         //! Similar to .NET Core IHostingEnvironment.IsDevelopment or IHostingEnvironment.EnvironmentName
 
-        [Description("Development")]
+        [Description("Development")]        // EnvironmentName
         DEV,        // local deploy of code, maybe shared db or local db. May have variations, Dev3, Dev2 etc. AKA "Development" in Core
         TEST,       // Testing server for QA people usually.
         STAGING,    // Optional staging server, More public access. Some projects skip this mode.
-        [Description("Production")]
-        PROD,       // prod server seen by customers. AKA "Production" in Core
+        [Description("Production")]         // EnvironmentName
+        PROD,       // prod server seen by customers. AKA "Production" in Core. trunk code branch.
     }
 
     public class ConfigInfoCore : IPropertyGetter
@@ -26,20 +26,39 @@ namespace DotStd
 
         public static Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
 
-        public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config)
+        private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT
+
+        public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config, string environmentName)
         {
             // config may be IConfigurationRoot or IConfigurationSection
+            // ASSUME ASPNETCORE_ENVIRONMENT has been set and dictates what my EnvironMode is.
             _Configuration = config;
+
+            if (string.Equals(environmentName, "Development", StringComparison.InvariantCultureIgnoreCase))
+                environmentName = EnvironMode.DEV.ToString();
+            if (string.Equals(environmentName, "Production", StringComparison.InvariantCultureIgnoreCase))
+                environmentName = EnvironMode.PROD.ToString();
+
+            _EnvironMode = environmentName;
         }
 
         public virtual object GetPropertyValue(string name)
         {
             // sName = "Sec:child" IPropertyGetter
+
             if (_Configuration != null)
             {
                 var sec = _Configuration.GetSection(name);
-                return sec?.Value;
+                object val = sec?.Value;
+                if (val != null)
+                    return val;
             }
+
+            if (string.Equals(name, ConfigInfoBase.kAppsEnvironMode, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return _EnvironMode;
+            }
+
             return null;
         }
     }
@@ -54,12 +73,12 @@ namespace DotStd
         public const string kConnectionStrings = "ConnectionStrings:";      // ConnectionStrings to db.
         public const string kSmtp = "Smtp:";    // configure how to send emails. Old XML config had weird format.
 
-        public const string kAppsConfigMode = "Apps:ConfigMode";       // What mode is this app running? Tag in appSettings. AKA EnvironmentName
+        public const string kAppsEnvironMode = "Apps:EnvironMode";       // What mode is this app running? Tag in appSettings. AKA EnvironmentName
         public const string kAppsLogFileDir = "Apps:LogFileDir";       // Where to put my local log files.
 
-        // ConfigMode = Is this app running in Dev, Test or Prod mode ?  kAppsConfigMode 
+        // EnvironMode = Is this app running in Dev, Test or Prod mode ?  kAppsConfigMode 
         // Equiv to IHostingEnvironment.EnvironmentName
-        public string ConfigMode { get; protected set; }    // What kAppsConfigMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
+        public readonly string EnvironMode;    // What kAppsEnvironMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
         private readonly IPropertyGetter _ConfigSource;   // Get my config info from here.
         private readonly Dictionary<int, object> Services = new Dictionary<int, object>();
@@ -113,27 +132,27 @@ namespace DotStd
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
 
-        public bool IsConfigModeLike(ConfigMode configMode)
+        public bool IsEnvironModeLike(EnvironMode configMode)
         {
-            // Prefix match ConfigMode.
-            // match ConfigMode but allow extension. e.g. Dev1 is the same as Dev
-            if (ConfigMode == null)
+            // Prefix match EnvironMode.
+            // match EnvironMode but allow extension. e.g. Dev1 is the same as Dev
+            if (EnvironMode == null)
                 return false;
-            return ConfigMode.ToUpper().StartsWith(configMode.ToString());
+            return EnvironMode.ToUpper().StartsWith(configMode.ToString());
         }
-        public bool IsConfigMode(string configMode)
+        public bool IsEnvironMode(string configMode)
         {
-            // Exact match ConfigMode
-            return String.Compare(ConfigMode, configMode, StringComparison.OrdinalIgnoreCase) == 0;
+            // Exact match EnvironMode
+            return String.Compare(EnvironMode, configMode, StringComparison.OrdinalIgnoreCase) == 0;
         }
-        public bool IsConfigMode(ConfigMode configMode)
+        public bool IsEnvironMode(EnvironMode configMode)
         {
-            // Exact match ConfigMode
-            return IsConfigMode(configMode.ToString());
+            // Exact match EnvironMode
+            return IsEnvironMode(configMode.ToString());
         }
         public bool IsConfigModeProd()
         {
-            return IsConfigMode(DotStd.ConfigMode.PROD);
+            return IsEnvironMode(DotStd.EnvironMode.PROD);
         }
 
         public virtual object GetPropertyValue(string name)
@@ -154,8 +173,8 @@ namespace DotStd
         {
             // Assign my config source. (file?)
             _ConfigSource = configSource;
-            ConfigMode = GetSetting(kAppsConfigMode);
-            ValidState.ThrowIfWhiteSpace(ConfigMode, nameof(ConfigMode));  // MUST have ConfigMode
+            EnvironMode = GetSetting(kAppsEnvironMode);
+            ValidState.ThrowIfWhiteSpace(EnvironMode, nameof(EnvironMode));  // MUST have EnvironMode
 
             if (connectionStringName != null)
             {

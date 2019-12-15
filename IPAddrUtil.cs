@@ -63,7 +63,7 @@ namespace DotStd
         }
     }
 
-    public class IPAddrUtil
+    public static class IPAddrUtil
     {
         // Helper for IPAddress functions.
 
@@ -183,7 +183,7 @@ namespace DotStd
             }
             catch (Exception ex)
             {
-                LoggerBase.DebugException("FindIPAddrLocal", ex);
+                LoggerUtil.DebugException("FindIPAddrLocal", ex);
                 return IPAddress.Parse(kLocalHost); // must return something.
             }
         }
@@ -208,7 +208,7 @@ namespace DotStd
             }
             catch (Exception ex)
             {
-                LoggerBase.DebugException("FindIPAddrExternal", ex);
+                LoggerUtil.DebugException("FindIPAddrExternal", ex);
                 return null;
             }
         }

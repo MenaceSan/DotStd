@@ -17,7 +17,7 @@ namespace DotStd
         // Mongo ?
     }
 
-    public class DbTableUtil
+    public static class DbTableUtil
     {
         // Helpers for a db table schema data.
 

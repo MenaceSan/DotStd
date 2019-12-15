@@ -52,6 +52,8 @@ namespace DotStd
 
     public class LogEntryBase
     {
+        // An entry to be logged. may be logged async to producer.
+
         public string Message;
         public LogLevel Level = LogLevel.Information;
         public int UserId = ValidState.kInvalidId;  // id for a thread of work for this user/worker. GetCurrentThreadId() ?
@@ -72,14 +74,14 @@ namespace DotStd
     public interface ILogger
     {
         // Emulate System.Diagnostics.WriteEntry
-        // This can possibly be forwarded to NLog or Log4Net ?
+        // This can possibly be forwarded to NLog or Log4Net ? AKA Appender.
         // similar to Microsoft.Extensions.Logging.ILogger
         // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
 
         // Is this log message important enough to be logged?
         bool IsEnabled(LogLevel level = LogLevel.Information);
 
-        // Log this. will check IsEnabled.
+        // Log this. assume will also check IsEnabled().
         void LogEntry(LogEntryBase entry);
     }
 
@@ -95,23 +97,8 @@ namespace DotStd
 
         public void SetFilterLevel(LogLevel filterLevel)
         {
+            // Only log stuff this important or better.
             _FilterLevel = filterLevel;
-        }
-
-        public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
-        {
-            // Not officially logged. Just debug console.
-            System.Diagnostics.Debug.WriteLine("Debug " + message);
-            // System.Diagnostics.Trace.WriteLine();
-        }
-
-        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
-        {
-            // an exception that I don't do anything about! NOT going to call LogException
-            // set a break point here if we want.
-            System.Diagnostics.Debug.WriteLine("DebugException " + subject + ":" + ex?.Message);
-            // Console.WriteLine();
-            // System.Diagnostics.Trace.WriteLine();
         }
 
         public virtual bool IsEnabled(LogLevel level = LogLevel.Information)    // ILogger
@@ -209,6 +196,44 @@ namespace DotStd
                 detail = oEx;
 
             LogEntry(oEx.Message, LogLevel.Critical, userId, detail);
+        }
+    }
+
+    public static class LoggerUtil
+    {
+        public static LoggerBase LogStart;     // always log fine detail at startup.
+
+        public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
+        {
+            // Not officially logged. Just debug console.
+            System.Diagnostics.Debug.WriteLine("Debug " + message);
+            // System.Diagnostics.Trace.WriteLine();
+
+            if (LogStart != null)
+            {
+                LogStart.LogEntry(message, LogLevel.Debug, userId);
+            }
+        }
+
+        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
+        {
+            // an exception that I don't do anything about! NOT going to call LogException
+            // set a break point here if we want.
+
+            System.Diagnostics.Debug.WriteLine("DebugException " + subject + ":" + ex?.Message);
+
+            // Console.WriteLine();
+            // System.Diagnostics.Trace.WriteLine();
+
+            if (LogStart != null)
+            {
+                LogStart.LogEntry(subject, LogLevel.Error, userId);
+            }
+        }
+
+        public static void CreateStartupLog(string filePath)
+        {
+            LogStart = new LogFileBase(filePath);
         }
     }
 }

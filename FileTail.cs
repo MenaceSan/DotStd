@@ -47,7 +47,7 @@ namespace DotStd
             }
             catch (Exception ex)
             {
-                 LoggerBase.DebugException("EmailMessage.SendSafeAsync", ex);
+                 LoggerUtil.DebugException("EmailMessage.SendSafeAsync", ex);
                Console.WriteLine(ex.ToString());
 
                 //prompt user to restart

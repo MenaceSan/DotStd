@@ -90,7 +90,7 @@ namespace DotStd
 
         public string TwoLetterISOLanguageName => Id.ToString();
 
-        public static LanguageId GetId(string lang, int level)
+        public static LanguageId GetId(string lang, int level = 3)
         {
             // get LanguageId from string. forgiving.
             // level = how close does the match need to be ?
@@ -112,7 +112,7 @@ namespace DotStd
                 if (level <= 2)
                     continue;
                 string desc = value.ToDescription().ToLower();  // part of full text.
-                if ( desc.Contains(lang))
+                if (desc.Contains(lang))
                     return value;
             }
 
@@ -121,7 +121,7 @@ namespace DotStd
 
         public static LanguageId GetAcceptLang(string acceptLang)
         {
-            // Get the best value from the "Accept-Langauge" format string.
+            // Get the best value from the "Accept-Language" format string.
             // HTTP Accept-Language tag e.g. "en-US,en;q=0.9"
 
             if (string.IsNullOrWhiteSpace(acceptLang))

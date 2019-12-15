@@ -159,7 +159,7 @@ namespace DotStd
             catch (Exception ex)
             {
                 // Why did it fail to send ?
-                LoggerBase.DebugException("EmailMessage.SendSafe", ex);
+                LoggerUtil.DebugException("EmailMessage.SendSafe", ex);
                 return ex.Message;
             }
         }
@@ -186,7 +186,7 @@ namespace DotStd
             catch (Exception ex)
             {
                 // Why did it fail to send ?
-                LoggerBase.DebugException("EmailMessage.SendSafeAsync", ex);
+                LoggerUtil.DebugException("EmailMessage.SendSafeAsync", ex);
                 return ex.Message;
             }
         }

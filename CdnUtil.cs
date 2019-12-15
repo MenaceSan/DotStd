@@ -149,7 +149,7 @@ namespace DotStd
 
                 // Pull/Get the file. 
                 downloadCount++;
-                LoggerBase.DebugEntry($"Get '{src.Value}'");
+                LoggerUtil.DebugEntry($"Get '{src.Value}'");
                 var dl = new HttpDownloader(src.Value, dstPath);
 
                 // CDN can get "OperationCanceledException: The operation was canceled."

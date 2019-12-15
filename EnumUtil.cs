@@ -26,6 +26,24 @@ namespace DotStd
             return type.GetMember(name) != null;
         }
 
+        public static bool HasAttr(object[] attrs)
+        {
+            // IEnumerable<Attribute>
+            return attrs != null && attrs.Length > 0;
+        }
+
+        public static string GetDescription(MemberInfo[] memInfo)
+        {
+            // Get value for DescriptionAttribute
+
+            if (memInfo == null || memInfo.Length <= 0)
+                return null;
+            object[] attrs = memInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+            if (!HasAttr(attrs))
+                return null;
+            return ((DescriptionAttribute)attrs[0]).Description;
+        }
+
         public static string GetEnumDescription(Enum value)
         {
             // Get the Metadata Description tag string for an enum (if it has one) else default to the enums name.
@@ -34,18 +52,11 @@ namespace DotStd
             {
                 return "";
             }
+
             Type type = value.GetType();
             string name = value.ToString();
-            MemberInfo[] memInfo = type.GetMember(name);   // could use GetField() for FieldInfo ?
-            if (memInfo != null && memInfo.Length > 0)
-            {
-                object[] attrs = memInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
-                if (attrs != null && attrs.Length > 0)
-                {
-                    return ((DescriptionAttribute)attrs[0]).Description;
-                }
-            }
-            return name;   // default to using the enums name. like: Enum.GetName(type, en);
+            string desc = GetDescription(type.GetMember(name));   // could use GetField() for FieldInfo ?
+            return desc ?? name;   // default to using the enums name. like: Enum.GetName(type, en);
         }
 
         /// <summary>

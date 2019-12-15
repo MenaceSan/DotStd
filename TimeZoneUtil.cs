@@ -212,7 +212,7 @@ namespace DotStd
 
             // MUST create it !!! Very bad.
             _tzi = _tziUTC = lstTzi.First();
-            LoggerBase.DebugException("No UTC!", null);
+            LoggerUtil.DebugException("No UTC!", null);
         }
 
         public virtual TimeZoneInfo GetTimeZoneInfo()

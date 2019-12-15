@@ -48,6 +48,7 @@ namespace DotStd
     {
         // A time in the future that may recur.
         // Ignore end of recur sequence here.
+        // Similar to quartz chron expression. https://www.freeformatter.com/cron-expression-generator-quartz.html
 
         public DateTime StartTime;          // When does this happen or happen first in recurring pattern?
         public TimeUnitId RecurUnitId;       // Does it recur ? on what time unit ?

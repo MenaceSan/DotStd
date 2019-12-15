@@ -10,7 +10,7 @@ namespace DotStd
     public static class AssemblyUtil
     {
         /// <summary>
-        /// Find assembly if its already loaded. Don't load it.
+        /// Find assembly if its already loaded. Don't load it again.
         /// </summary>
         /// <param name="name"> GetName e.g. 'System.Web' ignores version .</param>
         public static Assembly FindLoadedAssembly(string name)

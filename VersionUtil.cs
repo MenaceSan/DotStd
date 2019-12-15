@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DotStd
 {
-    public class VersionUtil
+    public static class VersionUtil
     {
         // Encode a version as a string, a System.Version or as a single int.
         // e.g. Version=4.0.0.0

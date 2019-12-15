@@ -154,7 +154,7 @@ namespace DotStd
                 {
                     FailedEvent(ex);
                 }
-                LoggerBase.DebugException("DownloadFileWithProgress", ex);
+                LoggerUtil.DebugException("DownloadFileWithProgress", ex);
                 return false;
             }
         }

@@ -55,7 +55,7 @@ namespace DotStd
 
     }
 
-    public class CurrencyUtil
+    public class CurrencyInfo
     {
         // Helper for different currency types.
         // CurrencyId
@@ -71,28 +71,28 @@ namespace DotStd
         public string Description => CurrencyId.ToDescription();
 
         // Exponent = 2
-        public static readonly CurrencyUtil kUSD = new CurrencyUtil(CurrencyId.USD, "$", "US$", false, "https://en.wikipedia.org/wiki/United_States_dollar");
-        public static readonly CurrencyUtil kEUR = new CurrencyUtil(CurrencyId.EUR, "€", null, false, "https://en.wikipedia.org/wiki/Euro");
-        public static readonly CurrencyUtil kJPY = new CurrencyUtil(CurrencyId.JPY, "円", null, false, "https://en.wikipedia.org/wiki/Japanese_yen");
-        public static readonly CurrencyUtil kGBP = new CurrencyUtil(CurrencyId.GBP, "£", null, false, "https://en.wikipedia.org/wiki/Pound_sterling");
+        public static readonly CurrencyInfo kUSD = new CurrencyInfo(CurrencyId.USD, "$", "US$", false, "https://en.wikipedia.org/wiki/United_States_dollar");
+        public static readonly CurrencyInfo kEUR = new CurrencyInfo(CurrencyId.EUR, "€", null, false, "https://en.wikipedia.org/wiki/Euro");
+        public static readonly CurrencyInfo kJPY = new CurrencyInfo(CurrencyId.JPY, "円", null, false, "https://en.wikipedia.org/wiki/Japanese_yen");
+        public static readonly CurrencyInfo kGBP = new CurrencyInfo(CurrencyId.GBP, "£", null, false, "https://en.wikipedia.org/wiki/Pound_sterling");
 
-        public static readonly CurrencyUtil kAUD = new CurrencyUtil(CurrencyId.AUD, "$", "AU$", false, "https://en.wikipedia.org/wiki/Australian_dollar");
-        public static readonly CurrencyUtil kCAD = new CurrencyUtil(CurrencyId.CAD, "$", "CA$", false, "https://en.wikipedia.org/wiki/Canadian_dollar");
-        public static readonly CurrencyUtil kCHF = new CurrencyUtil(CurrencyId.CHF, "Fr.", null, false, "https://en.wikipedia.org/wiki/Swiss_franc");
-        public static readonly CurrencyUtil kCNY = new CurrencyUtil(CurrencyId.CNY, "元", null, false, "https://en.wikipedia.org/wiki/Renminbi");
+        public static readonly CurrencyInfo kAUD = new CurrencyInfo(CurrencyId.AUD, "$", "AU$", false, "https://en.wikipedia.org/wiki/Australian_dollar");
+        public static readonly CurrencyInfo kCAD = new CurrencyInfo(CurrencyId.CAD, "$", "CA$", false, "https://en.wikipedia.org/wiki/Canadian_dollar");
+        public static readonly CurrencyInfo kCHF = new CurrencyInfo(CurrencyId.CHF, "Fr.", null, false, "https://en.wikipedia.org/wiki/Swiss_franc");
+        public static readonly CurrencyInfo kCNY = new CurrencyInfo(CurrencyId.CNY, "元", null, false, "https://en.wikipedia.org/wiki/Renminbi");
 
-        public static readonly CurrencyUtil kSEK = new CurrencyUtil(CurrencyId.SEK, "kr", null, false, "https://en.wikipedia.org/wiki/Swedish_krona");
-        public static readonly CurrencyUtil kNZD = new CurrencyUtil(CurrencyId.NZD, "$", "NZ$", false, "https://en.wikipedia.org/wiki/New_Zealand_dollar");
-        public static readonly CurrencyUtil kMXN = new CurrencyUtil(CurrencyId.MXN, "$", "MX$", false, "https://en.wikipedia.org/wiki/Mexican_peso");
-        public static readonly CurrencyUtil kSGD = new CurrencyUtil(CurrencyId.SGD, "S$", null, false, "https://en.wikipedia.org/wiki/Singapore_dollar");
+        public static readonly CurrencyInfo kSEK = new CurrencyInfo(CurrencyId.SEK, "kr", null, false, "https://en.wikipedia.org/wiki/Swedish_krona");
+        public static readonly CurrencyInfo kNZD = new CurrencyInfo(CurrencyId.NZD, "$", "NZ$", false, "https://en.wikipedia.org/wiki/New_Zealand_dollar");
+        public static readonly CurrencyInfo kMXN = new CurrencyInfo(CurrencyId.MXN, "$", "MX$", false, "https://en.wikipedia.org/wiki/Mexican_peso");
+        public static readonly CurrencyInfo kSGD = new CurrencyInfo(CurrencyId.SGD, "S$", null, false, "https://en.wikipedia.org/wiki/Singapore_dollar");
 
         // ...
 
-        public static readonly CurrencyUtil kBTC = new CurrencyUtil(CurrencyId.BTC, "₿", null, false, "https://en.wikipedia.org/wiki/Bitcoin");
+        public static readonly CurrencyInfo kBTC = new CurrencyInfo(CurrencyId.BTC, "₿", null, false, "https://en.wikipedia.org/wiki/Bitcoin");
 
-        public static readonly CurrencyUtil kUNK = new CurrencyUtil(ValidState.kInvalidId, "?", null, false);
+        public static readonly CurrencyInfo kUNK = new CurrencyInfo(ValidState.kInvalidId, "?", null, false);
 
-        private CurrencyUtil(CurrencyId id, string sign, string sign2 = null, bool signPost = false, string url = null)
+        private CurrencyInfo(CurrencyId id, string sign, string sign2 = null, bool signPost = false, string url = null)
         {
             CurrencyId = id;
             Sign = sign;
@@ -100,7 +100,7 @@ namespace DotStd
             SignPostfix = signPost;
         }
 
-        public static CurrencyUtil Get(CurrencyId currencyId)
+        public static CurrencyInfo Get(CurrencyId currencyId)
         {
             switch (currencyId)
             {
