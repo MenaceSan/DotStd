@@ -9,22 +9,29 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
-    public interface ITranslatorProvider
+    public interface ITranslatorProvider1
+    {
+        // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
+        // ASSUME this does not throw an exception. We can safely call this in non-async code.
+        Task<string> TranslateAsync(string fromText);
+    }
+
+    public interface ITranslatorProvider 
     {
         // Translate from some source language to some target language.
         // May use underlying cache. 
-        // Ignored or filtered stuff : <XML> may be filtered out, {0} may be filtered. 
+        // Ignored/filtered stuff : <XML> may be filtered out, {0} MUST NOT be filtered/altered. 
         // Similar to ASP Core IStringLocalizer
 
         LanguageId FromLangId { get; }
 
-        // What languages are available to translate to ?
+        // Select FromLangId
         bool SetFromLanguage(LanguageId fromLang);
 
         // What languages are available to translate to? LanguageId as string, Name of language in fromLang.
         Task<List<TupleKeyValue>> GetToLanguages();
 
-        // Translate some text.
+        // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
         Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
 
         // Translate a batch of texts.
@@ -294,6 +301,7 @@ namespace DotStd
 
         public override async Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
         {
+            // ASSUME this does not throw an exception. We can safely call this in non-async code.
             try
             {
                 if (string.IsNullOrWhiteSpace(ApiKey))

@@ -34,18 +34,18 @@ namespace DotStd
 
         public const string kSelected = "selected ";
 
-        public static string GetOpt(string value, string desc, string extra)
+        public static string GetOpt(string value, string desc, bool selected = false, string extra = null)
         {
-            // get HTML for <select>
+            // construct HTML for <select>
             // construct HTML "<option value='1'>Main</option>");
             // like TupleKeyValue
-            return string.Concat("<option ", extra, "value='", value, "'>", desc, "</option>");
-        }
 
-        public static string GetOpt(string value, string desc, bool selected = false)
-        {
-            // construct HTML 
-            return GetOpt(value, desc, selected ? kSelected : string.Empty);
+            if (selected)
+            {
+                extra = string.Concat(kSelected, extra);
+            }
+
+            return string.Concat("<option ", extra, "value='", value, "'>", desc, "</option>");
         }
 
         public static string GetOpt(int value, string desc, bool selected = false)
@@ -88,6 +88,6 @@ namespace DotStd
             sb.Append("</ul>");
             return sb.ToString();
         }
- 
+
     }
 }

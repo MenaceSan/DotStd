@@ -86,9 +86,16 @@ namespace DotStd
 
         public string NativeName;       // Native speakers term for it.
 
-        public readonly string URL;     // Wikipedia page.
+        public string URL;     // Wikipedia page.
 
         public string TwoLetterISOLanguageName => Id.ToString();
+
+        public string GetDescription()
+        {
+            if (String.IsNullOrWhiteSpace(NativeName))
+                return Name;
+            return string.Concat(NativeName, " (", Name, ")");
+        }
 
         public static LanguageId GetId(string lang, int level = 3)
         {

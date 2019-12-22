@@ -50,7 +50,8 @@ namespace DotStd
             if (_Created)
             {
                 // All log files should have this header.
-                w.WriteLine($"Log File Created '{dt}' for '{ConfigApp.AppName}'");
+                w.WriteLine($"Log File Created '{dt}' for '{ConfigApp.AppName}' v{ConfigApp.AppVersionStr}");
+                w.Flush();
             }
             return w;
         }
@@ -73,7 +74,7 @@ namespace DotStd
                         {
                             w.WriteLine("\t" + entry.Detail.ToString());
                         }
-                        if (entry.Level >= LogLevel.Error)  // important messages should be flushed immediately. In case we crash.
+                        if (entry.Level >= LogLevel.Error || LoggerUtil.LogStart != null)  // important messages should be flushed immediately. In case we crash.
                         {
                             w.Flush();
                         }

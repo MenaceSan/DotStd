@@ -233,6 +233,12 @@ namespace DotStd
 
         public static void CreateStartupLog(string filePath)
         {
+            // For startup also check:
+            // System Event Logger for Applications.
+            // IIS web.config stdoutLogFile.       <aspNetCore processPath=".\FourTeAdminWeb.exe" stdoutLogEnabled="true" stdoutLogFile="C:\FourTe\stdout" hostingModel="InProcess">
+            // IIS wwwroot/logs/
+            // https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/aspnet-core-module?view=aspnetcore-3.1
+
             LogStart = new LogFileBase(filePath);
         }
     }

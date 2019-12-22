@@ -5,6 +5,17 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    public enum JobExecTypeId
+    {
+        // How is the code for this job executed ?
+        PredefId,       // use Id as JobTypeId.
+        InProcess,      // Call in process (already present) code by name.
+        // ? Compile code from sources ?
+        Assembly,       // Load an assembly into my process space, then load some class and call method.
+        ProcAssembly,   // Use a process isolation wrapper on the assembly.
+        Process,        // Load a new process with arguments. EXE
+    }
+
     public class JobAttribute : Attribute
     {
         // Declare this as some job/task i want to execute from external source. checked in Compile.

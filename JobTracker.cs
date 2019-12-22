@@ -6,7 +6,7 @@ namespace DotStd
     {
         // Track some long process/job/task that is running async on the server.
         // Web browser can periodically request updates to its progress.
-        // HangFire might do this better? use SignalR ?  
+        // HangFire might do this better? use SignalR for status ?  
  
         // TODO Push updates to UI ? So we dont have the UI polling for this?
 

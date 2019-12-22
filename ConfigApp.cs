@@ -14,7 +14,7 @@ namespace DotStd
         public static int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
 
         public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start. AKA 'GUIThread'.
-        public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;        // Equiv to IsInvokeRequired()
+        public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;    // caller is on main thread? Equiv to IsInvokeRequired()
 
         private static string _AppName;
         public static string AppName

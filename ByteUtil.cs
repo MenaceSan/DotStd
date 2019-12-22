@@ -124,7 +124,7 @@ namespace DotStd
 
         public static int ToIntLE(byte[] b, int offset = 0)
         {
-            // NOTE: This doesnt really make sense as we dont use sign.
+            // NOTE: This doesn't really make sense as we don't use sign.
             // Convert 4 bytes to a 32 bit signed int. (Host Order) LittleEndian (Intel)  
             // Like BitConverter.ToInt32()
             return (int)ToUIntLE(b,offset);
@@ -155,7 +155,7 @@ namespace DotStd
         public static void PackIntLE(byte[] b, int offset, int value)
         {
             // little endian
-            // NOTE: This doesnt really make sense as we dont use sign.
+            // NOTE: This doesn't really make sense as we don't use sign.
             b[offset + 0] = (byte)(value);
             b[offset + 1] = (byte)(value >> 8);
             b[offset + 2] = (byte)(value >> 16);
