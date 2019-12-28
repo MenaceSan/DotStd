@@ -39,7 +39,7 @@ namespace DotStd
                 config = ConfigApp.ConfigInfo;
             }
 
-            AllowedFilter = config.IsConfigModeProd() ? null : allowedFilter;     // Can we send email to anybody ? ignore white list in prod mode.
+            AllowedFilter = config.IsEnvironModeProd() ? null : allowedFilter;     // Can we send email to anybody ? ignore white list in prod mode.
 
             // Search for email config in AppSettings.json for .NET Core.
             if (config.GetSetting(ConfigInfoBase.kSmtp + "Host") != null)

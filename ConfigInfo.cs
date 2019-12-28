@@ -76,7 +76,7 @@ namespace DotStd
         public const string kAppsEnvironMode = "Apps:EnvironMode";       // What mode is this app running? Tag in appSettings. AKA EnvironmentName
         public const string kAppsLogFileDir = "Apps:LogFileDir";       // Where to put my local log files.
 
-        // EnvironMode = Is this app running in Dev, Test or Prod mode ?  kAppsConfigMode 
+        // EnvironMode = Is this app running in Dev, Test or Prod mode ? 
         // Equiv to IHostingEnvironment.EnvironmentName
         public readonly string EnvironMode;    // What kAppsEnvironMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
@@ -150,7 +150,7 @@ namespace DotStd
             // Exact match EnvironMode
             return IsEnvironMode(configMode.ToString());
         }
-        public bool IsConfigModeProd()
+        public bool IsEnvironModeProd()
         {
             return IsEnvironMode(DotStd.EnvironMode.PROD);
         }

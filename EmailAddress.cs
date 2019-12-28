@@ -50,9 +50,9 @@ namespace DotStd
             }
         }
 
-        public bool IsValid(string email)
+        public virtual bool IsValid(string email)
         {
-            // virtual
+            // virtual IValidatorT<string>
             return IsValidEmail(email);
         }
 

@@ -9,14 +9,18 @@ namespace DotStd
         // app_com_type used by user_com.TypeId
 
         Unused = 0,
+        [Description("Internal Id")]
         InternalId = 1,     // internal messaging is reserved.
         Email = 2,          // may be openid.
+        [Description("Voice Phone")]
         VoicePhone = 3,     // land line. voice only.
+        [Description("Mobile Phone")]
         MobilePhone = 4,    // Voice and text
         SMS,            // Text only. 2 way
         Pager,          // beeper ? one way.
         Fax,            // Does anyone still use this ?  
         Skype = 8,
+        [Description("Google Hangout")]
         GoogleHangout = 9,      // needs an email id.
         Other = 10,     // unknown. Don't call this.  
 

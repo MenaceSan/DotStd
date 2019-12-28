@@ -13,6 +13,8 @@ namespace DotStd
     {
         // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
         // ASSUME this does not throw an exception. We can safely call this in non-async code.
+        // related to selected CultureInfo
+
         Task<string> TranslateAsync(string fromText);
     }
 
