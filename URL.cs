@@ -135,7 +135,7 @@ namespace DotStd
 
             foreach (string a in array)
             {
-                if (string.IsNullOrWhiteSpace(a))    // doesnt count. skip it.
+                if (string.IsNullOrWhiteSpace(a))    // doesn't count. skip it.
                     continue;
 
                 bool startSep = a.StartsWith(kSep); // next entry starts with sep?

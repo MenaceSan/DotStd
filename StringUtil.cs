@@ -10,6 +10,8 @@ namespace DotStd
         // String and char util functions.
         // ToByteArray = byte[] = System.Text.Encoding.Default.GetBytes(sIn);
 
+        public const string _NoErrorMsg = "";  // "" = Success = no error. null = did nothing.
+
         public static int CompareNoCase(this string s1, string s2)
         {
             // simple Wrapper 
@@ -27,7 +29,7 @@ namespace DotStd
         public static bool IsDigit1(char ch)
         {
             // is this char a basic number? like Regex regexDigit = new Regex("[^0-9]");
-            // NOT extended ascii, 1/2 etc.
+            // NOT extended ASCII, 1/2 etc.
 #if false   // false true 
             return ch >= '0' && ch <= '9';
 #else
@@ -37,7 +39,7 @@ namespace DotStd
         public static bool IsUpper1(char ch)
         {
             // is this char basic upper case? like new Regex("[^A-Z]");
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
 #if true   // false true 
             return (ch >= 'A' && ch <= 'Z');
 #else
@@ -47,7 +49,7 @@ namespace DotStd
         public static bool IsLower1(char ch)
         {
             // is this char basic lower case? like new Regex("[^a-z]");
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z');
 #else
@@ -57,7 +59,7 @@ namespace DotStd
 
         public static bool IsAlpha1(char ch)
         {
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
             // new Regex("[^a-zA-Z]");
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
@@ -68,7 +70,7 @@ namespace DotStd
 
         public static bool IsAlphaNumeric1(char ch)
         {
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
             // Regex("[^a-zA-Z0-9]")
 #if true   // false true 
             return IsAlpha1(ch) || IsDigit1(ch);
@@ -127,7 +129,7 @@ namespace DotStd
         public static bool IsAlphaNumeric1(string str)
         {
             // _regexAlNum = new Regex("[^a-zA-Z0-9]");
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
 
             if (string.IsNullOrWhiteSpace(str))
                 return false;
@@ -137,7 +139,7 @@ namespace DotStd
         public static string GetNumericOnly(string sValue, bool bStopOnNonNumeric = false)
         {
             // filter out all non numeric chars. For telephone numbers?
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
             // AKA ToNumStr
             // return System.Text.RegularExpressions.Regex.Replace(sValue,"[^\d]", ""); or Regex.Replace(sValue, "[^0-9]", "")
 
@@ -163,7 +165,7 @@ namespace DotStd
         public static string GetAlphaNumericOnly(string sValue)
         {
             // filter out all non alpha numeric chars.
-            // NOT extended ascii. Latin only.
+            // NOT extended ASCII. Latin only.
             // For comparing DLNum etc.
             // System.Text.RegularExpressions.Regex.Replace(sDL, "[^A-Za-z0-9]", "")
             // AKA ToAlNum

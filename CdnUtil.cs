@@ -82,10 +82,11 @@ namespace DotStd
                 if (node.NodeType != XmlNodeType.Element)
                     continue;
                 XElement xl = (XElement)node;
-                if (xl.Name != "script" && xl.Name != "link" && xl.Name != "a")
+                string nameXl = xl.Name.LocalName;
+                if (nameXl != "script" && nameXl != "link" && nameXl != "a")
                     continue;
 
-                string typeExt = (xl.Name == "script") ? "src" : "href"; // Is JavaScript or CSS ?
+                string typeExt = (nameXl == "script") ? "src" : "href"; // Is JavaScript or CSS/a ?
                 XAttribute src = xl.Attribute(typeExt);
                 if (src == null)
                 {
@@ -104,7 +105,7 @@ namespace DotStd
                 {
                     if (dstDev == null)
                     {
-                        continue;
+                        continue;   // We should not let this happen?
                     }
                     dst = dstDev;
                     dstDev = null;

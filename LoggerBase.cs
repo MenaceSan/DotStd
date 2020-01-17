@@ -54,20 +54,25 @@ namespace DotStd
     {
         // An entry to be logged. may be logged async to producer.
 
-        public string Message;
-        public LogLevel Level = LogLevel.Information;
+        public string Message;      // Description.
+        public LogLevel LevelId = LogLevel.Information;
         public int UserId = ValidState.kInvalidId;  // id for a thread of work for this user/worker. GetCurrentThreadId() ?
         public object Detail;       // extra information. that may be stored via ToString();
 
         public LogEntryBase()       // props to be populated later.
         { }
 
-        public LogEntryBase(string message, LogLevel level = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
+        public LogEntryBase(string message, LogLevel levelId = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
         {
             Message = message;
-            Level = level;
+            LevelId = levelId;
             UserId = userId;    // ValidState.IsValidId(userId) GetCurrentThreadId()
             Detail = detail;
+        }
+        
+        public override string ToString()
+        {
+            return Message;
         }
     }
 
@@ -79,7 +84,7 @@ namespace DotStd
         // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
 
         // Is this log message important enough to be logged?
-        bool IsEnabled(LogLevel level = LogLevel.Information);
+        bool IsEnabled(LogLevel levelId = LogLevel.Information);
 
         // Log this. assume will also check IsEnabled().
         void LogEntry(LogEntryBase entry);
@@ -95,23 +100,23 @@ namespace DotStd
 
         public LogLevel FilterLevel => _FilterLevel;         // Only log stuff at this level and above in importance.
 
-        public void SetFilterLevel(LogLevel filterLevel)
+        public void SetFilterLevel(LogLevel levelId)
         {
             // Only log stuff this important or better.
-            _FilterLevel = filterLevel;
+            _FilterLevel = levelId;
         }
 
-        public virtual bool IsEnabled(LogLevel level = LogLevel.Information)    // ILogger
+        public virtual bool IsEnabled(LogLevel levelId = LogLevel.Information)    // ILogger
         {
             // ILogger Override this
             // Quick filter check to see if this type is logged. Check this first if the rendering would be heavy.
-            return level >= _FilterLevel; // Log this?
+            return levelId >= _FilterLevel; // Log this?
         }
 
-        public static string GetSeparator(LogLevel eType)
+        public static string GetSeparator(LogLevel levelId)
         {
             // Separator after time prefix.
-            switch (eType)
+            switch (levelId)
             {
                 case LogLevel.Warning: return ":?:";
                 case LogLevel.Error:
@@ -126,7 +131,7 @@ namespace DotStd
             // ILogger Override this
             // default behavior = debug.
 
-            if (!IsEnabled(entry.Level))   // ignore this?
+            if (!IsEnabled(entry.LevelId))   // ignore this?
                 return;
 
             if (ValidState.IsValidId(entry.UserId))
@@ -137,15 +142,15 @@ namespace DotStd
 
             }
 
-            System.Diagnostics.Debug.WriteLine(GetSeparator(entry.Level) + entry.Message);
+            System.Diagnostics.Debug.WriteLine(GetSeparator(entry.LevelId) + entry.Message);
         }
 
 
-        public void LogEntry(string message, LogLevel level = LogLevel.Information,
+        public void LogEntry(string message, LogLevel levelId = LogLevel.Information,
             int userId = ValidState.kInvalidId,
             object detail = null)
         {
-            LogEntry(new LogEntryBase(message, level, userId, detail));
+            LogEntry(new LogEntryBase(message, levelId, userId, detail));
         }
 
         public void info(string message, int userId = ValidState.kInvalidId, object detail = null)
@@ -175,11 +180,11 @@ namespace DotStd
             LogEntry(message, LogLevel.Critical, userId, detail);
         }
 
-        public static bool IsExceptionDetailLogged(LogLevel level)
+        public static bool IsExceptionDetailLogged(LogLevel levelId)
         {
             // Do i want to log full detail for an Exception?
 
-            if (level >= LogLevel.Error)    // Always keep stack trace etc for error.
+            if (levelId >= LogLevel.Error)    // Always keep stack trace etc for error.
                 return true;
 
             // Is debug mode ?
@@ -187,12 +192,12 @@ namespace DotStd
             return false;
         }
 
-        public virtual void LogException(Exception oEx, LogLevel level = LogLevel.Error, int userId = ValidState.kInvalidId)
+        public virtual void LogException(Exception oEx, LogLevel levelId = LogLevel.Error, int userId = ValidState.kInvalidId)
         {
             // Helper for Special logging for exceptions.
 
             object detail = null;
-            if (IsExceptionDetailLogged(level))
+            if (IsExceptionDetailLogged(levelId))
                 detail = oEx;
 
             LogEntry(oEx.Message, LogLevel.Critical, userId, detail);

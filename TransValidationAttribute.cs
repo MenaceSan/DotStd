@@ -15,7 +15,7 @@ namespace DotStd
 
         public static ITranslatorProvider1 GetTranslatorProvider()
         {
-            // Get/Make the ITranslatorProvider for the ASP HttpContext that is appropriate for my thread.
+            // Get/Make the ITranslatorProvider for the ASP HttpContext that is appropriate for my thread/session.
             if (_GetTranslator == null)
                 return null;
             return _GetTranslator();

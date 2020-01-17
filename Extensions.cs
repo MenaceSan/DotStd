@@ -135,17 +135,17 @@ namespace DotStd
             return DateTime.UtcNow - from.Value;
          }
 
-        public static string ToSafeDateString(this DateTime obj, string def = null, string format = null)
+        public static string ToSafeDateString(this DateTime obj, string def = null, string format = null, IFormatProvider provider = null)
         {
             // If this is a bad date just display nothing. otherwise like DateUtil.kShortDate
             // e.g format = "M/d/yyyy" or 'yyyy-MM-dd' (for Javascript)
             if (def == null)
                 def = string.Empty;
             if (obj.IsExtremeDate())    // Const.dateExtremeMin
-                return def;
+                return def;     // null or "" ??
             if (format == null)
                 format = DateUtil.kShortDate;
-            return obj.ToString(format);
+            return obj.ToString(format, provider);
         }
 
         public static string ToSafeDateString(this DateTime? obj, string def = null, string format = null)
@@ -156,12 +156,7 @@ namespace DotStd
                 return def;
             return ToSafeDateString(obj.Value, def, format);
         }
-
-        public static string ToLocalStr(this TimeZoneUtil tz, DateTime dt, string format = null)
-        {
-            return TimeZoneUtil.ToLocalStr(tz, dt, format);
-        }
-
+ 
         // Extend Nullable<> types
 
         public static string ToStringForm<T>(this Nullable<T> nullable, string format) where T : struct

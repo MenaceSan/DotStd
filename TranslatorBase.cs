@@ -18,7 +18,7 @@ namespace DotStd
         Task<string> TranslateAsync(string fromText);
     }
 
-    public interface ITranslatorProvider 
+    public interface ITranslatorProvider
     {
         // Translate from some source language to some target language.
         // May use underlying cache. 
@@ -83,6 +83,28 @@ namespace DotStd
         }
     }
 
+    public class TranslatorDummy : TranslatorBase, ITranslatorProvider1
+    {
+        // No/null/dummy translation.
+
+        public override Task<List<TupleKeyValue>> GetToLanguages()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> TranslateAsync(string fromText)
+        {
+            // ITranslatorProvider1
+            return Task.FromResult(fromText);
+        }
+
+        public override Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
+        {
+            // ITranslatorProvider
+            return Task.FromResult(fromText);
+        }
+    }
+
     public class TranslatorTest : TranslatorBase
     {
         // A dummy/test translator . takes English (or anything) and converts to a fake language with accented vowels.
@@ -120,9 +142,8 @@ namespace DotStd
             'Z', 'Ž', 'z', 'ž',     // 8E, 
         };
 
-        public const char kStart = 'α'; // all test words start with this. Assume this is not normal.
-        public const char kEnd = '¡'; // all test words end with this. Assume this is not normal. IsTestLang
-
+        public const char kStart = '¡'; // all test words start with this. Assume this is not normal.
+ 
         public static bool IsTestLang(string s)
         {
             // Has this string already been translated? This should not happen . indicate failure.
@@ -171,7 +192,7 @@ namespace DotStd
                 {
                     if (!isLetter)  // end of word.
                     {
-                        sb.Append(kEnd);
+                        // sb.Append(kEnd);
                         wordStart = -1;
                     }
                 }
@@ -271,7 +292,7 @@ namespace DotStd
 
         public async Task<string> TranslateJsonAsync(string fromEnc, LanguageId toLang = LanguageId.native)
         {
-            // use the newer JSON format.
+            // use the newer JSON format translation.
             // https://cloud.google.com/translate/docs/basic/translating-text
 
             if (toLang == _fromLang)    // nothing to do.

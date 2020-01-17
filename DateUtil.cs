@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -78,44 +79,52 @@ namespace DotStd
             const int kDAY = 24 * kHOUR;
             const int kMONTH = 30 * kDAY;   // approximate.
 
-            double delta = ts.TotalSeconds;
-            bool inPast = delta < 0;
+            long deltaSec = (long) ts.TotalSeconds;
+            bool inPast = deltaSec < 0;
             string ago = "";
             if (inPast)
             {
-                delta = -delta;
+                deltaSec = -deltaSec;
                 ts = new TimeSpan(-ts.Ticks);
                 ago = " ago";
             }
 
-            if (delta < 1)
+            if (deltaSec < 1)
                 return "now";
 
-            if (delta < kMINUTE)
-                return ts.Seconds == 1 ? "one second" + ago : ts.Seconds + " seconds" + ago;
+            if (deltaSec < kMINUTE)
+            {
+                if (deltaSec == 1)
+                    return "one second" + ago;
+                return deltaSec + " seconds" + ago;
+            }
 
-            if (delta < 2 * kMINUTE)
+            if (deltaSec < 2 * kMINUTE)
                 return "a minute" + ago;
 
-            if (delta < 45 * kMINUTE)
-                return ts.Minutes + " minutes" + ago;
+            if (deltaSec < 45 * kMINUTE)
+                return (deltaSec/ kMINUTE) + " minutes" + ago;
 
-            if (delta < 90 * kMINUTE)
+            if (deltaSec < 90 * kMINUTE)
                 return "an hour" + ago;
 
-            if (delta < 24 * kHOUR)
-                return ts.Hours + " hours" + ago;
+            if (deltaSec < 24 * kHOUR)
+                return (deltaSec / kHOUR) + " hours" + ago;
 
-            if (delta < 48 * kHOUR)
-                return ts.TotalSeconds > 0 ? "a day" + ago : inPast ? "yesterday" : "tomorrow";
+            if (deltaSec < 48 * kHOUR)
+            {
+                return inPast ? "yesterday" : "tomorrow";
+            }
 
-            if (delta < 30 * kDAY)
-                return ts.Days + " days" + ago;
+            if (deltaSec < 30 * kDAY)
+                return (deltaSec / kDAY) + " days" + ago;
 
-            if (delta < 12 * kMONTH)    // approximate.
+            if (deltaSec < 12 * kMONTH)    // approximate.
             {
                 int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
-                return months <= 1 ? "one month" + ago : months + " months" + ago;
+                if (months <= 1)
+                    return "one month" + ago;
+                return months + " months" + ago;
             }
 
             int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365)); // approximate.
@@ -124,7 +133,15 @@ namespace DotStd
                 return "never";
             }
 
-            return years <= 1 ? "one year" + ago : years + " years" + ago;
+            if (years <= 1)
+                return "one year" + ago;
+
+            return years + " years" + ago;
+        }
+
+        public static async Task<string> TimeSpanStrAsync(TimeSpan ts, ITranslatorProvider1 trans)
+        {
+            return await trans.TranslateAsync(TimeSpanStr(ts));
         }
 
         public static string TimeMsecStr(long mSec)

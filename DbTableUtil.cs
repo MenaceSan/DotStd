@@ -27,7 +27,7 @@ namespace DotStd
 
         public static bool IsColIgnored(string colName)
         {
-            // assume this column is ignored?
+            // assume this column is ignored by its name?
             // Prefix the col header name with "Ignored_" to ignore it.
 
             return colName.StartsWith("Ignored_") || colName.StartsWith("Ignore_");
@@ -35,7 +35,7 @@ namespace DotStd
 
         public static bool IsColBool(string colName)
         {
-            // assume this column is boolean?
+            // assume this column is boolean by its name?
             return (colName.StartsWith("Is") && char.IsUpper(colName[2]))
                 || (colName.StartsWith("Can") && char.IsUpper(colName[3]))
                 || (colName.StartsWith("Has") && char.IsUpper(colName[3]))

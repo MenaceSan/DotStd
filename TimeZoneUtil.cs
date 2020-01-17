@@ -240,7 +240,7 @@ namespace DotStd
             return TimeZoneInfo.ConvertTimeFromUtc(dt, GetTimeZoneInfo());
         }
 
-        public static string ToLocalStr(TimeZoneUtil tz, DateTime dt, string format = null)
+        public static string ToLocalStr(TimeZoneUtil tz, DateTime dt, IFormatProvider provider, string format = null)
         {
             // Localize the time string for user display.
             // if tz == null then just label as (UTC) clearly.
@@ -248,11 +248,11 @@ namespace DotStd
             var tzi = tz?.GetTimeZoneInfo();
             if (tzi == null)
             {
-                // label as UTC or (LOCAL)
-                return dt.ToString(format) + "(UTC)";
+                // Just label as UTC or (LOCAL)
+                return dt.ToString(format, provider) + "(UTC)";
             }
 
-            return TimeZoneInfo.ConvertTimeFromUtc(dt, tzi).ToString(format);
+            return TimeZoneInfo.ConvertTimeFromUtc(dt, tzi).ToString(format, provider);
         }
     }
 }

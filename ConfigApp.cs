@@ -142,7 +142,8 @@ namespace DotStd
             return System.Diagnostics.Debugger.IsAttached;
         }
 
-        public static bool IsInDocker { get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue; } }
+        public static bool IsInDocker => (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue); 
 
+        public static string EnvironmentName => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");   // related to ConfigInfo.EnvironMode
     }
 }

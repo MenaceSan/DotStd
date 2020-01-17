@@ -59,7 +59,7 @@ namespace DotStd
         public override void LogEntry(LogEntryBase entry)
         {
             // Override this
-            if (!IsEnabled(entry.Level))   // ignore this entry?
+            if (!IsEnabled(entry.LevelId))   // ignore this entry?
                 return;
 
             try
@@ -69,12 +69,12 @@ namespace DotStd
                     {
                         if (w == null)
                             return;
-                        w.WriteLine(string.Concat(tNow.ToString("HH:mm:ss"), GetSeparator(entry.Level), entry.Message));
+                        w.WriteLine(string.Concat(tNow.ToString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message));
                         if (!ValidState.IsEmpty(entry.Detail))
                         {
-                            w.WriteLine("\t" + entry.Detail.ToString());
+                            w.WriteLine("\t" + entry.ToString());
                         }
-                        if (entry.Level >= LogLevel.Error || LoggerUtil.LogStart != null)  // important messages should be flushed immediately. In case we crash.
+                        if (entry.LevelId >= LogLevel.Error || LoggerUtil.LogStart != null)  // important messages should be flushed immediately. In case we crash.
                         {
                             w.Flush();
                         }

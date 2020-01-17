@@ -62,8 +62,27 @@ namespace DotStd
         [Description("Čeština (Czech)")]     //  ces https://en.wikipedia.org/wiki/Czech_language
         cs = 16,
 
-        [Description("한국어/韓國語 (Korean)")]     //  kor https://en.wikipedia.org/wiki/Korean_language
+        [Description("한국어/韓國語 (Korean)")]     // kor https://en.wikipedia.org/wiki/Korean_language
         ko = 17,
+
+        [Description("اَلْعَرَبِيَّةُ‎ (Arabic)")]     // https://en.wikipedia.org/wiki/Arabic
+        ar = 18,
+        [Description("ελληνικά (Greek)")]     // https://en.wikipedia.org/wiki/Greek_language
+        el = 19,
+        [Description("bahasa (Indonesian)")]     // https://en.wikipedia.org/wiki/Indonesian_language
+        id = 20,
+        [Description("हिन्दी (Hindi)")]     // https://en.wikipedia.org/wiki/Hindi
+        hi = 21,
+
+        // Swedish
+        // Hungarian
+        // Romanian
+        // Thai
+        // Slovak
+        // Danish
+        // Hebrew
+        // Ukrainian
+        // Urdu // Pakistan
 
         // fr_CA = "French Canadian", 
         // en_CA = "English_Canadian"
@@ -160,9 +179,12 @@ namespace DotStd
 
         public static System.Globalization.CultureInfo GetCulture(LanguageId id)
         {
-            // Get equiv .NET CultureInfo
+            // Get equiv .NET CultureInfo for the LanguageId.
+            // how to sort strings, show decimals and show date time for a langauge/culture. like RequestCulture.
+            if (id < LanguageId.en || id >= LanguageId.test)
+                id = LanguageId.en;
 
-            return null;
+            return new System.Globalization.CultureInfo(id.ToString());
         }
     }
 }

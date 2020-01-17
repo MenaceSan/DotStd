@@ -26,7 +26,7 @@ namespace DotStd
 
         public static Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
 
-        private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT
+        private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT => EnvironmentName
 
         public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config, string environmentName)
         {

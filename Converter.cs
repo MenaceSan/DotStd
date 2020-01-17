@@ -150,7 +150,7 @@ namespace DotStd
             return val;
         }
 
-        public static long ToLong(object o)
+        public static ulong ToULong(object o)
         {
             // Used for NPI. 10 digit integer. https://en.wikipedia.org/wiki/National_Provider_Identifier
             if (ValidState.IsNull(o))
@@ -158,23 +158,23 @@ namespace DotStd
 
             Type type = o.GetType();
             if (type == typeof(int))     // faster convert
-                return (int)o;
+                return (ulong)(int)o;
             if (type == typeof(long))     // faster convert
-                return (long)o;
+                return (ulong)(long)o;
             if (type == typeof(int?))     // faster convert
-                return ((int?)o) ?? 0;
+                return (ulong)(((int?)o) ?? 0);
             if (type == typeof(System.Enum))     // don't convert this to a string!
             {
                 // return (long)Convert.ChangeType(o, typeof(long));
-                return Convert.ToInt32(o);
+                return (ulong)Convert.ToInt32(o);
             }
 
             string s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return 0;
 
-            long val;
-            if (!long.TryParse(s, out val))
+            ulong val;
+            if (!ulong.TryParse(s, out val))
                 return 0;
 
             return val;

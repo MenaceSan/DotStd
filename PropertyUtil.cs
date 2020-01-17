@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -17,7 +18,7 @@ namespace DotStd
 
         object GetPropertyValue(string name);
     }
-
+ 
     public interface IPropertySetter
     {
         // like IDynamicMetaObjectProvider, DynamicObject, ExpandoObject, etc.

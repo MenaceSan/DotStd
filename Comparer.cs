@@ -23,7 +23,7 @@ namespace DotStd
 
         public SortDirection SortDir { get; set; }
 
-        public static int CompareType(object ox, object oy, TypeCode eTypeCode)
+        public static int CompareType(object ox, object oy, TypeCode typeCode)
         {
             // Compare 2 simple typed objects. 
             // Assume objects are the same type! TypeCode
@@ -40,7 +40,7 @@ namespace DotStd
                     return -1;
                 return 1;
             }
-            switch (eTypeCode)
+            switch (typeCode)
             {
                 case TypeCode.Boolean:
                 case TypeCode.String:

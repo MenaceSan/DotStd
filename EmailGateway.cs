@@ -145,7 +145,7 @@ namespace DotStd
             if (!InitClient())
                 return "The system is not configured to send email";
             _client.Send(msg.GetMailMessage());
-            return null;    // ok
+            return StringUtil._NoErrorMsg;    // ok
         }
 
         public string SendSafe(EmailMessage msg)
@@ -172,13 +172,13 @@ namespace DotStd
             if (!InitClient())
                 return "The system is not configured to send email";
             await _client.SendMailAsync(msg.GetMailMessage());
-            return null;    // ok
+            return StringUtil._NoErrorMsg;    // ok
         }
 
         public async Task<string> SendSafeAsync(EmailMessage msg)
         {
             // safe send.  no throw.
-            // return error message or null = success.
+            // return error message or StringUtil._NoErrorMsg = success.
             try
             {
                 return await SendAsync(msg);
@@ -195,6 +195,5 @@ namespace DotStd
         {
             return SendAsync(msg as EmailMessage);
         }
-
     }
 }
