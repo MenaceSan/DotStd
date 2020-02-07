@@ -43,6 +43,7 @@ namespace DotStd
         public int Id { get; set; }   // PK in some persistent storage.
 
         public int RunningAppId { get; set; } = ValidState.kInvalidId;  // 0 = not running. else its currently running. (as far as we know on ConfigApp.AppId);
+        public int RunningStatus { get; private set; }      // percent complete. 0-1000
 
         // NOTE: LastRun can be set into the future to delay start.
         public DateTime? LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
@@ -64,6 +65,12 @@ namespace DotStd
         public JobState(int id)
         {
             Id = id;
+        }
+
+        public virtual void SetRunningStatus(int statusPercent)
+        {
+            // override this to push the update.
+            RunningStatus = statusPercent;
         }
     }
 

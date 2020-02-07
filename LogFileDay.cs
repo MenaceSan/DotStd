@@ -69,7 +69,7 @@ namespace DotStd
                     {
                         if (w == null)
                             return;
-                        w.WriteLine(string.Concat(tNow.ToString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message));
+                        w.WriteLine(string.Concat(tNow.ToDtString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message));
                         if (!ValidState.IsEmpty(entry.Detail))
                         {
                             w.WriteLine("\t" + entry.ToString());
@@ -142,7 +142,7 @@ namespace DotStd
 
         public string GetName(DateTime dt)
         {
-            return _FilePathPrefix + GetDayStampInt(dt).ToString() + kExt;
+            return string.Concat(_FilePathPrefix, GetDayStampInt(dt).ToString(), kExt);
         }
 
         protected override TextWriter OpenLogFile(DateTime tNow)

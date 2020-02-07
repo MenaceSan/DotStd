@@ -289,6 +289,7 @@ namespace DotStd
         public static int InjectProperties<T>(T toObj, IPropertyGetter from, string from_prefix = null)
         {
             // inject all the properties from 'from' into an object toObj that match.
+            // NOTE: This does not know how to handle child objects with props. e.g. Dtr[Start]
             // Just skip those that don't match
             // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
 

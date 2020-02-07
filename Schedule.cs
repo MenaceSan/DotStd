@@ -73,6 +73,7 @@ namespace DotStd
         {
             // Describe the recurrence pattern. scheduled recurrence rules.
             // Ignore that start may be in the future.
+            // TODO ITranslatorProvider1
 
             if (DateUtil.IsExtremeDate(start))
                 return "Never";
@@ -80,7 +81,7 @@ namespace DotStd
             if (unitId <= TimeUnitId.None || unitId > TimeUnitId.Years)    // does not repeat.
             {
                 // "Once at " + date time
-                return start.ToString();
+                return start.ToDtTmString();
             }
 
             if (interval <= 0)
@@ -159,7 +160,7 @@ namespace DotStd
                     break;
 
                 case TimeUnitId.Years:
-                    sb.Append($" on {start.ToString("MMM", CultureInfo.InvariantCulture)} {start.Day:D2}");
+                    sb.Append($" on {start.ToDtString("MMM", CultureInfo.InvariantCulture)} {start.Day:D2}");
                     break;
 
                 default:

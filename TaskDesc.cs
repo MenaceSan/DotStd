@@ -86,26 +86,26 @@ namespace DotStd
 
             if (aMethodArgs == null)
                 return null;
-            var sOut = new StringBuilder();
+            var sb = new StringBuilder();
             for (int i = iStart; i < aMethodArgs.Length; i++)
             {
                 if (i > 0)
-                    sOut.Append(" ");
+                    sb.Append(" ");
                 string sArg = aMethodArgs[i].ToString();
                 if (String.IsNullOrWhiteSpace(sArg))
                     continue;
                 if (sArg.Contains(' '))
                 {
-                    sOut.Append("\"");
-                    sOut.Append(sArg);
-                    sOut.Append("\"");
+                    sb.Append("\"");
+                    sb.Append(sArg);
+                    sb.Append("\"");
                 }
                 else 
                 {
-                    sOut.Append(sArg);
+                    sb.Append(sArg);
                 }
             }
-            return sOut.ToString();
+            return sb.ToString();
         }
     }
 

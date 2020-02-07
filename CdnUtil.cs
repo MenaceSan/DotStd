@@ -40,31 +40,34 @@ namespace DotStd
         // can be used with <environment include="Development">
         public static bool UseCdn { get; set; } = true;
 
+        public const string kInstRoot = "wwwroot";  // When converting URL to install physical file path.
+
         public static string GetNonMin(string n)
         {
             // Try to find the NON-minified version of the file. If it has one.
             return n.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", "/");
         }
 
-        public static string GetPhysPathFromWeb(string w)
+        public static string GetPhysPathFromWeb(string url)
         {
-            // Get app relative physical path for file.
-            // w = site relative url path.
-            // ~ = wwwroot
+            // Get app relative physical path for file given its URL.
+            // url = site relative URL path.
             // / = wwwroot
-            // NO / = root of app.
+            // ~/ = MVC app root ?
+            // NO / = root of app?
 
-            if (w.StartsWith("~/"))
+            if (url.StartsWith("/"))
             {
-                return "wwwroot" + w.Substring(1);
+                return kInstRoot + url;
             }
 
-            return w;
+            // just leave it?
+            return url;
         }
 
         public static int SyncCdn(string cdnAllFilePath, string outDir)
         {
-            // Make sure all my CDN based resources are up to date.
+            // Make sure all my (local copy) CDN based resources are up to date.
             // Called at startup. not async?
             // 1. Read the HTML/XML file kAll from Resource.
             // 2. Pull all files from the CDN that we want locally as backups/fallback.
@@ -74,16 +77,17 @@ namespace DotStd
                 return 0;
 
             int downloadCount = 0;
+            int fileCount = 0;
             XDocument doc = XDocument.Load(cdnAllFilePath);     // TODO: Use HTML agility pack to deal with proper encoding??
 
-            // pull all 'link' and 'script' elements
+            // pull all 'a', 'link' and 'script' elements
             foreach (XNode node in doc.DescendantNodes())
             {
                 if (node.NodeType != XmlNodeType.Element)
                     continue;
                 XElement xl = (XElement)node;
                 string nameXl = xl.Name.LocalName;
-                if (nameXl != "script" && nameXl != "link" && nameXl != "a")
+                if (nameXl != "script" && nameXl != "link" && nameXl != "a")        // filter just the elements i want.
                     continue;
 
                 string typeExt = (nameXl == "script") ? "src" : "href"; // Is JavaScript or CSS/a ?
@@ -91,9 +95,11 @@ namespace DotStd
                 if (src == null)
                 {
                     // weird ! Fail!
+                    LoggerUtil.DebugException("Bad CDN element def", null);
                     continue;
                 }
 
+                fileCount++;
                 XAttribute integrity = xl.Attribute("integrity");       // has hash ?
                 XAttribute dstDev = xl.Attribute("data-dev-" + typeExt);    // Allow null default.
                 XAttribute dst = xl.Attribute("asp-fallback-" + typeExt);       // Assume exists.
@@ -105,6 +111,7 @@ namespace DotStd
                 {
                     if (dstDev == null)
                     {
+                        LoggerUtil.DebugException("Bad CDN data def", null);
                         continue;   // We should not let this happen?
                     }
                     dst = dstDev;
@@ -118,12 +125,12 @@ namespace DotStd
 
                 if (integrity == null)
                 {
-                    // integrity doesnt exist so just check that the file exists locally.
+                    // integrity doesn't exist so just check that the file exists locally.
                     if (File.Exists(dstPath))
                     {
                         var fi = new FileInfo(dstPath);
                         if (fi != null && fi.Length > 0)
-                            continue;   // it exists.
+                            continue;   // it exists. good enough since we dont have integrity.
                     }
                 }
                 else
@@ -132,6 +139,8 @@ namespace DotStd
                     int i = integrity.Value.IndexOf('-');
                     if (i <= 0)     // badly formed integrity ?? Fail ?
                     {
+                        // This is bad !!
+                        LoggerUtil.DebugException("Bad CDN integrity", null);
                         continue;
                     }
 
@@ -142,13 +151,13 @@ namespace DotStd
                         // Is current file ok?
                         byte[] hashCode2 = hasher.GetHashFile(dstPath);
                         // debugHash2 = Convert.ToBase64String(hashCode2);
-                        if (ByteUtil.CompareBytes(hashCode1, hashCode2) == 0)     // match.
+                        if (ByteUtil.CompareBytes(hashCode1, hashCode2) == 0)     // integrity match is good.
                             continue;
                         hasher.Init();
                     }
                 }
 
-                // Pull/Get the file. 
+                // Pull/Get the file from CDN. 
                 downloadCount++;
                 LoggerUtil.DebugEntry($"Get '{src.Value}'");
                 var dl = new HttpDownloader(src.Value, dstPath);

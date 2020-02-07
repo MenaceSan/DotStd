@@ -11,11 +11,13 @@ namespace DotStd
 {
     public interface ITranslatorProvider1
     {
-        // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
+        // Translate some text for a specific user/consumer. Assume it ignores and preserves punctuation, spaces and place holders like {0}
         // ASSUME this does not throw an exception. We can safely call this in non-async code.
-        // related to selected CultureInfo
+        // related to selected CultureInfo.  // Sort of related to TimeZone ? Not really.
 
         Task<string> TranslateAsync(string fromText);
+
+        // TODO CultureInfo GetCulture();
     }
 
     public interface ITranslatorProvider
@@ -72,12 +74,13 @@ namespace DotStd
 
         public virtual async Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native)
         {
-            // translate a batch of texts.
-            // Just treat the batch as a bunch of singles if i cant optimize this.
+            // translate a batch of texts at once.
+            // default = Just treat the batch as a bunch of singles if i cant optimize this.
+
             var lst = new List<string>();
             foreach (string txt in fromTexts)
             {
-                lst.Add(await TranslateTextAsync(txt, toLang));
+                lst.Add(await TranslateTextAsync(txt, toLang)); // emit
             }
             return lst;
         }
@@ -94,13 +97,13 @@ namespace DotStd
 
         public Task<string> TranslateAsync(string fromText)
         {
-            // ITranslatorProvider1
+            // implement ITranslatorProvider1
             return Task.FromResult(fromText);
         }
 
         public override Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
         {
-            // ITranslatorProvider
+            // implement/override ITranslatorProvider
             return Task.FromResult(fromText);
         }
     }

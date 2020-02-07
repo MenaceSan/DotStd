@@ -235,7 +235,7 @@ namespace DotStd
             // May be similar to String.Normalize(). not sure. TODO find out.
             // http://www.codinghorror.com/blog/2010/01/the-great-newline-schism.html
 
-            var sOut = new System.Text.StringBuilder();
+            var sb = new System.Text.StringBuilder();
             int nLen = sValue.Length;
             for (int i = 0; i < nLen; i++)
             {
@@ -244,19 +244,19 @@ namespace DotStd
                     continue;
                 if (ch == '\n')
                 {
-                    sOut.Append(Environment.NewLine);
+                    sb.Append(Environment.NewLine);
                     continue;
                 }
                 if (ch == ' ' && (nLen - i) > 4 && sValue[i + 1] == ' ' && sValue[i + 2] == ' ' && sValue[i + 3] != ' ')
                 {
                     // Stack dumps use 3 spaces to represent line breaks. For some reason.
-                    sOut.Append(Environment.NewLine);
+                    sb.Append(Environment.NewLine);
                     i += 2;
                     continue;
                 }
-                sOut.Append(ch);
+                sb.Append(ch);
             }
-            return sOut.ToString();
+            return sb.ToString();
         }
 
         public static string GetFirstLine(string s, out int lenLine)

@@ -71,7 +71,7 @@ namespace DotStd
             // AKA Right()
             return StringUtil.TruncateRight(text, iLenMax);
         }
- 
+
         public static string FixedLengthLeftAlign(this string source, int totalWidth, char paddingChar = ' ')
         {
             return StringUtil.FieldLeft(source, totalWidth, paddingChar);
@@ -80,7 +80,7 @@ namespace DotStd
         {
             return StringUtil.FieldRight(source, totalWidth, paddingChar);
         }
- 
+
         /// <summary>
         /// Formats a string using the current culture
         /// The original format string is NOT modified so the result must be assigned to a variable or passed as a method argument.
@@ -133,30 +133,71 @@ namespace DotStd
                 return TimeSpan.MaxValue;
 
             return DateTime.UtcNow - from.Value;
-         }
+        }
 
-        public static string ToSafeDateString(this DateTime obj, string def = null, string format = null, IFormatProvider provider = null)
+        //********************
+
+        public static string ToDtString(this DateTime dt, string format = null, IFormatProvider culture = null, string def = null)
         {
-            // If this is a bad date just display nothing. otherwise like DateUtil.kShortDate
-            // e.g format = "M/d/yyyy" or 'yyyy-MM-dd' (for Javascript)
+            // format DateTime output string as a string.
+            // ASSUME timeZone is already accounted for ???
+            // If this is a bad date just display nothing. 
+            // def = use this if its a bad string.
+            // e.g format = "M/d/yyyy" or default = 'yyyy-MM-dd' (for ISO)
+            // culture = Use format from culture for fancy string formatting.
+
             if (def == null)
                 def = string.Empty;
-            if (obj.IsExtremeDate())    // Const.dateExtremeMin
+            if (dt.IsExtremeDate())    // Const.dateExtremeMin
                 return def;     // null or "" ??
             if (format == null)
-                format = DateUtil.kShortDate;
-            return obj.ToString(format, provider);
+                format = DateUtil.kShortDate;       // "yyyy-MM-dd" = ISO
+            if (culture != null)
+                return dt.ToString(format, culture);
+            return dt.ToString(format);
         }
 
-        public static string ToSafeDateString(this DateTime? obj, string def = null, string format = null)
+        public static string ToDtTmString(this DateTime dt, IFormatProvider culture = null)
         {
-            if (def == null)
-                def = string.Empty;
-            if (obj == null)
-                return def;
-            return ToSafeDateString(obj.Value, def, format);
+            // Make a long detailed string with date and time. 
+            // culture = fancy and localized. null = ISO
+            // ASSUME timeZone is already accounted for ???
+            if (culture != null)
+                return dt.ToString(culture);
+            return dt.ToString();
         }
- 
+        public static string ToDtTmString(this DateTime? obj, IFormatProvider culture = null)
+        {
+            // Make a long detailed string with date and time. 
+            // culture = fancy and localized. null = ISO
+            // ASSUME timeZone is already accounted for ???
+            if (obj == null)
+                return "";
+            return ToDtTmString(obj.Value, culture);
+        }
+
+        public static string ToDateString(this DateTime dt)
+        {
+            // get Date as ISO date string. not time. assume timezone is irrelevant.
+            // like ToShortDateString()/ToString("d") BUT NOT cultural.
+            return ToDtString(dt, DateUtil.kShortDate);
+        }
+
+        public static string ToDateJS(this DateTime dt)
+        {
+            // Encode to a format that JavaScript can deal with.
+
+            return $"new Date({dt.Year},{dt.Month-1},{dt.Day})";
+        }
+
+        public static string ToDateString(this DateTime? obj)
+        {
+            // get Date as ISO date string. not time. assume timezone is irrelevant.
+            if (obj == null)
+                return null;
+            return ToDateString(obj.Value);
+        }
+
         // Extend Nullable<> types
 
         public static string ToStringForm<T>(this Nullable<T> nullable, string format) where T : struct

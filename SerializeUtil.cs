@@ -131,17 +131,18 @@ namespace DotStd
         // Don't include Newtonsoft JSON here. Its too heavy.
         // e.g. s = JsonConvert.SerializeObject(o, Formatting.None)
 
+        public const string kNull = "null";     // JavaScript
+        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values. e.g. "False"
+        public const string kTrue = "true";     // JSON bool    
+
         public static bool IsJSON(string sValue)
         {
             if (string.IsNullOrWhiteSpace(sValue))
                 return false;
-            if (sValue == "null")   // JSON validly encodes null this way.
+            if (sValue == kNull)   // JSON validly encodes null this way.
                 return true;
             return sValue.StartsWith("[") || sValue.StartsWith("{");
         }
-
-        public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values. e.g. "False"
-        public const string kTrue = "true";     // JSON bool    
 
         public static string ToJSON(bool b)
         {

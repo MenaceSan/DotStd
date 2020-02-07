@@ -270,27 +270,7 @@ namespace DotStd
             bool x2 = End.IsExtremeDate();
             if (x1 && x2)
                 return "";
-            return string.Concat(x1 ? "" : Start.ToString(), " - ", x2 ? "" : End.ToString());
-        }
-
-        /// <summary>
-        /// Converts the value of the current DateTimeRange object to a string of the format "Start - End"
-        /// where the Start and End dates are converted using the specified culture-specific format information.
-        /// </summary>
-        /// <param name="format">An object that supplies culture-specific formatting information.</param>
-        /// <returns>A string representation of the DateTimeRange.</returns>
-        /// <exception cref="System.FormatException">
-        /// The length of format is 1, and it is not one of the format specifier characters
-        /// defined for System.Globalization.DateTimeFormatInfo.-or- format does not
-        /// contain a valid custom format pattern.
-        /// </exception>
-        /// <exception cref="System.ArgumentOutOfRangeException">
-        /// The date and time is outside the range of dates supported by the calendar
-        //  used by provider.
-        /// </exception>
-        public string ToString(IFormatProvider provider)
-        {
-            return "{0} - {1}".FormatInvariant(Start.ToString(provider), End.ToString(provider));
+            return string.Concat(x1 ? "" : Start.ToDateString(), " - ", x2 ? "" : End.ToDateString());
         }
 
         /// <summary>
@@ -310,7 +290,7 @@ namespace DotStd
         /// </exception>
         public string ToString(string format)
         {
-            return "{0} - {1}".FormatInvariant(Start.ToString(format), End.ToString(format));
+            return "{0} - {1}".FormatInvariant(Start.ToDtString(format), End.ToDtString(format));
         }
 
         /// <summary>
@@ -389,7 +369,7 @@ namespace DotStd
         {
             // Create a week of inclusive dates.
             /// <param name="dt">start or end of week</param>
-       
+
             dt = dt.Date;
             if (isStartDate_)
             {

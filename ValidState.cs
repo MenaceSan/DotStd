@@ -166,7 +166,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             string sl = s.ToLower();
-            if (sl == "none" || sl == "null" || sl == "-none") 
+            if (sl == SerializeUtil.kNull || sl == "none" || sl == "-none") 
                 return false;
 
             foreach (char ch in s)

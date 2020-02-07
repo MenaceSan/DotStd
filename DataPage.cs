@@ -9,11 +9,12 @@ namespace DotStd
 {
     public static class DataPage
     {
-        // Helper for paging of lists of data for Linq and EF. SQL.
+        // Helper for paging of lists of data for LINQ and EF. SQL.
         // Allow deferred (server side) paging.
 
         private static IOrderedQueryable<T> OrderingHelper5X<T, TK>(IQueryable<T> source, MemberExpression property, ParameterExpression param1, bool isSortAscending, bool thenByLevel)
         {
+            // UNUSED
             // similar to OrderingHelper5 but the type must be known at compile time. But since there are few types we 
             var orderByExp = Expression.Lambda<Func<T, TK>>(property, param1);
             if (thenByLevel)
@@ -111,7 +112,7 @@ namespace DotStd
 
         //***********************************//
 
-        public static IOrderedQueryable<T> OrderingHelperX<T>(this IQueryable<T> source, Type typeProp, Expression orderByExp, bool isSortAscending = false, bool thenByLevel = false)
+        public static IOrderedQueryable<T> OrderingHelperX<T>(this IQueryable<T> source, LambdaExpression orderByExp, bool isSortAscending = false, bool thenByLevel = false)
         {
             // Order by some named property.
             // This does work for EF 3.1 for MySQL with properly formed Expression.
@@ -120,7 +121,7 @@ namespace DotStd
             MethodCallExpression call = Expression.Call(
                  typeof(Queryable),
                  thenByLevel ? (isSortAscending ? nameof(Queryable.ThenBy) : nameof(Queryable.ThenByDescending)) : (isSortAscending ? nameof(Queryable.OrderBy) : nameof(Queryable.OrderByDescending)),
-                 new Type[] { typeof(T), typeProp },
+                 new Type[] { typeof(T), orderByExp.ReturnType },
                  source.Expression,
                  Expression.Quote(orderByExp));
 
@@ -147,9 +148,9 @@ namespace DotStd
             MemberExpression property = Expression.Property(param1, prop1.Name);
 #endif
 
-            Expression orderByExp = Expression.Lambda(property, param1);
+            LambdaExpression orderByExp = Expression.Lambda(property, param1);
 
-            return OrderingHelperX(source, prop1.PropertyType, orderByExp, isSortAscending, thenByLevel);
+            return OrderingHelperX(source, orderByExp, isSortAscending, thenByLevel);
         }
 
         public static IOrderedQueryable<T> OrderByX<T>(this IQueryable<T> source, string propertyName, bool isSortAscending = true)
@@ -180,10 +181,11 @@ namespace DotStd
 
         //***********************************//
 
-        public static IOrderedQueryable<T> OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, Expression> propExp)
+        public static IOrderedQueryable<T> OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, LambdaExpression> propExp)
         {
             // Order by some named property(s). use IPropertyExpression to get property type.
             // NOTE: This will throw if the column/propertyName doesn't exist !
+            // propExp = GetPropertyExp
 
             Type entityType = typeof(T);
 
@@ -191,13 +193,13 @@ namespace DotStd
             foreach (var sort in sorts)
             {
                 PropertyInfo prop1 = entityType.GetProperty(sort.PropName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
-                Expression orderByExp = propExp(prop1.Name);    // call GetPropertyExp
+                LambdaExpression orderByExp = propExp(prop1.Name);    // call GetPropertyExp()
                 if (orderByExp == null)
                 {
                     // this should not happen!
                     return ret2;
                 }
-                ret2 = OrderingHelperX(ret2 ?? source, prop1.PropertyType, orderByExp, sort.SortDir == SortDirection.Ascending, ret2 != null);
+                ret2 = OrderingHelperX(ret2 ?? source, orderByExp, sort.SortDir == SortDirection.Ascending, ret2 != null);
             }
 
             return ret2;
@@ -298,7 +300,24 @@ namespace DotStd
             return pagesTotal;
         }
 
-        public IQueryable<T> GetQuery<T>(IQueryable<T> q, Func<string, Expression> propExp)
+        public IEnumerable<T> GetHack31<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
+        {
+ 
+            if (this.SortFields != null && this.SortFields.Count > 0)
+            {
+                var q2 = q.OrderByList2(this.SortFields, propExp); // will return IOrderedQueryable
+                if (q2 == null) // prop didn't exist ! this is bad.
+                    return q;
+                q = q2;
+            }
+            if (this.PageSize > 0)  // paging. assume IOrderedQueryable.
+            {
+                q = q.Take(this.PageSize);
+            }
+            return q.AsEnumerable();            // put this right before the call to Union().
+        }
+
+        public IQueryable<T> GetQuery<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
         {
             // get Paging query.
             // RETURN: IOrderedQueryable<T> or not.
@@ -307,7 +326,7 @@ namespace DotStd
             if (this.SortFields != null && this.SortFields.Count > 0)
             {
                 var q2 = q.OrderByList2(this.SortFields, propExp); // will return IOrderedQueryable
-                if (q2 == null) // prop didnt exist ! this is bad.
+                if (q2 == null) // prop didn't exist ! this is bad.
                     return q;
                 q = q2;
             }
@@ -318,7 +337,7 @@ namespace DotStd
             return q;
         }
 
-        public DataPageRsp<T> GetRsp<T>(IQueryable<T> q, Func<string, Expression> propExp)
+        public DataPageRsp<T> GetRsp<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
         {
             // Query and return the rows for the current page. NOT async.
             var rsp = new DataPageRsp<T>();

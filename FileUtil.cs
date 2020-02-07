@@ -47,7 +47,7 @@ namespace DotStd
         [Description(@"text/csv")]
         CSV = 13,
         [Description(@"text/html")]
-        HTML = 14,
+        HTML = 14,  // AKA .htm
         [Description(@"text/plain")]
         TXT = 15,        //  
 
@@ -65,6 +65,9 @@ namespace DotStd
         [Description(@"application/json")]      // MediaTypeNames.Application.Json
         JSON = 21,        // data
 
+        [Description(@"text/calendar")]  
+        ICS = 22,       // https://wiki.fileformat.com/email/ics/
+
         // AVI
         // MPG
         // webm
@@ -73,7 +76,8 @@ namespace DotStd
         // AIF, MP3
         // MKV, SWF, MOV, 
         // BZ2, ISO
-        // CFG, INI, DAT, DB, CAL, CAB
+        // CFG, INI,
+        // DAT, DB, CAB
         // CS, CPP, JS, CSS
 
         MaxValue = 20,

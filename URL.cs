@@ -30,6 +30,7 @@ namespace DotStd
         public const string kHttps = "https://";
         public const string kHttp = "http://";
         public const string kSep = "/";
+        public const char kSepChar = '/';
 
         public const string kArg = "?"; // start of args on URL.
         public const string kArgSep = "&";  // sep args on URL.

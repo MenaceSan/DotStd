@@ -31,7 +31,7 @@ namespace DotStd
         // NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
 
         public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
-        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesnt like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
+        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesn't like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
 
         public static readonly DateTime kUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);     // JavaScript epoch.
         public static readonly DateTime kExtremeMax = new DateTime(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's.  
@@ -39,7 +39,8 @@ namespace DotStd
         public const int kHoursInWeek = 168;        // (7*24)
         public const int kMinutesInDay = 3600;      // 24*60 // Modulus for day time.
 
-        public const string kShortDate = "yyyy-dd-MM";  // default short data format. Similar to ToShortDateString() or ToString("d") (cultural)
+        public const string kShortDate = "yyyy-MM-dd";  // default short data format ALA JavaScript, ISO Date. NOT ToShortDateString()/ToString("d") which are cultural.
+        public const string kShortDate2 = "MM/dd/yyyy"; // Weird format to be avoided.
 
         public static bool IsExtremeDate(DateTime dt)
         {
@@ -68,8 +69,9 @@ namespace DotStd
             return kUnixEpoch.AddMilliseconds(javaTimeStamp);
         }
 
-        public static string TimeSpanStr(TimeSpan ts)
+        public static string TimeSpanStr2(TimeSpan ts, out string arg)
         {
+            // a translatable approximate span.
             // get a string for a rough amount of time ago or ahead.
             // var ts = (yourDate - DateTime.UtcNow);
 
@@ -79,7 +81,7 @@ namespace DotStd
             const int kDAY = 24 * kHOUR;
             const int kMONTH = 30 * kDAY;   // approximate.
 
-            long deltaSec = (long) ts.TotalSeconds;
+            long deltaSec = (long)ts.TotalSeconds;
             bool inPast = deltaSec < 0;
             string ago = "";
             if (inPast)
@@ -90,58 +92,106 @@ namespace DotStd
             }
 
             if (deltaSec < 1)
+            {
+                arg = null;
                 return "now";
+            }
 
             if (deltaSec < kMINUTE)
             {
                 if (deltaSec == 1)
+                {
+                    arg = null;
                     return "one second" + ago;
-                return deltaSec + " seconds" + ago;
+                }
+
+                arg = deltaSec.ToString();
+                return "{0} seconds" + ago;
             }
 
             if (deltaSec < 2 * kMINUTE)
+            {
+                arg = null;
                 return "a minute" + ago;
+            }
 
             if (deltaSec < 45 * kMINUTE)
-                return (deltaSec/ kMINUTE) + " minutes" + ago;
+            {
+                arg = (deltaSec / kMINUTE).ToString();
+                return "{0} minutes" + ago;
+            }
 
             if (deltaSec < 90 * kMINUTE)
+            {
+                arg = null;
                 return "an hour" + ago;
+            }
 
             if (deltaSec < 24 * kHOUR)
-                return (deltaSec / kHOUR) + " hours" + ago;
+            {
+                arg = (deltaSec / kHOUR).ToString();
+                return "{0} hours" + ago;
+            }
 
             if (deltaSec < 48 * kHOUR)
             {
+                arg = null;
                 return inPast ? "yesterday" : "tomorrow";
             }
 
             if (deltaSec < 30 * kDAY)
-                return (deltaSec / kDAY) + " days" + ago;
+            {
+                arg = (deltaSec / kDAY).ToString();
+                return "{0} days" + ago;
+            }
 
             if (deltaSec < 12 * kMONTH)    // approximate.
             {
                 int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
                 if (months <= 1)
+                {
+                    arg = null;
                     return "one month" + ago;
-                return months + " months" + ago;
+                }
+
+                arg = months.ToString();
+                return "{0} months" + ago;
             }
 
             int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365)); // approximate.
             if (years > 200)
             {
+                arg = null;
                 return "never";
             }
 
             if (years <= 1)
+            {
+                arg = null;
                 return "one year" + ago;
+            }
 
-            return years + " years" + ago;
+            arg = years.ToString();
+            return "{0} years" + ago;
+        }
+
+        public static string TimeSpanStr(TimeSpan ts)
+        {
+            string arg;
+            string txt = TimeSpanStr2(ts, out arg);
+            if (arg == null)
+                return txt;
+            return string.Format(txt, arg);
         }
 
         public static async Task<string> TimeSpanStrAsync(TimeSpan ts, ITranslatorProvider1 trans)
         {
-            return await trans.TranslateAsync(TimeSpanStr(ts));
+            // a translated time span
+            string arg;
+            string txt = await trans.TranslateAsync(TimeSpanStr2(ts, out arg));
+            if (arg == null)
+                return txt;
+            return string.Format(txt, arg);
         }
 
         public static string TimeMsecStr(long mSec)
@@ -154,7 +204,7 @@ namespace DotStd
             {
                 return mSec.ToString() + " ms";
             }
-            return (((decimal)mSec) / 1000m).ToString() + " s"; ;
+            return (((decimal)mSec) / 1000m).ToString() + " s"; 
         }
 
         public static DayOfWeek ModDOW(DayOfWeek dow)
@@ -209,9 +259,9 @@ namespace DotStd
             return dt.Date.AddDays(diff);  // go forward.
         }
 
-        public static DayOfWeek GetDOW(string s)
+        public static DayOfWeek GetDOW(string s)    // NOT USED
         {
-            // Get DoW from string as Enum.
+            // Get DoW from English string as Enum.
             if (s != null)
             {
                 switch (s.ToLower())
@@ -288,7 +338,7 @@ namespace DotStd
 
         public static string GetTimeStr(int minutes, bool ampm = false, bool space = true)
         {
-            // Convert (0 based) minutes in the day to a military (or AMPM) time string.
+            // Convert (0 based) minutes in the day to a military (or AM/PM) time string.
             // if (minutes > DateUtil.kMinutesInDay) then just wrap.
 
             if (minutes < 0)
