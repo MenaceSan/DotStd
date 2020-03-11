@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -29,6 +30,7 @@ namespace DotStd
 
         public static Assembly GetAssemblySafe(Assembly assembly = null)
         {
+            // Get current executing assembly if one is not provided.
             if (assembly == null)   // default to current assembly
                 assembly = System.Reflection.Assembly.GetExecutingAssembly();
             return assembly;
@@ -51,10 +53,10 @@ namespace DotStd
             return Path.GetDirectoryName(GetAssemblyPath(assembly));
         }
 
-        public static DateTime GetAssemblyLinkDate(Assembly assembly, TimeZoneInfo target = null)
+        public static async Task<DateTime> GetAssemblyLinkDate(Assembly assembly, TimeZoneInfo target = null)
         {
             // For display of the build date of some Assembly
-            // Get date from PE header. 
+            // Get LOCAL DateTime from PE header. 
             // NOTE: .NET core doesn't use this, so just get file date.
             // https://upload.wikimedia.org/wikipedia/commons/1/1b/Portable_Executable_32_bit_Structure_in_SVG_fixed.svg
 
@@ -70,7 +72,7 @@ namespace DotStd
 
             using (FileStream stream = fi.OpenRead())
             {
-                stream.Read(buffer, 0, 2048);   // Read first block.
+                await stream.ReadAsync(buffer, 0, 2048);   // Read first block.
 
                 int offset = BitConverter.ToInt32(buffer, kPeHeaderOffset);    // start of PE
                 int peSig = BitConverter.ToInt32(buffer, offset);   // Signature 0x50450000
@@ -83,8 +85,7 @@ namespace DotStd
                 }
 
                 DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
-                TimeZoneInfo tz = target ?? TimeZoneInfo.Local;
-                DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, tz);
+                DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, target ?? TimeZoneInfo.Local);
                 return localTime;
             }
         }

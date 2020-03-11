@@ -8,6 +8,7 @@ namespace DotStd
     {
         // helper to pull a file from some HTTP or FTP server.
         // Has Progress similar to System.IProgress<float>.Report
+        // SEE ALSO: HttpDownloader
 
         public string SrcURL { get; set; }
         public string DestPath { get; set; }    // local dest file path.
@@ -43,8 +44,9 @@ namespace DotStd
             else
             {
                 // Make sure we allow redirects and such.
-                // Similar to HttpClient
+                // TODO convert to use HttpClient
                 // https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-request-data-using-the-webrequest-class
+
                 var req = WebRequest.Create(SrcURL);
                 HttpWebRequest reqH = ((HttpWebRequest)req);
 
@@ -59,7 +61,7 @@ namespace DotStd
 
                 reqH.Credentials = CredentialCache.DefaultCredentials;
                 reqH.UseDefaultCredentials = true;
-                reqH.Date = DateTime.UtcNow;
+                reqH.Date = TimeNow.Utc;
 
                 // reqH.Timeout = 5000;67
                 reqH.Method = "GET";

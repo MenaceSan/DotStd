@@ -5,6 +5,8 @@ namespace DotStd
 {
     public class LogFileBase : LoggerBase
     {
+        // NOTE: Log files are in server local time zone!
+
         protected string _FilePath;   // Current logging filename . Opened when needed.
         protected bool _Created = true;
 
@@ -13,22 +15,23 @@ namespace DotStd
             _FilePath = name;
         }
 
-        public static int GetDayStampInt(DateTime dt)
+        public static int GetDayStampInt(DateTime dtLocal)
         {
             // encode date as int. e.g. 20180302
-            int iVal = dt.Year;
+            // dtLocal = local time zone adjusted time.
+            int iVal = dtLocal.Year;
             iVal *= 100;
-            iVal += dt.Month;
+            iVal += dtLocal.Month;
             iVal *= 100;
-            iVal += dt.Day;
+            iVal += dtLocal.Day;
             return iVal;
         }
 
         public const string kExt = ".log";
 
-        public const string kDefaultPrefix = "/tmp/Log_";  // try not to use this.
+        public const string kDefaultPrefix = "/tmp/Log_";  // fallback log location. should be valid on most systems. try not to use this.
 
-        protected virtual TextWriter OpenLogFile(DateTime dt)
+        protected virtual TextWriter OpenLogFile(DateTime dtLocal)
         {
             // open a log file, append or create.
             // make sure the directory exists. May throw ?
@@ -50,7 +53,7 @@ namespace DotStd
             if (_Created)
             {
                 // All log files should have this header.
-                w.WriteLine($"Log File Created '{dt}' for '{ConfigApp.AppName}' v{ConfigApp.AppVersionStr}");
+                w.WriteLine($"Log File Created '{dtLocal}' ({TimeZoneInfo.Local.DisplayName}) for '{ConfigApp.AppName}' v{ConfigApp.AppVersionStr}");
                 w.Flush();
             }
             return w;
@@ -58,18 +61,19 @@ namespace DotStd
 
         public override void LogEntry(LogEntryBase entry)
         {
+            // Write log entry line.
             // Override this
             if (!IsEnabled(entry.LevelId))   // ignore this entry?
                 return;
 
             try
             {
-                DateTime tNow = DateTime.Now;       // local server time.
-                lock (this) using (var w = OpenLogFile(tNow))
+                DateTime tLocalNow = DateTime.Now;       // local server time for log file stamp
+                lock (this) using (var w = OpenLogFile(tLocalNow))
                     {
                         if (w == null)
                             return;
-                        w.WriteLine(string.Concat(tNow.ToDtString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message));
+                        w.WriteLine(string.Concat(tLocalNow.ToDtString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message)); // local TZ
                         if (!ValidState.IsEmpty(entry.Detail))
                         {
                             w.WriteLine("\t" + entry.ToString());
@@ -90,6 +94,7 @@ namespace DotStd
     public class LogFileDay : LogFileBase
     {
         // Log stuff out to a file that changes daily.
+        // Use local system time zone for text versions of time.
         // Thread safe.
 
         protected readonly string _FilePathPrefix;
@@ -113,7 +118,7 @@ namespace DotStd
 
             string prefix = kDefaultPrefix;
 
-            if (config != null)
+            if (config == null)
             {
                 config = ConfigApp.ConfigInfo;
             }
@@ -140,17 +145,17 @@ namespace DotStd
 
         }
 
-        public string GetName(DateTime dt)
+        public string GetName(DateTime dtLocal)
         {
-            return string.Concat(_FilePathPrefix, GetDayStampInt(dt).ToString(), kExt);
+            return string.Concat(_FilePathPrefix, GetDayStampInt(dtLocal).ToString(), kExt);
         }
 
-        protected override TextWriter OpenLogFile(DateTime tNow)
+        protected override TextWriter OpenLogFile(DateTime dtLocal)
         {
             // open a log file for today , append or create.
             // check for Day transition
 
-            DateTime tDay = tNow.Date;
+            DateTime tDay = dtLocal.Date;
 
             if (tDay != _Day)
             {
@@ -159,7 +164,7 @@ namespace DotStd
                 _Created = true;
             }
 
-            return base.OpenLogFile(tNow);
+            return base.OpenLogFile(dtLocal);
         }
 
         public override bool IsEnabled(LogLevel level = LogLevel.Information)

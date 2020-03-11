@@ -8,8 +8,10 @@ namespace DotStd
 {
     public class GmailMessage
     {
+#pragma warning disable IDE1006 // Naming Styles
         public string title { get; set; }
         public string summary { get; set; }
+#pragma warning restore IDE1006 // Naming Styles
     }
 
     public class GmailReader

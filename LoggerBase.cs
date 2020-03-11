@@ -53,6 +53,7 @@ namespace DotStd
     public class LogEntryBase
     {
         // An entry to be logged. may be logged async to producer.
+        // Assume time stamp is Now.
 
         public string Message;      // Description.
         public LogLevel LevelId = LogLevel.Information;
@@ -238,6 +239,7 @@ namespace DotStd
 
         public static void CreateStartupLog(string filePath)
         {
+            // Create a high detail log for startup.
             // For startup also check:
             // System Event Logger for Applications.
             // IIS web.config stdoutLogFile.       <aspNetCore processPath=".\FourTeAdminWeb.exe" stdoutLogEnabled="true" stdoutLogFile="C:\FourTe\stdout" hostingModel="InProcess">

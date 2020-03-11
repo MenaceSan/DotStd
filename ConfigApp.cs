@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 
 namespace DotStd
 {
@@ -30,10 +31,19 @@ namespace DotStd
             }
         }
 
-        private static int AppVersion;  // (Major.Minor.Build) encoded as an int for sorting migration data.
+        public static int AppVersion { get; private set; }  // (Major.Minor.Build) encoded as an int for sorting migration data.
+        public static string AppRevision { get; private set; }   // extra Version control tag.
+        public static string AppVersion3Str
+        {
+            // AppVersion should be read from Version.targets.template.
+            // Might be in the format "1.2.3.4-EXTRA"
+            get { return VersionUtil.ToVersionStr(AppVersion); }
+        }
         public static string AppVersionStr
         {
-            get { return VersionUtil.ToVersionStr(AppVersion); }
+            // AppVersion should be read from Version.targets.template.
+            // Might be in the format "1.2.3.4-EXTRA"
+            get { return VersionUtil.ToVersionStr(AppVersion, AppRevision); }
         }
 
         private static bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
@@ -116,7 +126,7 @@ namespace DotStd
         // get app global config info. support IServiceProvider.
         public static ConfigInfoBase ConfigInfo { get; private set; }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName, int appVersion)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName)
         {
             // Set app global config info.
             // MUST do this when first stating an app.
@@ -126,14 +136,25 @@ namespace DotStd
             AppId = appId;  // What app in the cluster am i ? may be updated later?
             AppTypeId = appId;
             _AppName = appName;
-            AppVersion = appVersion;
             MainThreadId = Environment.CurrentManagedThreadId;
         }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId, int appVersion)
+        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)
         {
             // Set app global config info.
-            SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription(), appVersion);
+            SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription());
+        }
+
+        public static void SetAppVersion(Assembly asm)
+        {
+            // Set version based on System.Version metadata in the top assembly.
+            // asm = System.Reflection.Assembly.GetExecutingAssembly()
+            // TODO Store and Get extra string tags for GIT hash id, etc ? [assembly: AssemblyInformationalVersion("13.3.1.74-g5224f3b")]
+            // https://stackoverflow.com/questions/15141338/embed-git-commit-hash-in-a-net-dll
+
+            System.Version ver = asm.GetName().Version;
+            AppVersion = VersionUtil.ToVersionInt(ver);
+            AppRevision = ver.Revision.ToString();
         }
 
         public static bool IsDebugging()

@@ -29,6 +29,7 @@ namespace DotStd
         // TODO read the 'libman.json' file to build this ?! Since libman doesnt contain 'integrity' at this time we can't just use libman directly. (2018)
 
         // TODO Manage list of CDN services such that they may be enabled/disabled on the fly.
+        // TODO Black list of CDNs . What CDN hosts are known to be bad ?
 
         public const string kAll = "CdnAll.html";       // Define all Cdn files i might use.
 

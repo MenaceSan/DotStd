@@ -132,23 +132,23 @@ namespace DotStd
 
         public ILogger Logger { get { return GetService<ILogger>(); } }
 
-        public bool IsEnvironModeLike(EnvironMode configMode)
+        public bool IsEnvironModeLike(EnvironMode environMode)
         {
             // Prefix match EnvironMode.
             // match EnvironMode but allow extension. e.g. Dev1 is the same as Dev
             if (EnvironMode == null)
                 return false;
-            return EnvironMode.ToUpper().StartsWith(configMode.ToString());
+            return EnvironMode.ToUpper().StartsWith(environMode.ToString());
         }
-        public bool IsEnvironMode(string configMode)
+        public bool IsEnvironMode(string environMode)
         {
             // Exact match EnvironMode
-            return String.Compare(EnvironMode, configMode, StringComparison.OrdinalIgnoreCase) == 0;
+            return String.Compare(EnvironMode, environMode, StringComparison.OrdinalIgnoreCase) == 0;
         }
-        public bool IsEnvironMode(EnvironMode configMode)
+        public bool IsEnvironMode(EnvironMode environMode)
         {
             // Exact match EnvironMode
-            return IsEnvironMode(configMode.ToString());
+            return IsEnvironMode(environMode.ToString());
         }
         public bool IsEnvironModeProd()
         {

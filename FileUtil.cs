@@ -87,10 +87,11 @@ namespace DotStd
     {
         // File system helpers.
         // avoid ",;" as DOS didn't support them as part of a name. https://en.wikipedia.org/wiki/8.3_filename
+        // https://en.wikipedia.org/wiki/Filename
 
         public const string kVirtualStore = "VirtualStore";
         public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
-        public const string kFileNameNT = "!#$&'()-@^_`{}~,";   // allow DOS + ","
+        public const string kFileNameNT  = "!#$&'()-@^_`{}~,=";   // allow DOS + ","
         public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
         public const string kDir = "/";     // path dir sep. Windows doesn't mind forward slash used as path.
 

@@ -40,7 +40,7 @@ namespace DotStd
             HttpResponseMessage response = await client.GetAsync(SrcURL);
             response.EnsureSuccessStatusCode();
 
-            using (var dst = File.Create(DestPath))
+            using (var dst = File.Create(DestPath))     // open/create local destination file.
             {
                 if (ProgressEvent == null)
                 {
@@ -51,7 +51,7 @@ namespace DotStd
                 {
                     // Send progress events.
 
-                    DateTime lastEvent = DateTime.UtcNow;
+                    DateTime lastEvent = DateTime.Now;      // measure relative time.
                     const int kBlockSize = 8192;
                     long? totalBytes1 = response.Content.Headers.ContentLength;    // may not be known/sent.
                     bool isEstimated = totalBytes1 == null; // we dont know the total size ?
@@ -81,12 +81,12 @@ namespace DotStd
 
                             currentBytesRead += bytesRead;
 
-                            var now = DateTime.UtcNow; 
-                            var elapsed = now - lastEvent;
+                            DateTime tLocalNow = DateTime.Now; 
+                            TimeSpan elapsed = tLocalNow - lastEvent;
                             if (elapsed.TotalSeconds > 0.50)
                             {
                                 ProgressEvent(currentBytesRead, totalBytes);
-                                lastEvent = now;
+                                lastEvent = tLocalNow;
                             }
                         }
                     }

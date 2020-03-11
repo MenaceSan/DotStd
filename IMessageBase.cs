@@ -62,7 +62,8 @@ namespace DotStd
         [Description("Confirmed address")]
         ConfirmedAddress = 6,          // got confirm back at some DateTime. (maybe old)
 
-        LDAP = 9,           // we can talk to the LDAP server.
+        ActiveDirectory = 8,        // The local ActiveDirectory attached to this machine.
+        LDAP = 9,           // we can talk to an LDAP server via LDAP protocols. defined by email extension. (@company.com)
 
         // OpenId Federated logins/validation are validated automatically. OAuth2 based ? Claim.Issuer == principal.Identity.AuthenticationType
         // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-2.2

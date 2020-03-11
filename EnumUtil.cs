@@ -8,7 +8,7 @@ namespace DotStd
 {
     public static class EnumUtil
     {
-        // Util helper to pull metadata from enums
+        // Utility helper to pull metadata from enums
 
         public static bool IsDefined(Enum value)
         {
@@ -84,6 +84,8 @@ namespace DotStd
         /// <returns>An <see cref="IList"/> containing the enumerated type value and description.</returns>
         public static IEnumerable<TupleIdValue> ToEnumList(this Type enumType)
         {
+            // similar to Html.GetEnumSelectList<Type>()
+
             ValidState.ThrowIfNull(enumType, enumType.Name);
 
             if (!enumType.IsEnum)

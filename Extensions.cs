@@ -132,7 +132,7 @@ namespace DotStd
             if (from == null)
                 return TimeSpan.MaxValue;
 
-            return DateTime.UtcNow - from.Value;
+            return TimeNow.Utc - from.Value;
         }
 
         //********************

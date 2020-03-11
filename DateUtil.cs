@@ -73,7 +73,7 @@ namespace DotStd
         {
             // a translatable approximate span.
             // get a string for a rough amount of time ago or ahead.
-            // var ts = (yourDate - DateTime.UtcNow);
+            // var ts = (yourDate - TimeNow.Utc);
 
             const int kSECOND = 1;
             const int kMINUTE = 60 * kSECOND;

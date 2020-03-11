@@ -14,9 +14,52 @@ namespace DotStd
         // NOTE: Use select2 for option lists with icons.
 
         public const string kNBSP = "&nbsp;";   // HTML non breaking space
+        public const string kGT = "&gt;";   //  
+        public const string kLT = "&lt;";   // 
 
         public const string kCommentOpen = "<!--";
         public const string kCommentClose = "-->";
+
+        // List of known/common entities. https://www.w3schools.com/html/html_entities.asp
+        public static readonly Dictionary<string, char> kEntities = new Dictionary<string, char>
+        {
+            {kNBSP, ' '},
+            {"&copy;", '©'},
+            {"&reg;", '®'},
+            {"&eacute;", 'é'},
+            {"&trade;", '™'},
+            {"&amp;", '&'},
+            {kGT, '>'},
+            {kLT, '<'},
+            {"&quot;", '"'},
+            {"&apos;", '\''},
+        };
+
+        public static char GetEntityChar(string entity)
+        {
+            // TODO handle "&#160;" ??
+
+            char value;
+            if (kEntities.TryGetValue(entity, out value))
+            {
+                return value;
+            }
+            return '\0';
+        }
+
+        public static string GetEntityName(string src, int startIndex)
+        {
+            // assume any entity name starts with & and ends with ;
+            if (src[startIndex] != '&')
+                return null;
+            int j = src.IndexOf(';', startIndex + 1);
+            if (j <= startIndex + 1)
+                return null;
+            int length = (j - startIndex) + 1;
+            if (length > 10)
+                return null;
+            return src.Substring(startIndex, length);
+        }
 
         public static string DecodeEntities2(string src)
         {
@@ -24,10 +67,16 @@ namespace DotStd
             // Replacing "&nbsp;" with "&#160;" since "&nbsp;" is not XML standard
             // NOTE: XmlReader is vulnerable to attacks from entity creation. XSS. OK in .Net 4.0+ but use DtdProcessing.Prohibit !!
 
-            src = src.Replace(kNBSP, " ");
-            src = src.Replace("&copy;", "©");
-            src = src.Replace("&eacute;", "é");
-            src = src.Replace("&trade;", "™");
+            for (int i = 0; i < src.Length; i++)
+            {
+                string entityName = GetEntityName(src, i);
+                if (entityName == null)
+                    continue;
+                char ch = GetEntityChar(entityName);
+                if (ch == '\0')
+                    continue;
+                src = string.Concat(src.Substring(0, i), ch, src.Substring(i + entityName.Length));
+            }
 
             return src;
         }
@@ -36,7 +85,7 @@ namespace DotStd
 
         public static string GetOpt(string value, string desc, bool selected = false, string extra = null)
         {
-            // construct HTML for <select>
+            // construct HTML option for <select>
             // construct HTML "<option value='1'>Main</option>");
             // like TupleKeyValue
 
@@ -50,19 +99,19 @@ namespace DotStd
 
         public static string GetOpt(int value, string desc, bool selected = false)
         {
-            // construct HTML 
+            // construct HTML option for <select> 
             return GetOpt(value.ToString(), desc, selected);
         }
 
         public static string GetOpt(TupleIdValue n, bool selected = false)
         {
-            // construct HTML 
+            // construct HTML option for <select>
             return GetOpt(n.Id, n.Value, selected);
         }
 
         public static string GetOpt(Enum n, bool selected = false)
         {
-            // construct HTML 
+            // construct HTML option for <select>
             // Get a value from enum to populate a HTML select list option.
             return GetOpt(n.ToInt(), n.ToDescription(), selected);
         }

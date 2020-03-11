@@ -54,7 +54,7 @@ namespace DotStd
         public static ulong GetKnuthHash(string read)
         {
             // Very fast 64 bit string anti-collision hash of a string. 
-            // like object.GetHashCode() but 64 bit.
+            // like object.GetHashCode() but 64 bit. Not cryptographically secure.
             // use 64 bits for lower hash collisions. 
             // ? Make this faster by doing 8 byte chunks?
 
