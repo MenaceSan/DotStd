@@ -212,6 +212,8 @@ namespace DotStd
         public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
         {
             // Not officially logged. Just debug console.
+            // startup ?
+
             System.Diagnostics.Debug.WriteLine("Debug " + message);
             // System.Diagnostics.Trace.WriteLine();
 

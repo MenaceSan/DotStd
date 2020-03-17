@@ -7,11 +7,11 @@ namespace DotStd
     {
         // What type of access/change was this ?
         // For the change audits.
-        Error = -1,
-        None = 0,       // no changes. Just a view of this data. for HIPAA audit trail.
-        Modify = 1,     // Made a change to some field(s) in this record. AKA Change/Edit/Update
-        Add = 2,        // new record created. AKA Insert.
-        Delete = 3, 
+        Error = 0,
+        View = 1,       // no changes. Just a view of this data. for HIPAA audit trail.
+        Modify = 2,     // Made a change to some field(s) in this record. AKA Change/Edit/Update
+        Add = 3,        // new record created. AKA Insert.
+        Delete = 4, 
     };
 
     [Serializable()]
