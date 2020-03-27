@@ -80,13 +80,14 @@ namespace DotStd
         // Assume this is paired with JobAttribute
         // Code must expose this interface so i can call it externally.
 
-        JobState State { get; set; }    // is it running ?
+        JobState State { get; set; }    // is it running ? last status etc.
 
         Task ExecuteAsync(string args); // Run it now.
     }
 
     public abstract class JobWorker : IJobWorker
     {
+        // Implement IJobWorker
         // Can be used with JobTracker ? JobTypeName ?
 
         public JobState State { get; set; }

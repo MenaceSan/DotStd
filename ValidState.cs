@@ -95,6 +95,7 @@ namespace DotStd
         {
             // is object equiv to null or empty string. string.IsNullOrEmpty() but NOT whitespace.
             // DateTime.MinValue might qualify ?
+            // NOTE: If this is an array, is the array empty ?
             // NOTE: 0 value is not the same as empty.
 
             if (IsNull(obj) || string.IsNullOrEmpty(obj.ToString()))

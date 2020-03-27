@@ -6,7 +6,7 @@ namespace DotStd
     public class GeoWeatherService : GeoLocation
     {
         // Weather at a location (or near it)
-        // "Apps:OpenWeatherMap"
+        // ConfigInfoBase.kApps + "OpenWeatherMap"
 
         public async Task<string> GetWeatherJson(string apiKey)
         {

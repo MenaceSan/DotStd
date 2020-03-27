@@ -11,7 +11,8 @@ namespace DotStd
         View = 1,       // no changes. Just a view of this data. for HIPAA audit trail.
         Modify = 2,     // Made a change to some field(s) in this record. AKA Change/Edit/Update
         Add = 3,        // new record created. AKA Insert.
-        Delete = 4, 
+        Delete = 4,
+        MaxValue = 5,
     };
 
     [Serializable()]

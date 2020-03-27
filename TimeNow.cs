@@ -28,6 +28,8 @@ namespace DotStd
         public static async Task<DateTime> GetNistAsync()
         {
             // Get UTC Time from NIST port 13.
+            // May throw System.IO.IOException
+
             using (var client = new TcpClient())
             {
                 DateTime t1 = DateTime.Now; // for data travel time.
@@ -79,8 +81,9 @@ namespace DotStd
                     return dto.Value.UtcDateTime;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                LoggerUtil.DebugException("GetUtcAsync", ex);
             }
 
             return DateTime.MinValue;

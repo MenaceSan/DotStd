@@ -11,9 +11,12 @@ namespace DotStd
 {
     public interface ITranslatorProvider1
     {
-        // Translate some text for a specific user/consumer. Assume it ignores and preserves punctuation, spaces and place holders like {0}
+        // Translate from some system NATIVE language text for a specific user/consumer who wants LangId.
+        // Assume it ignores and preserves punctuation, spaces and place holders like {0}
         // ASSUME this does not throw an exception. We can safely call this in non-async code.
         // related to selected CultureInfo.  // Sort of related to TimeZone ? Not really.
+
+        LanguageId LangId { get; }      // Destination language.
 
         Task<string> TranslateAsync(string fromText);
 
@@ -89,6 +92,8 @@ namespace DotStd
     public class TranslatorDummy : TranslatorBase, ITranslatorProvider1
     {
         // No/null/dummy translation.
+ 
+        LanguageId ITranslatorProvider1.LangId => LanguageId.test; // ITranslatorProvider1 Destination language.
 
         public override Task<List<TupleKeyValue>> GetToLanguages()
         {

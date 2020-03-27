@@ -43,13 +43,23 @@ namespace DotStd
             _memoryCache = memoryCache;
         }
 
-        public static string MakeKeyArgs(params object[] argsList)
+        public static ulong MakeHashCode(params object[] argsList)
         {
             // composite args for a cache key. Assume the key has a type/group prefix.
-            string keyArgs = string.Join(kSep, argsList);   // uses ToString() internally.
-            if (keyArgs.Length > 16)    // Just hash it if it seems too large. 
-                keyArgs = keyArgs.GetHashCode().ToString();     // danger of collision ?
-            return keyArgs;
+            if (argsList == null)
+                return 0;
+            ulong hashCode = 0;
+            foreach (object o in argsList)
+            {
+                hashCode = (hashCode << 13) | (hashCode >> (64 - 13));
+                hashCode ^= (ulong) o.GetHashCode();
+            }
+            return hashCode;
+        }
+
+        public static string MakeKeyArgs(params object[] argsList)
+        {
+            return MakeHashCode(argsList).ToString();
         }
 
         /// <summary>
@@ -62,7 +72,7 @@ namespace DotStd
             // build the string representation of some expression for the cache key. (AKA cacheKey)
             return string.Concat(type, kSep, MakeKeyArgs(argsList));
         }
- 
+
         private static void PostEvictionCallback(object cacheKey, object value, EvictionReason reason, object state)
         {
             // Memory cache uses this callback PostEvictionDelegate => its gone.
