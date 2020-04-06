@@ -58,6 +58,8 @@ namespace DotStd
             // use 64 bits for lower hash collisions. 
             // ? Make this faster by doing 8 byte chunks?
 
+            if (read == null)
+                return 0;
             ulong hashedValue = 3074457345618258791ul;
             for (int i = 0; i < read.Length; i++)
             {

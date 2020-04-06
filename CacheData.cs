@@ -240,7 +240,7 @@ namespace DotStd
         // A Type specific variation of the global cache singleton CacheData.
         // Build on CacheData with Type
 
-        public static string MakeKey(string id)
+        private static string MakeKey(string id)
         {
             return string.Concat(typeof(T).Name, CacheData.kSep, id);
         }
@@ -260,6 +260,7 @@ namespace DotStd
             ValidState.ThrowIfBadId(id, nameof(id));       // should check this before now.
             return Get(id.ToString());
         }
+
         public static T GetSingleton()
         {
             // Get singleton.

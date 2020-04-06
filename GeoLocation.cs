@@ -208,7 +208,7 @@ namespace DotStd
                 return IsValidLat(Latitude) && IsValidLon(Longitude);
             }
         }
-        bool IsExtreme
+        public bool IsExtreme
         {
             // !IsValid or May be Valid but not normal value. Might be bad value.
             // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
@@ -222,7 +222,7 @@ namespace DotStd
             }
         }
 
-        public override string ToString()
+        public string GetLatLonStr()
         {
             // Composite string.
             // e.g. "15.0N+30.0E"
@@ -230,6 +230,11 @@ namespace DotStd
             // https://maps.google.com/maps?q=24.197611,120.780512&z=18
 
             return String.Concat(Latitude.ToString(), ",", Longitude.ToString());
+        }
+
+        public override string ToString()
+        {
+            return GetLatLonStr();
         }
 
         public bool IsEqual2(GeoLocation x)
@@ -253,7 +258,7 @@ namespace DotStd
         public static string ToGeoUrl(double lat, double lon, DeviceTypeId deviceTypeId)
         {
             // Get Map
-            // deviceTypeId = Getdevice
+            // deviceTypeId = classify device we are displaying on
             if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows10)
             {
                 return ToGeoUrlGoo(lat, lon); // Unknown/Windows
@@ -301,12 +306,12 @@ namespace DotStd
 
         public static bool IsNear(double value1, double value2, double range)
         {
-            return Math.Abs(value1 - value2) < range; 
+            return Math.Abs(value1 - value2) < range;
         }
 
         public double GetDistance(double latitude, double longitude)
         {
-            // Calculate the distance between this and that.
+            // Calculate the Haversine distance between this and that.
             // Haversine. // http://en.wikipedia.org/wiki/Haversine_formula
 
             var su = Math.Sin((this.Latitude - latitude) * 0.5 * kDeg2Rad);

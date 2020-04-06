@@ -28,6 +28,7 @@ namespace DotStd
 
         public override string FormatErrorMessage(string name)
         {
+            // override ValidationAttribute
             ITranslatorProvider1 trans = TransValidationAttribute.GetTranslatorProvider();
             if (trans != null)
             {

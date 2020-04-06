@@ -36,7 +36,7 @@ namespace DotStd
         bool SetFromLanguage(LanguageId fromLang);
 
         // What languages are available to translate to? LanguageId as string, Name of language in fromLang.
-        Task<List<TupleKeyValue>> GetToLanguages();
+        List<TupleKeyValue> GetToLanguages();
 
         // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
         Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
@@ -52,6 +52,8 @@ namespace DotStd
         // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.2
         // Use the IHtmlLocalizer<T> implementation for resources that contain HTML.
         // NOTE: we might want to check the "Accept-Language" header on HTTP messages ?
+
+        public const int kHashCode0 = 0;    // placeholder for hash not yet calculated.
 
         protected LanguageId _fromLang = LanguageId.en;           // English is default source language.
 
@@ -71,7 +73,7 @@ namespace DotStd
             return true;
         }
 
-        public abstract Task<List<TupleKeyValue>> GetToLanguages();
+        public abstract List<TupleKeyValue> GetToLanguages();
 
         public abstract Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
 
@@ -92,10 +94,10 @@ namespace DotStd
     public class TranslatorDummy : TranslatorBase, ITranslatorProvider1
     {
         // No/null/dummy translation.
- 
+
         LanguageId ITranslatorProvider1.LangId => LanguageId.test; // ITranslatorProvider1 Destination language.
 
-        public override Task<List<TupleKeyValue>> GetToLanguages()
+        public override List<TupleKeyValue> GetToLanguages()
         {
             throw new NotImplementedException();
         }
@@ -151,17 +153,17 @@ namespace DotStd
         };
 
         public const char kStart = '¡'; // all test words start with this. Assume this is not normal.
- 
+
         public static bool IsTestLang(string s)
         {
             // Has this string already been translated? This should not happen . indicate failure.
             return s.Contains(kStart.ToString());
         }
 
-        public override Task<List<TupleKeyValue>> GetToLanguages()
+        public override List<TupleKeyValue> GetToLanguages()
         {
             // What languages do i translate to?
-            return Task.FromResult(new List<TupleKeyValue> { new TupleKeyValue(LanguageId.test) });
+            return new List<TupleKeyValue> { new TupleKeyValue(LanguageId.test) };
         }
 
         private char TranslateLetter(char ch)
@@ -247,7 +249,7 @@ namespace DotStd
 
         public string ApiKey; // send this to Google for commercial usage.
 
-        public override Task<List<TupleKeyValue>> GetToLanguages()
+        public override List<TupleKeyValue> GetToLanguages()
         {
             // What languages does this provider support ?
             // TODO support this properly ?? ask Google for the list.
@@ -262,7 +264,7 @@ namespace DotStd
                 new TupleKeyValue(LanguageId.it),
                 new TupleKeyValue(LanguageId.fa),
             };
-            return Task.FromResult(langs);
+            return langs;
         }
 
         public async Task<string> TranslateSingleAsync(string fromText, LanguageId toLang = LanguageId.native)

@@ -6,18 +6,20 @@ namespace DotStd
 {
     public enum DeviceTypeId
     {
-        // Mobile device types. for Push Notification. for PushSharp
+        // classify the clients device. is Mobile device type? for Push Notification. for PushSharp
         // used by user_device.DeviceTypeId
 
         Unknown = 0,
 
-        iOS = 1,        // Apple iOS // APN
-        Android = 2,    // Google Android  // FireBase ?
-        Amazon = 3,     // amazon-fireos
-        Windows10 = 4,    // UWP apps. Windows 10.
-        Mac = 5,        // Xamarin for Mac OS.
+        iOS = 1,            // Apple iOS // APN
+        Android = 2,        // Google Android  // FireBase ?
+        Amazon = 3,         // Amazon-fireos
+        Windows10 = 4,      // UWP apps. Windows 10.
+        Mac = 5,            // Xamarin for Mac OS.
 
-        // Blackberry
+        // Blackberry?
+        // Assume a laptop/desktop/tablet format?
+
         MSIE_Old = 15,        // https://stackoverflow.com/questions/10964966/detect-ie-version-prior-to-v9-in-javascript
     }
 
