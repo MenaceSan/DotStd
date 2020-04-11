@@ -5,82 +5,98 @@ using System.Text;
 
 namespace DotStd
 {
-    public enum DocumentType
+    public enum MimeType
     {
         // Common IANA MIME types and related file extensions.
-        // in table app_doc_type
-        // .NET defines many of these in MediaTypeNames
-        // Get SVG icons from https://fileicons.org/?view=square-o
+        // in table app_mime
+        // .NET defines many of these in System.Net.Mime.MediaTypeNames (BUT NOT ALL)
 
-        [Description(@"application/octet-stream")]
-        BIN = 0,    // BIN (AKA BLANK) -> Unknown Binary blob ?
+        [Description(@"application/octet-stream")]  // System.Net.Mime.MediaTypeNames.Application.Octet
+        BIN = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ?
 
         [Description(@"application/msword")]
-        DOC = 1,    // old binary format.
+        DOC = 2,    // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
-        DOCX = 2,    // https://fossbytes.com/doc-vs-docx-file-difference-use/
+        DOCX = 3,    // https://fossbytes.com/doc-vs-docx-file-difference-use/
 
         [Description(@"application/vnd.ms-excel")]
-        XLS = 3,      // old binary format.
+        XLS = 4,      // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-        XLSX = 4,
+        XLSX = 5,
 
         [Description(@"application/vnd.ms-powerpoint")]
-        PPT = 5,        // old binary format.
+        PPT = 6,        // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.presentationml.presentation")]
-        PPTX = 6,
+        PPTX = 7,
 
-        [Description(@"application/pdf")]
-        PDF = 7,
+        [Description(@"application/pdf")]   // System.Net.Mime.MediaTypeNames.Application.Pdf
+        PDF = 8,
+        [Description(@"application/rtf")]   // System.Net.Mime.MediaTypeNames.Application.Rtf
+        RTF = 9,
 
         [Description(@"image/jpeg")]
-        JPG = 8,       // AKA JEPG
+        JPG = 10,       // AKA JEPG
         [Description(@"image/png")]
-        PNG = 9,
+        PNG = 11,
         [Description(@"image/gif")]
-        GIF = 10,
+        GIF = 12,
         [Description(@"image/bmp")]
-        BMP = 11,
+        BMP = 13,
         [Description(@"image/x-icon")]
-        ICO = 12,
-
-        [Description(@"text/csv")]
-        CSV = 13,
-        [Description(@"text/html")]
-        HTML = 14,  // AKA .htm
-        [Description(@"text/plain")]
-        TXT = 15,        //  
-
+        ICO = 14,
+        [Description(@"image/tiff")]
+        TIFF = 15,
         [Description(@"image/svg+xml")]
-        SVG = 16,        //  Vector images
+        SVG = 16,        //  Vector images              // Get SVG icons from https://fileicons.org/?view=square-o
+
+        [Description(@"text/html")]
+        HTML = 17,  // AKA .htm
+        [Description(@"text/plain")]
+        TXT = 18,        //  
+        [Description(@"text/csv")]
+        CSV = 19,
+        [Description(@"text/xml")]      // System.Net.Mime.MediaTypeNames.Text.Xml
+        XML = 20,       // not the same as application/xml ?
+
+        [Description(@"video/avi")] // AKA "video/msvideo"
+        AVI = 21,
         [Description(@"video/mp4")]
-        MP4 = 17,        //  video consumed by chrome. HTML5
+        MP4 = 22,        //  video consumed by chrome. HTML5
+        [Description(@"video/mpeg")]
+        MPG = 23,        //  video AKA mpg, mpe
         [Description(@"video/x-flv")]
-        FLV = 18,        //  video
+        FLV = 24,        //  video
 
         [Description(@"audio/wav")]
-        WAV = 19,
+        WAV = 25,
+        [Description(@"audio/mp4")]     // iphone or android voice memos.
+        M4A = 26,
+        [Description(@"audio/mpeg")]
+        MP3 = 27,
+ 
         [Description(@"application/zip")]
-        ZIP = 20,        //  anything
-        [Description(@"application/json")]      // MediaTypeNames.Application.Json
-        JSON = 21,        // data
+        ZIP = 28,        //  anything
+        [Description(@"application/json")]      // System.Net.Mime.MediaTypeNames.Application.Json
+        JSON = 29,        // data
 
         [Description(@"text/calendar")]  
-        ICS = 22,       // https://wiki.fileformat.com/email/ics/
+        ICS = 30,       // https://wiki.fileformat.com/email/ics/
 
-        // AVI
-        // MPG
-        // webm
         // Other common types:
-        // RTF, XML, TGA, TTF
-        // AIF, MP3
-        // MKV, SWF, MOV, 
+        // webm (Google video)
+        // CAB  (zip type)
+        // CSS
+        // TGA, TTF
+        // AIF, 
+        // MKV, SWF, MOV
         // BZ2, ISO
         // CFG, INI,
-        // DAT, DB, CAB
-        // CS, CPP, JS, CSS
+        // DAT, DB
+        // CS, CPP
+        // JS, 
+        // RichText ?? for email NOT the same as RTF.
 
-        MaxValue = 20,
+        MaxValue,
     }
 
     public static class FileUtil
@@ -89,11 +105,13 @@ namespace DotStd
         // avoid ",;" as DOS didn't support them as part of a name. https://en.wikipedia.org/wiki/8.3_filename
         // https://en.wikipedia.org/wiki/Filename
 
-        public const string kVirtualStore = "VirtualStore";
+        public const string kVirtualStore = "VirtualStore";     // Windows.
         public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
         public const string kFileNameNT  = "!#$&'()-@^_`{}~,=";   // allow DOS + ","
         public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
         public const string kDir = "/";     // path dir sep. Windows doesn't mind forward slash used as path.
+
+        public const string kMime_Png = @"image/png";       // like System.Net.Mime.MediaTypeNames.Image.Gif
 
         public enum AccessType
         {
@@ -272,26 +290,32 @@ namespace DotStd
                 System.IO.File.Copy(filePathSrc, filePathDest, true);
         }
 
-        public static bool IsImageType(DocumentType docType)
+        public static bool IsKnownType(MimeType mimeId)
+        {
+            return mimeId > DotStd.MimeType.BIN;
+        }
+
+        public static bool IsImageType(MimeType mimeId)
         {
             // For things that only make sense as images. Avatar, Logo etc.
-            switch (docType)
+            switch (mimeId)
             {
-                case DocumentType.JPG:
-                case DocumentType.GIF:
-                case DocumentType.PNG:
-                case DocumentType.BMP:
-                case DocumentType.ICO:
-                case DocumentType.SVG:
+                case MimeType.JPG:
+                case MimeType.GIF:
+                case MimeType.PNG:
+                case MimeType.BMP:
+                case MimeType.ICO:
+                case MimeType.SVG:
+                case MimeType.TIFF:
                     return true;
                 default:
                     return false;
             }
         }
 
-        public static DocumentType GetDocumentTypeIdExt(string fileExtension)
+        public static MimeType GetDocumentTypeIdExt(string fileExtension)
         {
-            // Convert file name extension to DocumentType enum.
+            // Convert file name extension to  enum MimeType.
             // like Mime type. MimeMapping.GetMimeMapping()
             // Don't allow EXE types.
 
@@ -299,65 +323,69 @@ namespace DotStd
             {
                 case ".jpg":    // more commonly used than .jpeg ext.
                 case ".jpeg":
-                    return DocumentType.JPG;
+                    return MimeType.JPG;
                 case ".gif":
-                    return DocumentType.GIF;
+                    return MimeType.GIF;
                 case ".png":
-                    return DocumentType.PNG;
+                    return MimeType.PNG;
                 case ".bmp":
-                    return DocumentType.BMP;
+                    return MimeType.BMP;
                 case ".pdf":
-                    return DocumentType.PDF;
+                    return MimeType.PDF;
                 case ".doc":
-                    return DocumentType.DOC;
+                    return MimeType.DOC;
                 case ".docx":
-                    return DocumentType.DOCX;
+                    return MimeType.DOCX;
                 case ".xls":
-                    return DocumentType.XLS;
+                    return MimeType.XLS;
                 case ".xlsx":
-                    return DocumentType.XLSX;
+                    return MimeType.XLSX;
                 case ".ppt":
-                    return DocumentType.PPT;
+                    return MimeType.PPT;
                 case ".pptx":
-                    return DocumentType.PPTX;
+                    return MimeType.PPTX;
                 case ".txt":
-                    return DocumentType.TXT;
+                    return MimeType.TXT;
                 case ".csv":
-                    return DocumentType.CSV;
+                    return MimeType.CSV;
                 case ".ico":
-                    return DocumentType.ICO;
+                    return MimeType.ICO;
                 case ".svg":
-                    return DocumentType.SVG;
+                    return MimeType.SVG;
+                case ".tif":
+                case ".tiff":
+                    return MimeType.TIFF;
+
                 default:
-                    return DocumentType.BIN;    // binary blob.
+                    return MimeType.BIN;    // binary blob.
             }
         }
 
-        public static DocumentType GetDocumentTypeId(string fileName)
+        public static MimeType GetMimeId(string fileName)
         {
             return GetDocumentTypeIdExt(Path.GetExtension(fileName));
         }
 
-        public static string GetContentType(DocumentType docType)
+        public static string GetContentType(MimeType mimeId)
         {
-            // Get MIME type for DocumentType
+            // Get MIME type for MimeType
             // e.g. "text/plain"
             // like MimeMapping.GetMimeMapping()
 
-            if (docType <= DocumentType.BIN || docType >= DocumentType.MaxValue)
+            if (mimeId <= MimeType.BIN || mimeId >= MimeType.MaxValue)
             {
                 // Some other content type? octet-stream
-                docType = DocumentType.BIN;
+                mimeId = MimeType.BIN;
             }
 
-            return docType.ToDescription();
+            return mimeId.ToDescription();
         }
 
         public static string GetContentTypeExt(string fileExtension)
         {
             // given a file extension get the mime type. like MimeMapping.GetMimeMapping()
             // Used with HttpContext.Current.Response.ContentType
-            return GetContentType(GetDocumentTypeId(fileExtension));
+            return GetContentType(GetMimeId(fileExtension));
         }
 
         public static string GetContentType(string fileName)

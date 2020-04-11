@@ -14,6 +14,8 @@ namespace DotStd
         Discover = 3,   // DISC - 16 digits and start with digits 6011
         Amex = 4,       // AMEX - 15 digits and start with 34 or 37
         DinersClub = 5,     // Diners Club - 14 digits and begin with 300 through 305, 36, or 38
+
+        // MaxValue
     }
 
     public static class CreditCard
@@ -83,7 +85,7 @@ namespace DotStd
             for (; i >= 0; i--)
             {
                 char ch = cardNum[i];
-                if (!StringUtil.IsDigit1(ch))
+                if (!StringUtil.IsDigit1(ch)) // must be all digits.
                     return false;
 
                 int curDigit = (ch - '0');
@@ -162,7 +164,7 @@ namespace DotStd
 
         public static string GetCardTestNumber(CreditCardTypeId cardType)
         {
-            // Return a bogus CC number that passes Luhn and format tests
+            // Return a bogus CC number that passes Luhn and format tests for a given CreditCardTypeId
 
             // Src: https://www.paypal.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm
             // Credit: Scott Dorman, http://www.geekswithblogs.net/sdorman

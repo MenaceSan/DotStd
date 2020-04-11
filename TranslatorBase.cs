@@ -318,7 +318,7 @@ namespace DotStd
                 }
 
                 string json = JsonConvert.SerializeObject(new { q = fromEnc, source = LanguageId.en.ToString(), target = toLang.ToString() });        // format = "text"
-                var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
+                var content = new StringContent(json, Encoding.UTF8, MimeType.JSON.ToDescription());
 
                 HttpResponseMessage resp = await client.PostAsync(url, content);
                 resp.EnsureSuccessStatusCode();
@@ -368,7 +368,7 @@ namespace DotStd
 
                 object req = new { q = fromTexts, target = toLang.ToString() };
                 string json = JsonConvert.SerializeObject(req);
-                var content = new StringContent(json, Encoding.UTF8, DocumentType.JSON.ToDescription());
+                var content = new StringContent(json, Encoding.UTF8, MimeType.JSON.ToDescription());
 
                 HttpResponseMessage resp = await client.PostAsync(url, content);
                 resp.EnsureSuccessStatusCode();
