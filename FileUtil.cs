@@ -5,82 +5,82 @@ using System.Text;
 
 namespace DotStd
 {
-    public enum MimeType
+    public enum MimeId
     {
         // Common IANA MIME types and related file extensions.
         // in table app_mime
         // .NET defines many of these in System.Net.Mime.MediaTypeNames (BUT NOT ALL)
 
         [Description(@"application/octet-stream")]  // System.Net.Mime.MediaTypeNames.Application.Octet
-        BIN = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ?
+        bin = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ?
 
         [Description(@"application/msword")]
-        DOC = 2,    // old binary format.
+        doc = 2,    // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
-        DOCX = 3,    // https://fossbytes.com/doc-vs-docx-file-difference-use/
+        docx = 3,    // https://fossbytes.com/doc-vs-docx-file-difference-use/
 
         [Description(@"application/vnd.ms-excel")]
-        XLS = 4,      // old binary format.
+        xls = 4,      // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-        XLSX = 5,
+        xlsx = 5,
 
         [Description(@"application/vnd.ms-powerpoint")]
-        PPT = 6,        // old binary format.
+        ppt = 6,        // old binary format.
         [Description(@"application/vnd.openxmlformats-officedocument.presentationml.presentation")]
-        PPTX = 7,
+        pptx = 7,
 
         [Description(@"application/pdf")]   // System.Net.Mime.MediaTypeNames.Application.Pdf
-        PDF = 8,
+        pdf = 8,
         [Description(@"application/rtf")]   // System.Net.Mime.MediaTypeNames.Application.Rtf
-        RTF = 9,
-
-        [Description(@"image/jpeg")]
-        JPG = 10,       // AKA JEPG
-        [Description(@"image/png")]
-        PNG = 11,
-        [Description(@"image/gif")]
-        GIF = 12,
-        [Description(@"image/bmp")]
-        BMP = 13,
-        [Description(@"image/x-icon")]
-        ICO = 14,
-        [Description(@"image/tiff")]
-        TIFF = 15,
-        [Description(@"image/svg+xml")]
-        SVG = 16,        //  Vector images              // Get SVG icons from https://fileicons.org/?view=square-o
+        rtf = 9,
+        [Description(@"application/zip")]
+        zip = 10,        //  anything
+        [Description(@"application/json")]      // System.Net.Mime.MediaTypeNames.Application.Json
+        json = 11,        // data
 
         [Description(@"text/html")]
-        HTML = 17,  // AKA .htm
+        html = 12,  // AKA .htm
         [Description(@"text/plain")]
-        TXT = 18,        //  
+        txt = 13,        //  
         [Description(@"text/csv")]
-        CSV = 19,
+        csv = 14,
         [Description(@"text/xml")]      // System.Net.Mime.MediaTypeNames.Text.Xml
-        XML = 20,       // not the same as application/xml ?
+        xml = 15,       // not the same as application/xml ?
+        [Description(@"text/calendar")]
+        ics = 16,       // https://wiki.fileformat.com/email/ics/
 
-        [Description(@"video/avi")] // AKA "video/msvideo"
-        AVI = 21,
-        [Description(@"video/mp4")]
-        MP4 = 22,        //  video consumed by chrome. HTML5
-        [Description(@"video/mpeg")]
-        MPG = 23,        //  video AKA mpg, mpe
-        [Description(@"video/x-flv")]
-        FLV = 24,        //  video
+        [Description(@"image/jpeg")]
+        jpg = 17,       // AKA JEPG
+        [Description(@"image/png")]
+        png = 18,
+        [Description(@"image/gif")]
+        gif = 19,
+        [Description(@"image/bmp")]
+        bmp = 20,
+        [Description(@"image/x-icon")]
+        ico = 21,
+        [Description(@"image/tiff")]
+        tiff = 22,
+        [Description(@"image/svg+xml")]
+        svg = 23,        //  Vector images              // Get SVG icons from https://fileicons.org/?view=square-o
 
         [Description(@"audio/wav")]
-        WAV = 25,
+        wav = 24,
         [Description(@"audio/mp4")]     // iphone or android voice memos.
-        M4A = 26,
+        m4a = 25,
         [Description(@"audio/mpeg")]
-        MP3 = 27,
- 
-        [Description(@"application/zip")]
-        ZIP = 28,        //  anything
-        [Description(@"application/json")]      // System.Net.Mime.MediaTypeNames.Application.Json
-        JSON = 29,        // data
+        mp3 = 26,
 
-        [Description(@"text/calendar")]  
-        ICS = 30,       // https://wiki.fileformat.com/email/ics/
+        [Description(@"video/avi")] // AKA "video/msvideo"
+        avi = 27,
+        [Description(@"video/mp4")]
+        mp4 = 28,        //  video consumed by chrome. HTML5
+        [Description(@"video/mpeg")]
+        mpg = 29,        //  video AKA mpg, mpe
+        [Description(@"video/x-flv")]
+        flv = 30,        //  video
+        [Description(@"video/quicktime")]
+        mov = 31,   // iPhone movie clips.
 
         // Other common types:
         // webm (Google video)
@@ -88,7 +88,7 @@ namespace DotStd
         // CSS
         // TGA, TTF
         // AIF, 
-        // MKV, SWF, MOV
+        // MKV, SWF, WMV
         // BZ2, ISO
         // CFG, INI,
         // DAT, DB
@@ -106,12 +106,21 @@ namespace DotStd
         // https://en.wikipedia.org/wiki/Filename
 
         public const string kVirtualStore = "VirtualStore";     // Windows.
-        public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
-        public const string kFileNameNT  = "!#$&'()-@^_`{}~,=";   // allow DOS + ","
-        public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
-        public const string kDir = "/";     // path dir sep. Windows doesn't mind forward slash used as path.
 
-        public const string kMime_Png = @"image/png";       // like System.Net.Mime.MediaTypeNames.Image.Gif
+        // NOTE: Linux does not like & used in file names? Though windows would allow it.
+        public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
+        public const string kFileNameNT  = "!#$&'()-@^_`{}~,=";   // allow DOS characters + ",="
+
+        public const char kCharNT = '=';    // extra char allowed by NT.
+        public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
+
+        public const char kDirDos = '\\';
+        public const char kDirChar = '/';       // 
+        public static readonly char[] kDirSeps = new char[] { kDirDos, kDirChar };
+
+        public const string kDir = "/";     // path directory separator as string. Windows doesn't mind forward slash used as path. Normal for Linux.
+
+        public const string kMimePng = @"image/png";       // like System.Net.Mime.MediaTypeNames.Image.Gif
 
         public enum AccessType
         {
@@ -134,7 +143,14 @@ namespace DotStd
             return Path.Combine(sVirtualStore, filePath.Substring(Path.GetPathRoot(filePath).Length));  // skip root info "c:" etc.
         }
 
-        public static bool IsFileNameBasic(char ch)
+        public static DateTime GetFileTime(DateTime dt)
+        {
+            // When comparing times we can round down to 2 seconds. FAT stores 2 second accuracy.
+            const long ticks2Sec = TimeSpan.TicksPerSecond * 2;
+            return new DateTime(dt.Ticks - (dt.Ticks % ticks2Sec), dt.Kind);
+        }
+
+        public static bool IsFileNameBasic(char ch, string extra)
         {
             // Is this a valid basic char in a file name?
 
@@ -142,13 +158,11 @@ namespace DotStd
                 return true;
             if (ch >= 'A' && ch <= 'Z')     // always good
                 return true;
-            if (ch >= '0' && ch <= '9')     // always good
+            if (StringUtil.IsDigit1(ch))     // always good
                 return true;
             if (ch == '.')                  // always assume interior dots are ok. Only DOS 8.3 would have trouble.
                 return true;
-            //if (kFileNameDos.IndexOf(ch) >= 0)  // even DOS allowed these special chars.
-            //    return true;
-            if (kFileNameNT.IndexOf(ch) >= 0)  // DOS + newer allowed chars.
+            if (extra.IndexOf(ch) >= 0)  // DOS + newer allowed chars. kFileNameDos or kFileNameNT
                 return true;
 
             // DOS didn't support "\"*+,/:;<=>?\[]|" in a file name.
@@ -159,7 +173,7 @@ namespace DotStd
         {
             // put the file in a form that only uses valid chars but try to avoid collisions.
             // Max chars = 255
-            // allow file name chars. "-_ "
+            // allow file name chars. "-_ ". NOT kDir
             // https://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
             // NEVER take chars away from here. we may add them in the future.
 
@@ -168,14 +182,14 @@ namespace DotStd
 
             var sb = new StringBuilder();
             int iLen = fileName.Length;
-            if (iLen > 255)
+            if (iLen > 255) // max length.
                 iLen = 255;
 
             bool lastEncode = false;
             for (int i = 0; i < iLen; i++)
             {
                 char ch = fileName[i];
-                if (IsFileNameBasic(ch))
+                if (IsFileNameBasic(ch, kFileNameDos))
                 {
                     lastEncode = false;
                 }
@@ -191,12 +205,17 @@ namespace DotStd
             return sb.ToString();
         }
 
+        public static bool IsDirSep(char ch)
+        {
+            return ch == kDirChar || ch == kDirDos;
+        }
+
         public static bool IsPathValid(string filePath, bool bAllowDirs, bool bAllowSpaces = true, bool bAllowRoots = false, bool bAllowRelatives = false)
         {
             // Keep internal file names simple ASCII. do not allow UNICODE.
             // Is filename composed of simple chars " _-." a-z, A-Z, 0-9, 
             // Assume these are not user created names. Don't need to use any fancy chars.
-            // bAllowDirs = allow '/' '\'
+            // bAllowDirs = allow '/' '\', kDirChar
             // bAllowRoots = allow ':' or "\\"
             // bAllowRelatives = allow "..". beware . %2e%2e%2f represents ../ https://www.owasp.org/index.php/Path_Traversal
             // bAllowSpaces = allow spaces.
@@ -217,7 +236,7 @@ namespace DotStd
             for (int i = 0; i < iLen; i++)
             {
                 char ch = filePath[i];
-                if (IsFileNameBasic(ch))        // always good char
+                if (IsFileNameBasic(ch, kFileNameNT))        // always good char
                     continue;
                 if (ch == ' ')
                 {
@@ -231,7 +250,7 @@ namespace DotStd
                         return false;
                     continue;
                 }
-                if (ch == '/' || ch == '\\')
+                if (IsDirSep(ch))
                 {
                     if (!bAllowDirs)
                         return false;
@@ -240,7 +259,7 @@ namespace DotStd
                         return false;
                     continue;
                 }
-                return false;       // its bad. Dont allow "%," and others.
+                return false;       // its bad. Don't allow "%," and others.
             }
             return true;
         }
@@ -290,32 +309,32 @@ namespace DotStd
                 System.IO.File.Copy(filePathSrc, filePathDest, true);
         }
 
-        public static bool IsKnownType(MimeType mimeId)
+        public static bool IsKnownType(MimeId mimeId)
         {
-            return mimeId > DotStd.MimeType.BIN;
+            return mimeId > DotStd.MimeId.bin;
         }
 
-        public static bool IsImageType(MimeType mimeId)
+        public static bool IsImageType(MimeId mimeId)
         {
             // For things that only make sense as images. Avatar, Logo etc.
             switch (mimeId)
             {
-                case MimeType.JPG:
-                case MimeType.GIF:
-                case MimeType.PNG:
-                case MimeType.BMP:
-                case MimeType.ICO:
-                case MimeType.SVG:
-                case MimeType.TIFF:
+                case MimeId.jpg:
+                case MimeId.gif:
+                case MimeId.png:
+                case MimeId.bmp:
+                case MimeId.ico:
+                case MimeId.svg:
+                case MimeId.tiff:
                     return true;
                 default:
                     return false;
             }
         }
 
-        public static MimeType GetDocumentTypeIdExt(string fileExtension)
+        public static MimeId GetMimeIdExt(string fileExtension)
         {
-            // Convert file name extension to  enum MimeType.
+            // Convert file name extension to enum MimeId.
             // like Mime type. MimeMapping.GetMimeMapping()
             // Don't allow EXE types.
 
@@ -323,59 +342,64 @@ namespace DotStd
             {
                 case ".jpg":    // more commonly used than .jpeg ext.
                 case ".jpeg":
-                    return MimeType.JPG;
+                    return MimeId.jpg;
                 case ".gif":
-                    return MimeType.GIF;
+                    return MimeId.gif;
                 case ".png":
-                    return MimeType.PNG;
+                    return MimeId.png;
                 case ".bmp":
-                    return MimeType.BMP;
+                    return MimeId.bmp;
                 case ".pdf":
-                    return MimeType.PDF;
+                    return MimeId.pdf;
                 case ".doc":
-                    return MimeType.DOC;
+                    return MimeId.doc;
                 case ".docx":
-                    return MimeType.DOCX;
+                    return MimeId.docx;
                 case ".xls":
-                    return MimeType.XLS;
+                    return MimeId.xls;
                 case ".xlsx":
-                    return MimeType.XLSX;
+                    return MimeId.xlsx;
                 case ".ppt":
-                    return MimeType.PPT;
+                    return MimeId.ppt;
                 case ".pptx":
-                    return MimeType.PPTX;
+                    return MimeId.pptx;
                 case ".txt":
-                    return MimeType.TXT;
+                    return MimeId.txt;
                 case ".csv":
-                    return MimeType.CSV;
+                    return MimeId.csv;
                 case ".ico":
-                    return MimeType.ICO;
+                    return MimeId.ico;
                 case ".svg":
-                    return MimeType.SVG;
+                    return MimeId.svg;
                 case ".tif":
                 case ".tiff":
-                    return MimeType.TIFF;
+                    return MimeId.tiff;
+                case ".mpe":
+                case ".mpg":
+                    return MimeId.mpg;
 
                 default:
-                    return MimeType.BIN;    // binary blob.
+                    return MimeId.bin;    // binary blob.
             }
         }
 
-        public static MimeType GetMimeId(string fileName)
+        public static MimeId GetMimeId(string fileName)
         {
-            return GetDocumentTypeIdExt(Path.GetExtension(fileName));
+            // Infer MIME type from the name extension.
+
+            return GetMimeIdExt(Path.GetExtension(fileName));
         }
 
-        public static string GetContentType(MimeType mimeId)
+        public static string GetContentType(MimeId mimeId)
         {
-            // Get MIME type for MimeType
+            // Get MIME type name for MimeId id.
             // e.g. "text/plain"
             // like MimeMapping.GetMimeMapping()
 
-            if (mimeId <= MimeType.BIN || mimeId >= MimeType.MaxValue)
+            if (mimeId <= MimeId.bin || mimeId >= MimeId.MaxValue)
             {
                 // Some other content type? octet-stream
-                mimeId = MimeType.BIN;
+                mimeId = MimeId.bin;
             }
 
             return mimeId.ToDescription();

@@ -114,8 +114,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(text))
                 return text;
 
-            string pluralized;
-            if (_SpecialPlurals.TryGetValue(text, out pluralized))
+            if (_SpecialPlurals.TryGetValue(text, out string pluralized))
                 return pluralized;
 
             if (text.EndsWith("y", StringComparison.OrdinalIgnoreCase) &&
@@ -185,7 +184,7 @@ namespace DotStd
             {
                 int remainder = (int)(currentNumber % toBase);
                 charArray[index--] = kBaseDigits[remainder];
-                currentNumber = currentNumber / toBase;
+                currentNumber /= toBase;
             }
 
             string result = new string(charArray, index + 1, kBitsInLong - index - 1);

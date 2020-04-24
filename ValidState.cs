@@ -174,7 +174,7 @@ namespace DotStd
             {
                 if (ch >= 'a' && ch <= 'z')
                     continue;
-                if (ch >= '0' && ch <= '9')
+                if (StringUtil.IsDigit1(ch))
                     continue;
                 if (kUniqueAllowX.IndexOf(ch) >= 0)      // allowed special chars.
                     continue;

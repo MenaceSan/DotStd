@@ -129,6 +129,7 @@ namespace DotStd
 
             return val;
         }
+ 
 
         public static int ToIntSloppy(string s, int offset = 0)
         {
@@ -142,7 +143,7 @@ namespace DotStd
                 char ch = s[i];
                 if (leadSpace && char.IsWhiteSpace(ch))
                     continue;
-                if (ch < '0' || ch > '9')
+                if (!StringUtil.IsDigit1(ch))
                     break;
                 leadSpace = false;  // found a non space.
                 val = (val * 10) + (ch - '0');

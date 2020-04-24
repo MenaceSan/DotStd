@@ -105,7 +105,7 @@ namespace DotStd
 
         public static bool IsNumeric1(string str)
         {
-            // Does this string contain a simple integer number? no - or . 
+            // Does this string contain a simple/strict integer number? no spaces, -+ or . 
             // NOT extended IsNumber 1/2
             if (string.IsNullOrWhiteSpace(str))
                 return false;
@@ -116,7 +116,7 @@ namespace DotStd
         public static bool IsNumeric2(string str)
         {
             // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
-            // NOT extended IsNumber 1/2
+            // NOT extended IsNumber 1/2. No decimal comma for European?
             if (string.IsNullOrWhiteSpace(str))
                 return false;
             if (_regexNum2 == null)

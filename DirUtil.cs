@@ -59,7 +59,7 @@ namespace DotStd
             // like VB FileIO.FileSystem.DirectoryExists, FileIO.FileSystem.CreateDirectory
             // ignore if the dir already exists.
             // Will throw on failure.
-            // RETURN: true = the dir needed to be created. it didnt exist.
+            // RETURN: true = the dir needed to be created. it didn't exist.
             if (String.IsNullOrEmpty(sDir)) // this dir.
                 return false;
             if (System.IO.Directory.Exists(sDir))   // is this needed?

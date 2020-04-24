@@ -12,7 +12,7 @@ namespace DotStd
 
         public static bool IsDefined(Enum value)
         {
-            // Is a defined enum value ?
+            // Is value a defined enum member value ?
             if (value == null)
                 return false;
             Type type = value.GetType();
@@ -30,6 +30,36 @@ namespace DotStd
         {
             // IEnumerable<Attribute>
             return attrs != null && attrs.Length > 0;
+        }
+
+        public static string GetValName(Enum value)
+        {
+            // get a string with the int and name for the enum value.
+            if (IsDefined(value))
+            {
+                return $"{value.ToInt()} ({value.ToString()})";
+            }
+            return value.ToString();
+        }
+
+        public static T GetEnum<T>(int value) where T : Enum
+        {
+            // Convert int to Enum.
+            return (T)(object)value;
+        }
+
+        public static string GetValName<T>(int value) where T : Enum
+        {
+            // Get a string name for the enum value (else int)
+            return GetValName(GetEnum<T>(value));
+        }
+
+        public static string GetValName<T>(int? value) where T : Enum
+        {
+            // Get a string name for the enum value (or null)
+            if (value == null)
+                return "";
+            return GetValName<T>(value.Value);
         }
 
         public static string GetDescription(MemberInfo[] memInfo)
