@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
@@ -10,14 +11,16 @@ namespace DotStd
         // An external host that we use that may be allowed or disallowed. (has fallback)
         // we can also add any external services like Google Map apis that may be enabled or disabled dynamically?
 
-        public string HostName;
+        public string Name;         // short name.
+        public string HostName;     // prefix for files form this source.
         public bool Enabled;
     }
 
     public class CdnConfig
     {
-        // TODO List of CDN servers to be used. (or none)
+        // TODO List of CDN servers to be used. (or none) alternate/backups/mirrors for CDN?
 
+        public List<CdnHost> Hosts;
     }
 
     public static class CdnUtil

@@ -65,7 +65,7 @@ namespace DotStd
                 HttpResponseMessage result = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
                 DateTime t2 = DateTime.Now;  // how old is the result i got ? data travel time.
 
-                return result.Headers.Date;
+                return result.Headers.Date; // Get DateTimeOffset from header.
             }
         }
 

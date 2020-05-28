@@ -116,10 +116,10 @@ namespace DotStd
             return string.Concat(NativeName, " (", Name, ")");
         }
 
-        public static LanguageId GetId(string lang, int level = 3)
+        public static LanguageId GetId(string lang, int testLevel = 3)
         {
             // get LanguageId from string. forgiving.
-            // level = how close does the match need to be ?
+            // testLevel = how close does the match need to be ?
 
             if (string.IsNullOrWhiteSpace(lang))
                 return LanguageId.native;
@@ -129,13 +129,14 @@ namespace DotStd
             Array enumValues = Enum.GetValues(typeof(LanguageId));
             foreach (LanguageId value in enumValues)
             {
-                if (value.ToString() == lang)   // code.
+                string langVal = value.ToString();
+                if (langVal == lang)   // code.
                     return value;
-                if (level <= 1)
+                if (testLevel <= 1)
                     continue;
                 if (lang == ((int)value).ToString())    // number
                     return value;
-                if (level <= 2)
+                if (testLevel <= 2 || lang.Length <= 2) // dont test desc. strict tets.
                     continue;
                 string desc = value.ToDescription().ToLower();  // part of full text.
                 if (desc.Contains(lang))

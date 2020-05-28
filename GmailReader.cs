@@ -24,7 +24,7 @@ namespace DotStd
 
         public void SetCreds(string email, string password)
         {
-            // Store my credentials.
+            // Store my credentials. SecureString
             _Credentials = new System.Net.NetworkCredential(email, password);
         }
 

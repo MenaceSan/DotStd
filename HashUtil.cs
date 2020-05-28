@@ -139,7 +139,7 @@ namespace DotStd
 
         public byte[] GetHash(string password, string systemsecret, ulong salt, int id)
         {
-            // crypto hashes are on strings (passwords)
+            // crypto hashes are on strings (passwords) SecureString
             // Compute a hash of (system secret password + password + ulong random salt + id of user). 
             // cant share lookup attacks across users or pre-compute.
             // all attacks are per user.

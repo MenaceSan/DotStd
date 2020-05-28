@@ -13,6 +13,12 @@ namespace DotStd
 
         public const string kHexAlphabet = "0123456789ABCDEF";
 
+        public static void ToHexChar(StringBuilder sb, byte b)
+        {
+            sb.Append(kHexAlphabet[(int)(b >> 4)]);
+            sb.Append(kHexAlphabet[(int)(b & 0xF)]);
+        }
+
         public static string ToHexStr(byte[] data)
         {
             // Loop through each byte[] and format each one as a hexadecimal string.
@@ -23,9 +29,7 @@ namespace DotStd
             var sb = new StringBuilder();
             for (int i = 0; i < data.Length; i++)
             {
-                byte b = data[i];
-                sb.Append(kHexAlphabet[(int)(b >> 4)]);
-                sb.Append(kHexAlphabet[(int)(b & 0xF)]);
+                ToHexChar(sb, data[i]);
             }
 
             // Return the hexadecimal string.
@@ -49,6 +53,16 @@ namespace DotStd
             return ch - '0';
         }
 
+        public static int FromHexChar2(string str, int i)
+        {
+            // Convert 2 hex chars to a number.
+            int v1 = FromHexChar(str[i + 0]);
+            int v2 = FromHexChar(str[i + 1]);
+            if (v1 < 0 || v2 < 0)
+                return -1;
+            return v2 + (v1 << 4);
+        }
+
         public static byte[] FromHexStr(string str)
         {
             // convert hex string to byte[]
@@ -56,27 +70,28 @@ namespace DotStd
             str = str.Trim();
 
             int start = 0;
-            int len = str.Length & ~1;  // even numbers only.
+            int len = str.Length;
             if (str.StartsWith("0x"))       // ignore prefix.
             {
                 start = 2;
                 len -= 2;
             }
 
-            byte[] data = new byte[len / 2];
+            len /= 2;  // even numbers only.
+            byte[] data = new byte[len];    // output.
 
-            for (int i = start; i < len; i += 2)
+            int i = start;
+
+            for (int j = 0; j < len; i += 2, j++)
             {
-                int v1 = FromHexChar(str[i + 0]);
-                int v2 = FromHexChar(str[i + 1]);
-                if (v1 < 0 || v2 < 0)
+                int v2 = FromHexChar2(str, i);
+                if (v2 < 0)
                 {
                     // shorten it.
-                    Array.Resize(ref data, i / 2);
+                    Array.Resize(ref data, j);
                     break;
                 }
-                v2 += v1 << 4;
-                data[i / 2] = (byte)(v2);
+                data[j] = (byte)(v2);
             }
 
             return data;

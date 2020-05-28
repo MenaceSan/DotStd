@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
@@ -86,11 +87,13 @@ namespace DotStd
         // webm (Google video)
         // CAB  (zip type)
         // CSS
-        // TGA, TTF
-        // AIF, 
-        // MKV, SWF, WMV
-        // BZ2, ISO
-        // CFG, INI,
+        // TGA, (image)
+        // TTF (font)
+        // AIF, (audio)
+        // MKV, SWF, WMV (video)
+        // BZ2,     // compressed
+        // ISO  (?)
+        // CFG, INI, (text config)
         // DAT, DB
         // CS, CPP
         // JS, 
@@ -105,208 +108,32 @@ namespace DotStd
         // avoid ",;" as DOS didn't support them as part of a name. https://en.wikipedia.org/wiki/8.3_filename
         // https://en.wikipedia.org/wiki/Filename
 
-        public const string kVirtualStore = "VirtualStore";     // Windows.
+        public const int kLenMax = 255; // max safe file name length. (or 260?)
 
-        // NOTE: Linux does not like & used in file names? Though windows would allow it.
-        public const string kFileNameDos = "!#$&'()-@^_`{}~";     // allow these, but Avoid "%" as it can  be used for encoding?
-        public const string kFileNameNT  = "!#$&'()-@^_`{}~,=";   // allow DOS characters + ",="
+        // NOTE: Linux does not like & used in file names? Though Windows would allow it.
+        public const string kFileNameUrl = "!'()-_~";  // Extra chars that are safe for URL, DOS and NT.
+        public const string kFileNameDos = "!'()-_~#$&@^`{}";     // allow these, but Avoid "%" as it can  be used for encoding? safe for DOS and NT
+        public const string kFileNameNT = "!'()-_~#$&@^`{},=";   // allow DOS characters + ",=". Safe for NT.
 
-        public const char kCharNT = '=';    // extra char allowed by NT.
+        public const char kCharNT = '=';        // extra char allowed by NT. used to extend the file name.
         public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
 
-        public const char kDirDos = '\\';
+        public const char kDirDos = '\\';       // used only for Windows/DOS
         public const char kDirChar = '/';       // 
         public static readonly char[] kDirSeps = new char[] { kDirDos, kDirChar };
 
         public const string kDir = "/";     // path directory separator as string. Windows doesn't mind forward slash used as path. Normal for Linux.
 
+        public const string kVirtualStore = "VirtualStore";     // Windows virtualization junk.
         public const string kMimePng = @"image/png";       // like System.Net.Mime.MediaTypeNames.Image.Gif
 
         public enum AccessType
         {
+            // What sort of file access do i have?
             Read,
             Create,     // NOT USED ?
             Write,
             Delete,
-        }
-
-        public static string GetVirtualStoreName(string filePath)
-        {
-            // Windows File can be translated from "C:\Program Files\DirName\config.ini" to
-            // "C:\Users\<account>\AppData\Local\VirtualStore\Program Files\DirName\config.ini
-
-            string sProgFiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);    // can get moved to VirtualStoreRoot
-            if (!filePath.Contains(sProgFiles))    // only stuff in the programfiles folder is part of the virtual store.
-                return null;
-            string sAppData = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string sVirtualStore = Path.Combine(sAppData, kVirtualStore);   // M$ has a localized version of "VirtualStore" !?
-            return Path.Combine(sVirtualStore, filePath.Substring(Path.GetPathRoot(filePath).Length));  // skip root info "c:" etc.
-        }
-
-        public static DateTime GetFileTime(DateTime dt)
-        {
-            // When comparing times we can round down to 2 seconds. FAT stores 2 second accuracy.
-            const long ticks2Sec = TimeSpan.TicksPerSecond * 2;
-            return new DateTime(dt.Ticks - (dt.Ticks % ticks2Sec), dt.Kind);
-        }
-
-        public static bool IsFileNameBasic(char ch, string extra)
-        {
-            // Is this a valid basic char in a file name?
-
-            if (ch >= 'a' && ch <= 'z')     // always good
-                return true;
-            if (ch >= 'A' && ch <= 'Z')     // always good
-                return true;
-            if (StringUtil.IsDigit1(ch))     // always good
-                return true;
-            if (ch == '.')                  // always assume interior dots are ok. Only DOS 8.3 would have trouble.
-                return true;
-            if (extra.IndexOf(ch) >= 0)  // DOS + newer allowed chars. kFileNameDos or kFileNameNT
-                return true;
-
-            // DOS didn't support "\"*+,/:;<=>?\[]|" in a file name.
-            return false;   // some other kind of char.
-        }
-
-        public static string MakeNormalizedName(string fileName)
-        {
-            // put the file in a form that only uses valid chars but try to avoid collisions.
-            // Max chars = 255
-            // allow file name chars. "-_ ". NOT kDir
-            // https://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
-            // NEVER take chars away from here. we may add them in the future.
-
-            if (fileName == null)
-                return null;
-
-            var sb = new StringBuilder();
-            int iLen = fileName.Length;
-            if (iLen > 255) // max length.
-                iLen = 255;
-
-            bool lastEncode = false;
-            for (int i = 0; i < iLen; i++)
-            {
-                char ch = fileName[i];
-                if (IsFileNameBasic(ch, kFileNameDos))
-                {
-                    lastEncode = false;
-                }
-                else
-                {
-                    if (lastEncode)
-                        continue;
-                    ch = kEncoder;   // This might cause collision ??
-                    lastEncode = true;
-                }
-                sb.Append(ch);
-            }
-            return sb.ToString();
-        }
-
-        public static bool IsDirSep(char ch)
-        {
-            return ch == kDirChar || ch == kDirDos;
-        }
-
-        public static bool IsPathValid(string filePath, bool bAllowDirs, bool bAllowSpaces = true, bool bAllowRoots = false, bool bAllowRelatives = false)
-        {
-            // Keep internal file names simple ASCII. do not allow UNICODE.
-            // Is filename composed of simple chars " _-." a-z, A-Z, 0-9, 
-            // Assume these are not user created names. Don't need to use any fancy chars.
-            // bAllowDirs = allow '/' '\', kDirChar
-            // bAllowRoots = allow ':' or "\\"
-            // bAllowRelatives = allow "..". beware . %2e%2e%2f represents ../ https://www.owasp.org/index.php/Path_Traversal
-            // bAllowSpaces = allow spaces.
-            // similar to System.Security.Permissions.FileIOPermission.CheckIllegalCharacters
-            // NEVER allow "*?"<>|"
-
-            int iLen = filePath.Length;
-            if (iLen > 260) // Max path name length. (or 255?)
-                return false;
-            if (bAllowSpaces && iLen <= 0)      // empty is ok ?
-                return true;
-            if (!bAllowRoots)    // allow rooted full path files.
-            {
-                if (Path.IsPathRooted(filePath))
-                    return false;
-            }
-
-            for (int i = 0; i < iLen; i++)
-            {
-                char ch = filePath[i];
-                if (IsFileNameBasic(ch, kFileNameNT))        // always good char
-                    continue;
-                if (ch == ' ')
-                {
-                    if (!bAllowSpaces)
-                        return false;
-                    continue;
-                }
-                if (ch == ':')
-                {
-                    if (!bAllowRoots)
-                        return false;
-                    continue;
-                }
-                if (IsDirSep(ch))
-                {
-                    if (!bAllowDirs)
-                        return false;
-                    // don't allow ../ or ..\
-                    if (!bAllowRelatives && i >= 2 && filePath[i - 1] == '.' && filePath[i - 2] == '.')
-                        return false;
-                    continue;
-                }
-                return false;       // its bad. Don't allow "%," and others.
-            }
-            return true;
-        }
-
-        public static bool IsReadOnly(string filePath)
-        {
-            // Assume file exists. is it read only?
-            var info = new FileInfo(filePath);
-            return info.IsReadOnly;
-        }
-
-        public static void RemoveAttributes(string filePath, FileAttributes attributesToRemove)
-        {
-            // Used to remove read only flag.
-            FileAttributes attributes = File.GetAttributes(filePath);
-            attributes = attributes & ~attributesToRemove;
-            File.SetAttributes(filePath, attributes);
-        }
-        public static void RemoveReadOnlyFlag(string filePath)
-        {
-            // Used to remove read only flag.
-            RemoveAttributes(filePath, FileAttributes.ReadOnly);
-        }
-
-        public static void FileDelete(string filePath)
-        {
-            // Use this for setting a common breakpoint for file deletes.
-            // replace VB Computer.FileSystem.DeleteFile
-            // if ( System.IO.File.Exists(filePath)) is not needed.
-            System.IO.File.Delete(filePath);
-        }
-
-        public static void FileReplace(string filePathSrc, string filePathDest, bool bMove = true)
-        {
-            // Move/Copy and silently replace any file if it exists.
-            // Assume Dir for filePathDest exists.
-
-            if (filePathSrc == filePathDest)
-                return;
-            if (!DirUtil.DirCreateForFile(filePathDest))
-            {
-                FileDelete(filePathDest);
-            }
-            if (bMove)
-                System.IO.File.Move(filePathSrc, filePathDest);
-            else
-                System.IO.File.Copy(filePathSrc, filePathDest, true);
         }
 
         public static bool IsKnownType(MimeId mimeId)
@@ -316,7 +143,7 @@ namespace DotStd
 
         public static bool IsImageType(MimeId mimeId)
         {
-            // For things that only make sense as images. Avatar, Logo etc.
+            // Is this mime type an image? e.g. Avatar, Logo etc.
             switch (mimeId)
             {
                 case MimeId.jpg:
@@ -418,6 +245,243 @@ namespace DotStd
             // like MimeMapping.GetMimeMapping()
 
             return GetContentTypeExt(Path.GetExtension(fileName));
+        }
+
+        public static DateTime GetFileTime(DateTime dt)
+        {
+            // When comparing times we can round down to 2 seconds. FAT stores 2 second accuracy.
+            const long ticks2Sec = TimeSpan.TicksPerSecond * 2;
+            return new DateTime(dt.Ticks - (dt.Ticks % ticks2Sec), dt.Kind);
+        }
+
+        public static bool IsNameCharValid(char ch, string otherCharsAllowed)
+        {
+            // Is this a valid basic char in a file name? ALL file systems and URL support this ?
+
+            if (ch < ' ')
+                return false;   // Special chars are NEVER allowed
+            if (ch >= 'a' && ch <= 'z')     // always good
+                return true;
+            if (ch >= 'A' && ch <= 'Z')     // always good
+                return true;
+            if (StringUtil.IsDigit1(ch))     // always good
+                return true;
+            if (ch == '.')                  // always assume interior dots are OK. Only DOS 8.3 would have trouble.
+                return true;
+
+            if (otherCharsAllowed.IndexOf(ch) >= 0)  // allow these safe chars. DOS + newer allowed chars. kFileNameDos or kFileNameNT
+                return true;
+
+            // e.g. DOS didn't support "\"*+,/:;<=>?\[]|" in a file name.
+            return false;   // some other kind of char.
+        }
+
+        public static bool IsDirSep(char ch)
+        {
+            return ch == kDirChar || ch == kDirDos;
+        }
+
+        public static bool IsPathValid(string filePath, bool bAllowDirs, bool bAllowSpaces = true, bool bAllowRoots = false, bool bAllowRelatives = false)
+        {
+            // Keep internal file names simple ASCII. do not allow UNICODE.
+            // Is filename composed of simple chars " _-." a-z, A-Z, 0-9, 
+            // Assume these are not user created names. Don't need to use any fancy chars.
+            // bAllowDirs = allow '/' '\', kDirChar
+            // bAllowRoots = allow ':' or "\\"
+            // bAllowRelatives = allow "..". beware . %2e%2e%2f represents ../ https://www.owasp.org/index.php/Path_Traversal
+            // bAllowSpaces = allow spaces.
+            // similar to System.Security.Permissions.FileIOPermission.CheckIllegalCharacters
+            // NEVER allow "*?"<>|"
+
+            int iLen = filePath.Length;
+            if (iLen > kLenMax) // Max path name length. (or 260?)
+                return false;
+            if (bAllowSpaces && iLen <= 0)      // empty is OK ?
+                return true;
+            if (!bAllowRoots)    // allow rooted full path files.
+            {
+                if (Path.IsPathRooted(filePath))
+                    return false;
+            }
+
+            for (int i = 0; i < iLen; i++)
+            {
+                char ch = filePath[i];
+                if (IsNameCharValid(ch, kFileNameNT))        // always good char
+                    continue;
+                if (ch == ' ')
+                {
+                    if (!bAllowSpaces)
+                        return false;
+                    continue;
+                }
+                if (ch == ':')
+                {
+                    if (!bAllowRoots)
+                        return false;
+                    continue;
+                }
+                if (IsDirSep(ch))
+                {
+                    if (!bAllowDirs)
+                        return false;
+                    // don't allow ../ or ..\
+                    if (!bAllowRelatives && i >= 2 && filePath[i - 1] == '.' && filePath[i - 2] == '.')
+                        return false;
+                    continue;
+                }
+                return false;       // its bad. Don't allow "%," and others.
+            }
+            return true;
+        }
+
+        public static string EncodeSafeName(string fileName)
+        {
+            // encode a UNICODE string into a valid/safe file name. a form that only uses valid chars safe for file systems and URL.
+            // Max chars = 255 = kLenMax
+            // allow file name chars like "-_". NOT kDir
+            // https://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
+            // https://www.w3schools.com/tags/ref_urlencode.ASP
+
+            if (fileName == null)
+                return null;
+
+            byte[] bytes = Encoding.UTF8.GetBytes(fileName);  // get UTF8 encoding as bytes.
+
+            var sb = new StringBuilder();
+ 
+            for (int i = 0; i < bytes.Length; i++)  // UTF8 length
+            {
+                byte b = bytes[i];
+                char ch = (char)b;
+
+                if (!IsNameCharValid(ch, kFileNameUrl))
+                {
+                    if (ch < ' ')   
+                    {
+                        return null;   // Special chars are NEVER allowed. Bad filename.
+                    }
+
+                    if (sb.Length+3 > kLenMax) // truncate.
+                        break;
+
+                    sb.Append(kEncoder);    // encode char as %XX
+                    SerializeUtil.ToHexChar(sb, b);
+                    continue;
+                }
+
+                if (sb.Length >= kLenMax)   // truncate. max length.
+                    break;
+                sb.Append(ch);
+            }
+
+            return sb.ToString();
+        }
+
+        public static string DecodeSafeName(string fileName)
+        {
+            // Get the displayable UNICODE name from the safe encoded (URL or file system) name.
+            // Decode the encoded special chars.
+            // @RETURN null if  this is not a valid encoded name!
+
+            if (fileName == null)
+                return null;
+
+            int len = fileName.Length;
+            if (len > kLenMax) // max length exceeded! this is not a valid encoded name!
+            {
+                return null;
+            }
+
+            var lb = new List<byte>(); 
+            for (int i = 0; i < len; i++)
+            {
+                char ch = fileName[i];
+
+                if (ch == kEncoder)
+                {
+                    // decode char from %XX 
+                    i++;
+                    if (i+2 > len)
+                        break;
+                    int v2 = SerializeUtil.FromHexChar2(fileName, i);
+                    if (v2 < 0)
+                    {
+                        return null;    // this should NOT happen!  this is not a valid encoded name!
+                    }
+                    ch = (char)v2;
+                    i++;
+                }
+                else if (!IsNameCharValid(ch, kFileNameUrl))
+                {
+                    return null;    // this should NOT happen!  this is not a valid encoded name!
+                }
+
+                lb.Add((byte)ch);
+            }
+
+            // Convert UTF8 to string.
+            return Encoding.UTF8.GetString(lb.ToArray());      // filename is now UNICODE.
+        }
+
+        public static string GetVirtualStoreName(string filePath)
+        {
+            // Windows File can be translated from "C:\Program Files\DirName\config.ini" (Where i put it)
+            // to "C:\Users\<account>\AppData\Local\VirtualStore\Program Files\DirName\config.ini  (Where Windows actually put it)
+
+            string progFiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);    // can get moved to VirtualStoreRoot
+            if (!filePath.Contains(progFiles))    // only stuff in the ProgramFiles folder is part of the virtual store.
+                return null;
+
+            string appData = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string virtualStore = Path.Combine(appData, kVirtualStore);   // M$ has a localized version of "VirtualStore" !?
+            int lenRoot = Path.GetPathRoot(filePath).Length;
+            return Path.Combine(virtualStore, filePath.Substring(lenRoot));  // skip root info "c:" etc.
+        }
+
+        public static bool IsReadOnly(string filePath)
+        {
+            // Assume file info.Exists. is it read only?
+            var info = new FileInfo(filePath);
+            return info.IsReadOnly;
+        }
+
+        public static void RemoveAttributes(string filePath, FileAttributes attributesToRemove)
+        {
+            // Used to remove read only flag.
+            FileAttributes attributes = File.GetAttributes(filePath);
+            attributes &= ~attributesToRemove;
+            File.SetAttributes(filePath, attributes);
+        }
+        public static void RemoveReadOnlyFlag(string filePath)
+        {
+            // Used to remove read only flag.
+            RemoveAttributes(filePath, FileAttributes.ReadOnly);
+        }
+
+        public static void FileDelete(string filePath)
+        {
+            // Use this for setting a common breakpoint for file deletes.
+            // replace VB Computer.FileSystem.DeleteFile
+            // if ( System.IO.File.Exists(filePath)) is not needed. delete will succeed anyhow.
+            System.IO.File.Delete(filePath);
+        }
+
+        public static void FileReplace(string filePathSrc, string filePathDest, bool bMove = true)
+        {
+            // Move/Copy and silently replace any file if it exists.
+            // Assume Dir for filePathDest exists.
+
+            if (filePathSrc == filePathDest)
+                return;
+            if (!DirUtil.DirCreateForFile(filePathDest))
+            {
+                FileDelete(filePathDest);
+            }
+            if (bMove)
+                System.IO.File.Move(filePathSrc, filePathDest);
+            else
+                System.IO.File.Copy(filePathSrc, filePathDest, true);
         }
     }
 }

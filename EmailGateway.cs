@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Net.Mail;
+using System.Security;
 using System.Threading.Tasks;
 
 namespace DotStd
@@ -18,7 +19,7 @@ namespace DotStd
         public string Host { get; set; }  // AKA host, 
         public int Port { get; set; }       // (ushort) for SMTP 587 or 25.
         public string Username { get; set; }    // AKA userName
-        public string Password { get; set; }    // AKA password. might be encrypted?
+        public string Password { get; set; }    // AKA password. might be encrypted? SecureString
         public bool EnableSsl { get; set; } = true;
 
         public IValidatorT<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
