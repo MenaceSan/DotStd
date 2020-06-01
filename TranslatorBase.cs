@@ -122,7 +122,7 @@ namespace DotStd
         // Assume any caching happens at a higher level.
         // TODO : ensure we don't double translate.
 
-        static char[] _pairs = new char[] {     // Swap letters.
+        static readonly char[] _pairs = new char[] {     // Swap letters.
 
             'A', 'Ä', 'a', 'ä', // C4, E4
             'B', 'ß', 'b', 'Ƅ',

@@ -24,7 +24,7 @@ namespace DotStd
         // Support for the new .NET core JSON config file style.
         // Wrapper for .NET Core IConfiguration
 
-        public static Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
+        public readonly Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
 
         private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT => EnvironmentName
 
@@ -63,9 +63,9 @@ namespace DotStd
         }
     }
 
-    public class ConfigInfoBase : IPropertyGetter, IServiceProvider
+    public class ConfigInfoBase : IPropertyGetter 
     {
-        // Common config files stuff. Regardless of where the config info comes from.
+        // Common config files stuff for any app. Regardless of where the config info comes from.
         // abstracted _ConfigSource Might be .NET core JSON or framework XML.
         // Similar to IConfiguration
 
@@ -80,58 +80,10 @@ namespace DotStd
         // Equiv to IHostingEnvironment.EnvironmentName
         public readonly string EnvironMode;    // What kAppsEnvironMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
-        private readonly IPropertyGetter _ConfigSource;   // Get my config info from here.
-        private readonly Dictionary<int, object> Services = new Dictionary<int, object>();
+        private readonly IPropertyGetter _ConfigSource;   // Get my config info from here. e.g. ConfigInfoCore
 
         public string ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
-
-        public object GetService(Type serviceType)  // IServiceProvider
-        {
-            // implement IServiceProvider. DI.
-          
-            if (Services.TryGetValue(serviceType.GetHashCode(), out object serviceO))
-            {
-                return serviceO;
-            }
-            if (serviceType == typeof(ILogger))
-            {
-                // Create a default logger. never return null.
-                ILogger serviceL = new LoggerBase();    // just log to the debugger by default.
-                AddService(serviceL);
-                return serviceL;
-            }
-            return null;
-        }
-
-        public T GetService<T>()
-        {
-            // My service locater. Like IServiceCollection.
-            // e.g. ConfigApp.ConfigInfo.GetService<ILogger>()
  
-            if (Services.TryGetValue(typeof(T).GetHashCode(), out object serviceO))
-            {
-                return (T)serviceO;
-            }
-            if (typeof(T) == typeof(ILogger))
-            {
-                // Create a default logger. never return null.
-                ILogger serviceL = new LoggerBase();    // just log to the debugger by default.
-                AddService(serviceL);
-                return (T)serviceL;
-            }
-            return default;
-        }
-
-        public void AddService<T>(T service) where T : class
-        {
-            // Configure a service by its interface . used for DI registration.
-            // ILogger is special.
-            int hashCode = typeof(T).GetHashCode();
-            Services[hashCode] = service;
-        }
-
-        public ILogger Logger { get { return GetService<ILogger>(); } }
-
         public bool IsEnvironModeLike(EnvironMode environMode)
         {
             // Prefix match EnvironMode.
@@ -143,7 +95,7 @@ namespace DotStd
         public bool IsEnvironMode(string environMode)
         {
             // Exact match EnvironMode
-            return String.Compare(EnvironMode, environMode, StringComparison.OrdinalIgnoreCase) == 0;
+            return string.Compare(EnvironMode, environMode, StringComparison.OrdinalIgnoreCase) == 0;
         }
         public bool IsEnvironMode(EnvironMode environMode)
         {

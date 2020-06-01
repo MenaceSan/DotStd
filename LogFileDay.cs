@@ -53,7 +53,8 @@ namespace DotStd
             if (_Created)
             {
                 // All log files should have this header.
-                w.WriteLine($"Log File Created '{dtLocal}' ({TimeZoneInfo.Local.DisplayName}) for '{ConfigApp.AppName}' v{ConfigApp.AppVersionStr}");
+                var app = ConfigApp._Instance.Value;
+                w.WriteLine($"Log File Created '{dtLocal}' ({TimeZoneInfo.Local.DisplayName}) for '{app.AppName}' v{app.AppVersionStr}");
                 w.Flush();
             }
             return w;
@@ -117,10 +118,11 @@ namespace DotStd
             // Get directory and name of the log file
 
             string prefix = kDefaultPrefix;
+            var app = ConfigApp._Instance.Value;
 
             if (config == null)
             {
-                config = ConfigApp.ConfigInfo;
+                config = app.ConfigInfo;
             }
 
             if (config != null)
@@ -136,7 +138,7 @@ namespace DotStd
                 }
             }
 
-            return Path.Combine(prefix, ConfigApp.AppName);
+            return Path.Combine(prefix, app.AppName);
         }
 
         public static void PurgeOldLogs(int daysOld)

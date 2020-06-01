@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace DotStd.DependencyInjection
+{
+
+    public static class ServiceProviderExt
+    {
+        // NOTE: This conflicts with Microsoft.Extensions.DependencyInjection 
+        public static T GetService<T>(this IServiceProvider provider)
+        {
+            // Get a service.
+            // e.g. ServiceProvider._Instance.GetService<ILogger>()
+            object serviceO = provider.GetService(typeof(T));
+            if (serviceO == null)
+                return default;
+            return (T)serviceO;
+        }
+    }
+}

@@ -35,9 +35,10 @@ namespace DotStd
             // No need to manually get GetMailSettings MailSettingsSectionGroup in .NET Framework. That is automatic.
             // https://hassantariqblog.wordpress.com/2017/03/20/asp-net-core-sending-email-with-gmail-account-using-asp-net-core-services/
 
+            var app = ConfigApp._Instance.Value;
             if (config == null)
             {
-                config = ConfigApp.ConfigInfo;
+                config = app.ConfigInfo;
             }
 
             AllowedFilter = config.IsEnvironModeProd() ? null : allowedFilter;     // Can we send email to anybody ? ignore white list in prod mode.

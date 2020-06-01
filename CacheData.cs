@@ -23,12 +23,14 @@ namespace DotStd
 
         public const int kSecond = 1;       // multiplier for seconds. for debug.
 
-        private static IMemoryCache _memoryCache;       // my global/shared instance of the Cache.
-        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. NOT thread safe.???
+        private static IMemoryCache _memoryCache;       // my global/shared singleton instance of the Cache.
+        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. manual make thread safe.
 
         public static void Init(IMemoryCache memoryCache)
         {
             // set memoryCache = my global instance of the Cache.
+            //  maybe Microsoft.Extensions.Caching.Memory.IMemoryCache else default.
+
             if (_memoryCache != null)
             {
                 if (memoryCache == null)

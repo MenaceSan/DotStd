@@ -70,7 +70,7 @@ namespace DotStd
         // To check if you're connected or not:
         // System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
 
-        public static string kLocalHost = "127.0.0.1";  // IPAddress.Loopback = System.Net.IPAddress.Parse(kLocalHost) for ip4. 
+        public const string kLocalHost = "127.0.0.1";  // IPAddress.Loopback = System.Net.IPAddress.Parse(kLocalHost) for ip4. 
         public const int kMaxLen = 64;   // max reasonable length of string.
 
         public static uint ToUInt(IPAddress addr)

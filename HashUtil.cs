@@ -96,6 +96,15 @@ namespace DotStd
             }
         }
 
+        public async Task<byte[]> GetHashFileAsync(string filename)
+        {
+            using (var fs = new FileStream(filename, FileMode.Open))
+            {
+                // Convert the input string to a byte array and compute the hash.
+                return await GetHashStreamAsync(fs);
+            }
+        }
+
         public static void MergeHash(byte[] inp, byte[] bout)
         {
             // Combine 2 hashes. try not to lose noise/entropy. xor wrapping extra data (or padding output).

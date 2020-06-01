@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -39,41 +40,37 @@ namespace DotStd
 
         // TODO AddReturnUrl and build args.
 
-        public static bool IsHttpX(string sURL)
+        public static bool IsHttpX(string url)
         {
             // is Http* Scheme ?
-            return sURL.StartsWith(kHttps) || sURL.StartsWith(kHttp);
+            return url.StartsWith(kHttps) || url.StartsWith(kHttp);
         }
-        public static bool IsHttpSecure(string sURL)
+        public static bool IsHttpSecure(string url)
         {
             // is Https Scheme ?
-            return sURL.StartsWith(kHttps);
+            return url.StartsWith(kHttps);
         }
 
-        static Regex _regexURL = null;
+        static readonly Lazy<Regex> _regexURL = new Lazy<Regex>( () => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$")); 
+
         public static bool IsValidURL(string url)
         {
             // Stricter version of URL validation
             if (string.IsNullOrWhiteSpace(url))
                 return false;
-            if (_regexURL == null)
-            {
-                _regexURL = new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$");
-            }
-            return _regexURL.IsMatch(url);
+         
+            return _regexURL.Value.IsMatch(url);
         }
 
-        static Regex _regexURL2 = null;
+        static readonly Lazy<Regex> _regexURL2 = new Lazy<Regex>(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));  
+ 
         public static bool IsValidURL2(string url)
         {
             // More forgiving version of URL
             if (string.IsNullOrWhiteSpace(url))
                 return false;
-            if (_regexURL2 == null)
-            {
-                _regexURL2 = new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$");
-            }
-            return _regexURL2.IsMatch(url);
+           
+            return _regexURL2.Value.IsMatch(url);
         }
 
         public static string GetSubDomain(string reqHost)
@@ -110,34 +107,34 @@ namespace DotStd
             return reqHost.Substring(0, i);
         }
 
-        public static string MakeHttpX(string sURL, bool bSetHttps)
+        public static string MakeHttpX(string url, bool bSetHttps)
         {
-            // Make sure the URL has the proper prefix. http or https
-            if (sURL.StartsWith(kHttps))
+            // Make sure the URL has the proper prefix. HTTP or HTTPS
+            if (url.StartsWith(kHttps))
             {
                 if (!bSetHttps)
-                    return kHttp + sURL.Substring(8);
+                    return kHttp + url.Substring(8);
             }
-            else if (sURL.StartsWith(kHttp))
+            else if (url.StartsWith(kHttp))
             {
                 if (bSetHttps)
-                    return kHttps + sURL.Substring(7);
+                    return kHttps + url.Substring(7);
             }
             else
             {
-                return (bSetHttps ? kHttps : kHttp) + sURL;
+                return (bSetHttps ? kHttps : kHttp) + url;
             }
-            return sURL;
+            return url;
         }
 
-        public static string MakeHttpProper(string sURL)
+        public static string MakeHttpProper(string url)
         {
-            // Make sure the URL has a prefix. default to https if it does not.
-            if (!sURL.StartsWith(kHttp) && !sURL.StartsWith(kHttps))    // make sure it has prefix.
-                sURL = kHttps + sURL;
-            if (!sURL.EndsWith(kSep) && !sURL.Contains("?"))    // not sure why i have to do this.
-                sURL += kSep;
-            return sURL;
+            // Make sure the URL has a prefix. default to HTTPS if it does not.
+            if (!url.StartsWith(kHttp) && !url.StartsWith(kHttps))    // make sure it has prefix.
+                url = kHttps + url;
+            if (!url.EndsWith(kSep) && !url.Contains("?"))    // not sure why i have to do this.
+                url += kSep;
+            return url;
         }
 
         public static string Combine(params string[] array)
@@ -176,27 +173,34 @@ namespace DotStd
             return sb.ToString();
         }
 
-        public static string GetFileName(string sURL)
+        public static string GetFileName(string url)
         {
             // Extract just the filename from the URL. No domain name, Clip args after '?' or '#'
             try
             {
-                int i = sURL.LastIndexOf(kSep);
+                int i = url.LastIndexOf(kSep);
                 if (i >= 0)
                 {
-                    sURL = sURL.Substring(sURL.LastIndexOf(kSep) + 1);
+                    url = url.Substring(url.LastIndexOf(kSep) + 1);
                 }
-                i = sURL.IndexOf("?");  // '#' // chop off args.
+                i = url.IndexOf("?");  // '#' // chop off args.
                 if (i >= 0)
                 {
-                    sURL = sURL.Substring(0, i);
+                    url = url.Substring(0, i);
                 }
-                return sURL;
+                return url;
             }
             catch
             {
-                return sURL;
+                return url;
             }
+        }
+
+        public static string GetDir(string url)
+        {
+            // Get the dir for the URL.
+            string name = GetFileName(url);
+            return url.Substring(0, url.Length - name.Length);
         }
 
         public static string Make(string sPage, params string[] sArgs)

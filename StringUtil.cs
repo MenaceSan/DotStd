@@ -112,18 +112,14 @@ namespace DotStd
             return str.All(c => IsDigit1(c));
         }
 
-        static Regex _regexNum2 = null;
+        static readonly Lazy<Regex> _regexNum2 = new Lazy<Regex>(() => new Regex(@"^\s*\-?\d+(\.\d+)?\s*$"));
         public static bool IsNumeric2(string str)
         {
             // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
             // NOT extended IsNumber 1/2. No decimal comma for European?
             if (string.IsNullOrWhiteSpace(str))
                 return false;
-            if (_regexNum2 == null)
-            {
-                _regexNum2 = new Regex(@"^\s*\-?\d+(\.\d+)?\s*$");
-            }
-            return _regexNum2.IsMatch(str);
+            return _regexNum2.Value.IsMatch(str);
         }
 
         public static bool IsAlphaNumeric1(string str)

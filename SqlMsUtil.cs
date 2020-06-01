@@ -24,8 +24,8 @@ namespace DotStd
         // SQL features specific to M$ SQL
         // Like SqlConnectionStringBuilder
         // NOTE: DateTime.MinValue = "1/1/0001 12:00:00 AM", SqlDateTime.MinValue = DateTime(1753, 1, 1)
-        public static DateTime kSmallDateTimeMin = new DateTime(1900, 01, 01, 00, 00, 00);    // "1/1/1900 12:00:00 AM"
-        public static DateTime kSmallDateTimeMax = new DateTime(2079, 06, 06, 23, 59, 00);
+        public static readonly DateTime kSmallDateTimeMin = new DateTime(1900, 01, 01, 00, 00, 00);    // "1/1/1900 12:00:00 AM"
+        public static readonly DateTime kSmallDateTimeMax = new DateTime(2079, 06, 06, 23, 59, 00);
 
         public enum SQLExcepNum
         {

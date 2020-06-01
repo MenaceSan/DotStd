@@ -6,19 +6,21 @@ namespace DotStd
 {
     // NOTE .NET Core and Std need NuGet for Configuration Support.
 
-    public static class ConfigApp
+    public class ConfigApp
     {
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
-        public static int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
+        public static readonly Lazy<ConfigApp> _Instance = new Lazy<ConfigApp>();
 
-        public static int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start. AKA 'GUIThread'.
-        public static bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;    // caller is on main thread? Equiv to IsInvokeRequired()
+        public int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
+        public int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
 
-        private static string _AppName;
-        public static string AppName
+        public int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start. AKA 'GUIThread'.
+        public bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;    // caller is on main thread? Equiv to IsInvokeRequired()
+
+        private string _AppName;
+        public string AppName
         {
             get
             {
@@ -31,23 +33,23 @@ namespace DotStd
             }
         }
 
-        public static int AppVersion { get; private set; }  // (Major.Minor.Build) encoded as an int for sorting migration data.
-        public static string AppRevision { get; private set; }   // extra Version control tag.
-        public static string AppVersion3Str
+        public int AppVersion { get; private set; }  // (Major.Minor.Build) encoded as an int for sorting migration data.
+        public string AppRevision { get; private set; }   // extra Version control tag.
+        public string AppVersion3Str
         {
             // AppVersion should be read from Version.targets.template.
             // Might be in the format "1.2.3.4-EXTRA"
             get { return VersionUtil.ToVersionStr(AppVersion); }
         }
-        public static string AppVersionStr
+        public string AppVersionStr
         {
             // AppVersion should be read from Version.targets.template.
             // Might be in the format "1.2.3.4-EXTRA"
             get { return VersionUtil.ToVersionStr(AppVersion, AppRevision); }
         }
 
-        private static bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
-        private static bool _IsUnitTesting;                // cached state of IsUnitTestingX after s_IsUnitTesting_Checked
+        private bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
+        private bool _IsUnitTesting;                // cached state of IsUnitTestingX after s_IsUnitTesting_Checked
 
         public static bool IsUnitTestingX()
         {
@@ -73,7 +75,7 @@ namespace DotStd
             return false;
         }
 
-        public static bool IsUnitTesting()
+        public bool IsUnitTesting()
         {
             // Determine if we are running inside a unit test. detect any version.
             // Cached
@@ -85,9 +87,9 @@ namespace DotStd
             return _IsUnitTesting;
         }
 
-        private static string _BaseDir;        // The base directory (for the app) we will use to find resource files.
+        private string _BaseDir;        // The base directory (for the app) we will use to find resource files.
 
-        public static string BaseDirectory
+        public string BaseDirectory
         {
             // What is my install directory? i have resource files here.
             // i may be a web app or not. don't use HttpContext.Current.Server.MapPath
@@ -114,7 +116,7 @@ namespace DotStd
             }
         }
 
-        public static void SetUnitTesting(string baseDir)
+        public void SetUnitTesting(string baseDir)
         {
             // Declare that I am in unit test mode. set my _BaseDir
             // Assume IsUnitTesting
@@ -124,9 +126,9 @@ namespace DotStd
 
         // The applications top level config read from some config file. May be redirected for testing.
         // get app global config info. support IServiceProvider.
-        public static ConfigInfoBase ConfigInfo { get; private set; }
+        public ConfigInfoBase ConfigInfo { get; private set; }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName)
+        public void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName)
         {
             // Set app global config info.
             // MUST do this when first stating an app.
@@ -139,13 +141,13 @@ namespace DotStd
             MainThreadId = Environment.CurrentManagedThreadId;
         }
 
-        public static void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)
+        public void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)
         {
             // Set app global config info.
             SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription());
         }
 
-        public static void SetAppVersion(Assembly asm)
+        public void SetAppVersion(Assembly asm)
         {
             // Set version based on System.Version metadata in the top assembly.
             // asm = System.Reflection.Assembly.GetExecutingAssembly()

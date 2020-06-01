@@ -12,7 +12,7 @@ namespace DotStd
         // Get current UTC time from some external server on the Internet that i trust.
         // https://stackoverflow.com/questions/6435099/how-to-get-datetime-from-the-internet
 
-        public static TimeSpan Offset;  // Offset to add to system time to get real time. UTC.
+        public static TimeSpan Offset;  // Offset to add to system time to get real time. UTC. singleton
 
         public static DateTime Utc  // Get the time adjusted to real time. 
         {
@@ -21,7 +21,7 @@ namespace DotStd
             get
             {
                 var t = DateTime.UtcNow;
-                return t;
+                return t; // + Offset
             }
         }
         public static DateTimeOffset UtcO  // Get the time adjusted to real time. 
@@ -30,7 +30,7 @@ namespace DotStd
             get
             {
                 var t = DateTimeOffset.UtcNow;
-                return t;
+                return t; // + Offset
             }
         }
 

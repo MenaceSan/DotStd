@@ -100,7 +100,7 @@ namespace DotStd
         // Base64 *******************
         // NOT the same as Base64Url.
 
-        static Regex _regexBase64 = null;
+        static readonly Lazy<Regex> _regexBase64 = new Lazy<Regex>(() => new Regex(@"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None));      
         public static bool IsValidBase64(string s)
         {
             // Is the format of the string valid for base64?
@@ -110,11 +110,8 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             s = s.Trim();   // ignore spaces.
-            if (_regexBase64 == null)
-            {
-                _regexBase64 = new Regex(@"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None);
-            }
-            return (s.Length % 4 == 0) && _regexBase64.IsMatch(s);
+
+            return (s.Length % 4 == 0) && _regexBase64.Value.IsMatch(s);
         }
 
         public static int ToBase64Len(int lenBin)

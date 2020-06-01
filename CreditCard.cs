@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 
 namespace DotStd
 {
@@ -25,7 +26,7 @@ namespace DotStd
 
         // BEWARE CreditCardTypeId hard coded as string. e.g. "Visa"
         private const string _cardRegex = "^(?:(?<Visa>4\\d{3})|(?<MasterCard>5[1-5]\\d{2})|(?<Discover>6011)|(?<DinersClub>(?:3[68]\\d{2})|(?:30[0-5]\\d))|(?<Amex>3[47]\\d{2}))([ -]?)(?(DinersClub)(?:\\d{6}\\1\\d{4})|(?(Amex)(?:\\d{6}\\1\\d{5})|(?:\\d{4}\\1\\d{4}\\1\\d{4})))$";
-        private static Regex _cardRegex1;
+        private static readonly Lazy<Regex> _cardRegex1 = new Lazy<Regex>( () => new Regex(_cardRegex));   
 
         private static string GetClean(string cardNum)
         {
@@ -35,14 +36,7 @@ namespace DotStd
             // Clean the card number- remove dashes and spaces
             return cardNum.Replace("-", "").Replace(" ", "");
         }
-
-        private static Regex GetRegex()
-        {
-            // Create new instance of Regex comparer with our credit card regex pattern
-            if (_cardRegex1 == null)
-                _cardRegex1 = new Regex(_cardRegex);
-            return _cardRegex1;
-        }
+ 
 
         public static CreditCardTypeId GetCardTypeFromNumber2(string cardNum)
         {
@@ -50,7 +44,7 @@ namespace DotStd
             // NOTE: this does not mean the card is valid format/length, just that it resembles a type.
 
             // Assume clean cardNum.
-            GroupCollection gc = GetRegex().Match(cardNum).Groups;
+            GroupCollection gc = _cardRegex1.Value.Match(cardNum).Groups;
 
             for (CreditCardTypeId id = CreditCardTypeId.Visa; id <= CreditCardTypeId.DinersClub; id++)
             {
@@ -133,7 +127,7 @@ namespace DotStd
                 return false;
 
             // Make sure the supplied number matches the supplied card type
-            if (!GetRegex().Match(cardNum).Groups[cardType.ToString()].Success)
+            if (!_cardRegex1.Value.Match(cardNum).Groups[cardType.ToString()].Success)
             {
                 return false; // The card number does not match the card type
             }

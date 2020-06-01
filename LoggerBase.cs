@@ -191,15 +191,15 @@ namespace DotStd
             return false;
         }
 
-        public virtual void LogException(Exception oEx, LogLevel levelId = LogLevel.Error, int userId = ValidState.kInvalidId)
+        public virtual void LogException(Exception ex, LogLevel levelId = LogLevel.Error, int userId = ValidState.kInvalidId)
         {
             // Helper for Special logging for exceptions.
 
             object detail = null;
             if (IsExceptionDetailLogged(levelId))
-                detail = oEx;
+                detail = ex;
 
-            LogEntry(oEx.Message, LogLevel.Critical, userId, detail);
+            LogEntry(ex.Message, LogLevel.Critical, userId, detail);
         }
     }
 

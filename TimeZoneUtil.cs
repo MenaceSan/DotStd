@@ -56,8 +56,7 @@ namespace DotStd
         public int Offset { get; set; }          // offset in minutes from UTC. Not including DST offset. May be same as Id.
         public bool UsesDst { get; set; }       // Does this zone use Daylight Savings Time (DST) for part of the year? e.g. EST are EDT are the same time zone.
 
-        protected TimeZoneInfo _tzi;  // best match for .NET TimeZoneInfo and TimeZoneId .
-        protected static TimeZoneInfo _tziUTC;     // The UTC time zone for .NET. TimeZoneInfo.Utc
+        protected TimeZoneInfo _tzi;  // best match for .NET TimeZoneInfo and TimeZoneId . fallback to TimeZoneInfo.Utc.
 
         public bool IsEquiv(TimeZoneInfo tzi)
         {
@@ -190,27 +189,7 @@ namespace DotStd
             }
 
             return tziBest;
-        }
-
-        private static TimeZoneInfo GetTimeZoneInfoUtc(ReadOnlyCollection<TimeZoneInfo> lstTzi)
-        {
-            // Find UTC.
-            if (_tziUTC != null)
-                return _tziUTC;
-            _tziUTC = TimeZoneInfo.Utc;
-            if (_tziUTC != null)
-                return _tziUTC;
-
-            // This should never happen!
-            _tziUTC = FindTimeZoneInfoBest(lstTzi, 0, false, null, null);
-            if (_tziUTC != null)
-                return _tziUTC;
-
-            // MUST create it !!! Very bad.  
-            _tziUTC = lstTzi.First();
-            LoggerUtil.DebugException("No UTC!", null);
-            return _tziUTC;
-        }
+        } 
 
         protected void UpdateTimeZoneInfo(ReadOnlyCollection<TimeZoneInfo> lstTzi)
         {
@@ -222,7 +201,7 @@ namespace DotStd
                 return;
 
             // Bad! fall back to UTC! 
-            _tzi = GetTimeZoneInfoUtc(lstTzi);
+            _tzi = TimeZoneInfo.Utc;
         }
 
         public virtual TimeZoneInfo GetTimeZoneInfo()
