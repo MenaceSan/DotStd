@@ -41,6 +41,10 @@ namespace DotStd
             // compare 2 arrays of bytes.
             // 0 = same.
 
+            if (a2 == null)
+                return -1;
+            if (a1 == null)
+                return 1;
             if (a1.Length != a2.Length)
                 return a1.Length - a2.Length;
 

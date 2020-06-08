@@ -12,6 +12,8 @@ namespace DotStd.DependencyInjection
         {
             // Get a service.
             // e.g. ServiceProvider._Instance.GetService<ILogger>()
+            if (provider == null)
+                return default;
             object serviceO = provider.GetService(typeof(T));
             if (serviceO == null)
                 return default;

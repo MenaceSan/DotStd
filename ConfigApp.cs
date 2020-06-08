@@ -11,7 +11,7 @@ namespace DotStd
         // App singleton config. AppDomain
         // Singleton for config info that applies to the app. App config only applies once.
 
-        public static readonly Lazy<ConfigApp> _Instance = new Lazy<ConfigApp>();
+        public static readonly Lazy<ConfigApp> _Instance = new Lazy<ConfigApp>();  // singleton.
 
         public int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
         public int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.

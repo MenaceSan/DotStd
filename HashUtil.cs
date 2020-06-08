@@ -178,6 +178,7 @@ namespace DotStd
 
         public HashUtil(HashAlgorithm hasher)
         {
+            // Wrap a hash algorithm.
             _Hasher = hasher;
         }
 
@@ -196,7 +197,7 @@ namespace DotStd
             return new SHA512CryptoServiceProvider();
         }
 
-        public static HashAlgorithm FindHasher(string hashAlgName)
+        public static HashAlgorithm FindHasherByName(string hashAlgName)
         {
             // Lookup hasher by name.
             // like static HashAlgorithm.Create(string hashName);
