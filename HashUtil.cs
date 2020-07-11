@@ -51,6 +51,9 @@ namespace DotStd
             _Hasher.Initialize();
         }
 
+        public const ulong kHashValue1 = 3074457345618258791ul;
+        public const ulong kHashValue2 = 3074457345618258799ul;
+
         public static ulong GetKnuthHash(string read)
         {
             // Very fast 64 bit string anti-collision hash of a string. 
@@ -60,11 +63,11 @@ namespace DotStd
 
             if (read == null)
                 return 0;
-            ulong hashedValue = 3074457345618258791ul;
+            ulong hashedValue = kHashValue1;
             for (int i = 0; i < read.Length; i++)
             {
                 hashedValue += read[i];
-                hashedValue *= 3074457345618258799ul;
+                hashedValue *= kHashValue2;
             }
             return hashedValue;
         }

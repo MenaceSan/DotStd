@@ -266,7 +266,8 @@ namespace DotStd
         {
             // Ask ZT about the Postal code. Working in 2017.
             // http://ziptasticapi.com
-            // e.g. sPostalCode = "90210";
+            // e.g. sPostalCode = "90210"; // http://ziptasticapi.com/90210
+            // may get 503 error intermittently?
 
             string sReq = "http://ziptasticapi.com/" + sPostalCode;
             m_sResponse = await RequestStringAsync(sReq);
