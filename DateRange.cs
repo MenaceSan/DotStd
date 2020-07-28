@@ -128,76 +128,6 @@ namespace DotStd
             }
         }
 
-        public DateRange(DateTime dt)
-        {
-            // create empty range
-            Start = dt;
-            End = dt;
-        }
-
-        /// <summary>
-        /// Constructs a new <see cref="DateRange"/> using the specified start and end DateTimes.
-        /// </summary>
-        /// <param name="start">The start of the range.</param>
-        /// <param name="end">The end of the range.</param>
-        public DateRange(DateTime start, DateTime? end)
-            : this()
-        {
-            Start = start;
-            End = end ?? DateTime.MaxValue; // infinite.
-        }
-
-        /// <summary>
-        /// Constructs a new <see cref="DateRange"/> using the specified start DateTime and a TimeSpan.
-        /// </summary>
-        /// <param name="start">The start of the range.</param>
-        /// <param name="timeSpan">The end of the range.</param>
-        public DateRange(DateTime start, TimeSpan timeSpan)
-            : this()
-        {
-            Start = start;
-            End = start + timeSpan;
-        }
-
-        public DateRange(DateTime[] range)
-        {
-            Start = (range.Length > 0) ? range[0] : DateTime.MinValue;
-            End = (range.Length > 1) ? range[1] : DateTime.MaxValue;
-        }
-
-        public void FixExtreme(bool inclusiveDefault)
-        {
-            // Try to fix bad data.
-            // Null/empty dates produce IsExtremeDate. do i want this to mean infinite range ?
-            bool isStartEx = Start.IsExtremeDate();
-            bool isEndEx = End.IsExtremeDate();
-            if (inclusiveDefault)
-            {
-                // Default = include more if we get null values
-                if (isStartEx) Start = DateUtil.kExtremeMin;
-                if (isEndEx) End = DateUtil.kExtremeMax;
-            }
-            else if (isStartEx && isEndEx)
-            {
-                // Bad IsValidRange
-                Start = DateTime.MinValue;
-                End = DateTime.MinValue;
-            }
-            else
-            {
-                // Just empty range.
-                if (isStartEx) Start = End;
-                if (isEndEx) End = Start;
-            }
-        }
-
-        public DateRange(DateTime startDate, DateTime endDate, bool inclusiveDefault)
-        {
-            Start = startDate;
-            End = endDate;
-            FixExtreme(inclusiveDefault);
-        }
-
         /// <summary>
         /// Expand / union the range of time to include this date time.
         /// </summary>
@@ -422,6 +352,76 @@ namespace DotStd
         public void SetDatesForYear(DateTime dt)
         {
             SetDatesForYear(dt.Year);
+        }
+
+        public void FixExtreme(bool inclusiveDefault)
+        {
+            // Try to fix bad data.
+            // Null/empty dates produce IsExtremeDate. do i want this to mean infinite range ?
+            bool isStartEx = Start.IsExtremeDate();
+            bool isEndEx = End.IsExtremeDate();
+            if (inclusiveDefault)
+            {
+                // Default = include more if we get null values
+                if (isStartEx) Start = DateUtil.kExtremeMin;
+                if (isEndEx) End = DateUtil.kExtremeMax;
+            }
+            else if (isStartEx && isEndEx)
+            {
+                // Bad IsValidRange
+                Start = DateTime.MinValue;
+                End = DateTime.MinValue;
+            }
+            else
+            {
+                // Just empty range.
+                if (isStartEx) Start = End;
+                if (isEndEx) End = Start;
+            }
+        }
+
+        //****************
+
+        public DateRange(DateTime dt)
+        {
+            // create empty range
+            Start = dt;
+            End = dt;
+        }
+
+        public DateRange(DateTime startDate, DateTime endDate, bool inclusiveDefault)
+        {
+            Start = startDate;
+            End = endDate;
+            FixExtreme(inclusiveDefault);
+        }
+
+        /// <summary>
+        /// Constructs a new <see cref="DateRange"/> using the specified start and end DateTimes.
+        /// </summary>
+        /// <param name="start">The start of the range.</param>
+        /// <param name="end">The end of the range.</param>
+        public DateRange(DateTime start, DateTime? end)
+        {
+            Start = start;
+            End = end ?? DateTime.MaxValue; // infinite.
+        }
+
+        /// <summary>
+        /// Constructs a new <see cref="DateRange"/> using the specified start DateTime and a TimeSpan.
+        /// </summary>
+        /// <param name="start">The start of the range.</param>
+        /// <param name="timeSpan">The end of the range.</param>
+        public DateRange(DateTime start, TimeSpan timeSpan)
+        {
+            Start = start;
+            End = start + timeSpan;
+        }
+
+        public DateRange(DateTime[] range)
+        {
+            Start = (range.Length > 0) ? range[0] : DateTime.MinValue;
+            End = (range.Length > 1) ? range[1] : DateTime.MaxValue;
         }
     }
 }
