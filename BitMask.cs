@@ -200,10 +200,7 @@ namespace DotStd
             }
         }
 
-        public void OpAndNot(BitMask bits)
-        {
-            // Turn off bits that are indicated.
-            // TODO
-        }
+        // TODO public void OpAndNot(BitMask bits)  // Turn off bits that are indicated.
+         
     }
 }

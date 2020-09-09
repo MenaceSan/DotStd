@@ -74,10 +74,10 @@ namespace DotStd
                     {
                         if (w == null)
                             return;
-                        w.WriteLine(string.Concat(tLocalNow.ToDtString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.Message)); // local TZ
+                        w.WriteLine(string.Concat(tLocalNow.ToDtString("HH:mm:ss"), GetSeparator(entry.LevelId), entry.ToString())); // local TZ
                         if (!ValidState.IsEmpty(entry.Detail))
                         {
-                            w.WriteLine("\t" + entry.ToString());
+                            w.WriteLine("\t" + entry.Detail);
                         }
                         if (entry.LevelId >= LogLevel.Error || LoggerUtil.LogStart != null)  // important messages should be flushed immediately. In case we crash.
                         {

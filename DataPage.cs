@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace DotStd
 {
@@ -263,7 +262,7 @@ namespace DotStd
     [Serializable]
     public class DataPageReq
     {
-        // Params to Request a page of data.
+        // Params to Request a page of data from a Db.
         // overload this to add search filters.
 
         public int StartOfPage { get; set; }    // start of the current page. 0 based.
@@ -351,6 +350,7 @@ namespace DotStd
     public class DataPageFilter : DataPageReq
     {
         // a data page with extra search/filter params imposed.
+        // I am setting up a query to a Db.
         // overload this to add more search filters.
 
         public string SearchFilter { get; set; }    // Filter on some important text field(s). Which ?? 

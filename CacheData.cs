@@ -265,7 +265,7 @@ namespace DotStd
 
         public static T GetSingleton()
         {
-            // Get singleton.
+            // Get singleton. Instance()
             return (T)CacheData.Get(typeof(T).Name);
         }
 

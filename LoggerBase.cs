@@ -53,7 +53,7 @@ namespace DotStd
         // An entry to be logged. may be logged async to producer. (on another thread)
         // Assume time stamp is Now.
 
-        public string Message;      // Description of the event.
+        public string Message;      // Description of the event. NOTE: Use ToString() instead of this directly to get args.
         public LogLevel LevelId = LogLevel.Information;
         public int UserId = ValidState.kInvalidId;  // id for a thread of work for this user/worker. GetCurrentThreadId() ?
         public object Detail;       // extra information. that may be stored via ToString();
@@ -141,7 +141,7 @@ namespace DotStd
 
             }
 
-            System.Diagnostics.Debug.WriteLine(GetSeparator(entry.LevelId) + entry.Message);
+            System.Diagnostics.Debug.WriteLine(GetSeparator(entry.LevelId) + entry.ToString());
         }
 
 

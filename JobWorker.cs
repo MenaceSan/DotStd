@@ -1,20 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DotStd
 {
-    public enum JobExecTypeId
-    {
-        // How is the code for this job executed ?
-        PredefId,       // use Id as JobTypeId.
-        InProcess,      // Call in process (already present) code by name.
-        // ? Compile code from sources ?
-        Assembly,       // Load an assembly into my process space, then load some class and call method.
-        ProcAssembly,   // Use a process isolation wrapper on the assembly.
-        Process,        // Load a new process with arguments. EXE
-    }
 
     public class JobAttribute : Attribute
     {
@@ -34,16 +23,26 @@ namespace DotStd
         }
     }
 
+    public enum JobIsolationId
+    {
+        // How is the code for this job executed ? What isolation level?
+        Await,          // Await the async entry. (default)
+        NoAwait,        // run directly inline. No thread. No await.
+        Thread,         // Create a thread and call the entry point assembly in my process space.
+        ProcAssembly,   // Use a process isolation wrapper on the assembly. (thread assumed)
+        Process,        // Load a new process with arguments. EXE
+    }
+
     public class JobState
     {
-        // Persist Last/Current run state of the job. Produce a JobWorker to run.
+        // Persist Last/Current run definition/state of a job. Produce a JobWorker to run.
         // keep this in persistent storage.
         // leave scheduling definition out. when should this run again? 
 
-        public int Id { get; set; }   // PK in some persistent storage.
+        public int Id { get; set; }   // JobId, PK in some persistent storage.
 
-        public int RunningAppId { get; set; } = ValidState.kInvalidId;  // 0 = not running. else its currently running. (as far as we know on ConfigApp.AppId);
-        public int RunningStatus { get; private set; }      // percent complete. 0-1000
+        public int RunningAppId { get; set; } = ValidState.kInvalidId;  // What AppId is running this now? 0 = not running. else its currently running. (as far as we know on ConfigApp.AppId);
+        public int RunningStatus { get; private set; }      // estimated percent complete. 0-1000
 
         // NOTE: LastRun can be set into the future to delay start.
         public DateTime? LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
@@ -69,18 +68,19 @@ namespace DotStd
 
         public virtual void SetRunningStatus(int statusPercent)
         {
-            // override this to push the update.
+            // override this to push the update or persist in DB.
             RunningStatus = statusPercent;
         }
     }
 
     public interface IJobWorker
     {
-        // abstraction for some job/task i want to execute. exposed by assembly.
+        // abstraction for some job/task to execute. exposed by assembly.
         // Assume this is paired with JobAttribute
-        // Code must expose this interface so i can call it externally.
+        // Code must expose this interface so i can call it.
+        // Might Compile code from sources ? or just load some external assembly
 
-        JobState State { get; set; }    // is it running ? last status etc.
+        JobState State { get; set; }    // Link back to my job state/definition. is it running ? last status etc.
 
         Task ExecuteAsync(string args); // Run it now.
     }
@@ -88,7 +88,7 @@ namespace DotStd
     public abstract class JobWorker : IJobWorker
     {
         // Implement IJobWorker
-        // Can be used with JobTracker ? JobTypeName ?
+        // Can be used with JobTracker ?  
 
         public JobState State { get; set; }
 

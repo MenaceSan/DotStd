@@ -42,7 +42,7 @@ namespace DotStd
         // Similar to System.ComponentModel.DataAnnotations.Validator
         // Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
 
-        public const int kInvalidId = 0;    // This is never a valid id/PK in the db. ValidState.IsValidId()
+        public const int kInvalidId = default;    // 0 This is never a valid id/PK in the db. ValidState.IsValidId() default(int)
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
         public const string kSavedChanges = "Saved Changes";
@@ -146,7 +146,7 @@ namespace DotStd
             // is this a valid db id ? db convention says all id must be > 0
             if (!id.HasValue)
                 return false;
-            return id.Value != kInvalidId;
+            return id.Value != kInvalidId;      // default(int)
         }
         public static bool IsValidId(Enum id)
         {
@@ -167,7 +167,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             string sl = s.ToLower();
-            if (sl == SerializeUtil.kNull || sl == "none" || sl == "-none") 
+            if (sl == SerializeUtil.kNull || sl == "none" || sl == "-none")
                 return false;
 
             foreach (char ch in s)

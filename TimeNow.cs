@@ -71,11 +71,11 @@ namespace DotStd
 
         public static async Task<DateTime> GetUtcAsync(string url = null)
         {
-            // get external UTC time.
+            // get external UTC time. 
 
             try
             {
-                return await GetNistAsync();
+                return await GetNistAsync();  // MAY throw.
             }
             catch
             {

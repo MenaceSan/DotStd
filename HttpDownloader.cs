@@ -34,6 +34,7 @@ namespace DotStd
         public async Task DownloadFileAsync(HttpClient client)
         {
             // Get some HTTP/HTTPS URL and put in local file.
+            // can throw.
 
             DirUtil.DirCreateForFile(DestPath);
 
@@ -97,6 +98,7 @@ namespace DotStd
         public async Task DownloadFileAsync(HttpClientHandler httpClientHandler)
         {
             // Get some HTTP/HTTPS URL and put in local file.
+            // can throw.
 
             using (var client = new HttpClient(httpClientHandler))
             {
@@ -107,6 +109,7 @@ namespace DotStd
         public async Task DownloadFileAsync(bool allowRedirect = false)
         {
             // Get some HTTP/HTTPS URL and put in local file.
+            // can throw.
 
             await DownloadFileAsync(new HttpClientHandler()
             {
@@ -117,6 +120,7 @@ namespace DotStd
         public void DownloadFile(bool allowRedirect = false)
         {
             // Get some HTTP/HTTPS URL and put in local file. NOT async.
+            // can throw.
             DownloadFileAsync(allowRedirect).Wait();
         }
     }

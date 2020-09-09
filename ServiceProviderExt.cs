@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DotStd.DependencyInjection
+namespace DotStd.ServiceExt
 {
 
     public static class ServiceProviderExt

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DotStd
 {
@@ -457,6 +458,18 @@ namespace DotStd
         {
             // Used to remove read only flag.
             RemoveAttributes(filePath, FileAttributes.ReadOnly);
+        }
+
+        public static async Task<string> ReadAllTextAsync(string path)
+        {
+            // Read a text or HTML format file.
+            // NOTE: This may block on open. Not true async. M$ samples say this is ok. Win32 has no async file open !!!!
+            // return await File.ReadAllTextAsync(path, Encoding.UTF8); // ALSO May block on file open!? AND Not available in .net standard ?
+
+            using (var fileRead = new StreamReader(path, Encoding.UTF8))
+            {
+                return await fileRead.ReadToEndAsync();
+            }
         }
 
         public static void FileDelete(string filePath)

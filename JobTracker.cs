@@ -10,7 +10,7 @@ namespace DotStd
  
         // TODO Push updates to UI ? So we dont have the UI polling for this?
 
-        private string JobTypeName { get; set; }        // Id for what am i doing ? e.g. nameof(x) not friendly name. 
+        private string JobTypeName { get; set; }        // unique Id for what am i doing ? e.g. nameof(x) not friendly name. 
         private int UserId { get; set; }             // What user is this for ? 0 = doesnt matter (all users share).
 
         public bool IsComplete { get; private set; }    // code exited. fail or success.

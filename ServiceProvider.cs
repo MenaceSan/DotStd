@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace DotStd
 {
@@ -11,7 +9,7 @@ namespace DotStd
         // We should use the default global DI provider instead of this! like app.ApplicationServices
         // NOTE: This conflicts with Microsoft.Extensions.DependencyInjection.ServiceProvider
 
-        public static IServiceProvider _Instance;        // TODO Get rid of all other uses of _Instance. singleton.
+        public static IServiceProvider _Instance;        // TODO Get rid of all other uses of _Instance. singleton. Replace this with ASP or other versions of a DI/IServiceProvider.
 
         private readonly Dictionary<int, object> Services = new Dictionary<int, object>(); // Like IServiceCollection.
 
@@ -57,6 +55,7 @@ namespace DotStd
             where TService : class
             where TImplementation : class, TService
         {
+            // Add as both the implementation and the interface.
             AddSingleton(typeof(TService), service);
             AddSingleton(typeof(TImplementation), service);
         }

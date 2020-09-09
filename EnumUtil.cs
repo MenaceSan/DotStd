@@ -13,6 +13,8 @@ namespace DotStd
         public static bool IsDefined(Enum value)
         {
             // Is value a defined enum member value ?
+            // like Enum.IsDefined() ? 
+
             if (value == null)
                 return false;
             Type type = value.GetType();
@@ -134,21 +136,23 @@ namespace DotStd
             return list;
         }
 
-        public static T ParseEnum<T>(string value) // where T : System.Enum
+        public static bool IsMatch<T>(string value) where T : struct  // where T : System.Enum
+        {
+            T result;
+            return Enum.TryParse<T>(value, true, out result);
+        }
+
+        public static T ParseEnum<T>(string value) where T : struct  // where T : System.Enum
         {
             // convert a string to enum T if possible.
             // look up a string and compare it to the declared enum values.
-            try
-            {
-                return (T)Enum.Parse(typeof(T), value, true);   // ignore case.
-            }
-            catch
-            {
-            }
+            T result;
+            if (Enum.TryParse<T>(value, true, out result))  // ignore case.
+                return result;
             return default(T);  // always 0
         }
 
-        public static T ParseEnum2<T>(string value) // where T : System.Enum
+        public static T ParseEnum2<T>(string value) where T : struct  // where T : System.Enum
         {
             // a much more forgiving version of ParseEnum, ignore case.
             // check if its numeric, use GetDescription ??

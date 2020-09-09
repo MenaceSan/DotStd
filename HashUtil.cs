@@ -89,8 +89,9 @@ namespace DotStd
 
         public byte[] GetHashFile(string filename)
         {
-            // Hash the contents of a file. Not crypto. just anti-collision.
-            // MD5 = Return 128 bits. 16 bytes for contents of a file.
+            // Hash the contents of a file with _Hasher.
+            // MD5 = Return 128 bits. 16 bytes for contents of a file. Not crypto. just anti-collision.
+            // use SHA512 for true crypto.
 
             using (var fs = new FileStream(filename, FileMode.Open))
             {
@@ -190,7 +191,20 @@ namespace DotStd
             // faster. less secure. for low collision hashes.
             // used for new account sign up + user email.
             // MD5 = Return 128 bits. 16 bytes for a base64 string of 24 chars.
+            // Wrap a MD5 HashAlgorithm.
+            // NIST recommends SHA-256 or better for passwords.
+            // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
             return new MD5CryptoServiceProvider();
+        }
+        public static HashAlgorithm GetSHA256()
+        {
+            // Secure hash. SHA256
+            //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
+            // NIST recommends SHA-256 or better for passwords.
+            // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
+            // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
+
+            return new SHA256CryptoServiceProvider();
         }
         public static HashAlgorithm GetSHA512()
         {
@@ -200,29 +214,22 @@ namespace DotStd
             return new SHA512CryptoServiceProvider();
         }
 
+        public const string kMd5 = "md5";
+        public const string kSha256 = "sha256";
+
         public static HashAlgorithm FindHasherByName(string hashAlgName)
         {
             // Lookup hasher by name.
             // like static HashAlgorithm.Create(string hashName);
             // HMACSHA256 ? HMACSHA512 ?
 
-            if (hashAlgName.StartsWith("md5"))
+            if (hashAlgName.StartsWith(kMd5))
             {
-                // Wrap a MD5 HashAlgorithm.
-                // MD5 = Return 128 bits. 16 bytes for a base64 string of 24 chars.
-                // NIST recommends SHA-256 or better for passwords.
-                // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
                 return GetMD5();
             }
-            else if (hashAlgName.StartsWith("sha256"))
+            else if (hashAlgName.StartsWith(kSha256))
             {
-                // Secure hash. SHA256
-                //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
-                // NIST recommends SHA-256 or better for passwords.
-                // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
-                // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-
-                return new SHA256CryptoServiceProvider();
+                return GetSHA256();
             }
             else if (hashAlgName.StartsWith("sha384"))
             {

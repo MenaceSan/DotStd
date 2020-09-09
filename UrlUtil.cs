@@ -24,7 +24,7 @@ namespace DotStd
         MSIE_Old = 15,        // https://stackoverflow.com/questions/10964966/detect-ie-version-prior-to-v9-in-javascript
     }
 
-    public static class URL
+    public static class UrlUtil
     {
         // Helper for URLs always use "/" as path separators.
         // similar to System.Uri or System.UriBuilder
@@ -40,72 +40,33 @@ namespace DotStd
 
         // TODO AddReturnUrl and build args.
 
+        public static string GetProtocol(string url)
+        {
+            if (url.StartsWith(kHttps))
+                return kHttps;
+            if (url.StartsWith(kHttp))
+                return kHttp;
+            return null;
+        }
+
         public static bool IsHttpX(string url)
         {
             // is Http* Scheme ?
-            return url.StartsWith(kHttps) || url.StartsWith(kHttp);
+            return GetProtocol(null) != null;
         }
         public static bool IsHttpSecure(string url)
         {
             // is Https Scheme ?
             return url.StartsWith(kHttps);
         }
-
-        static readonly Lazy<Regex> _regexURL = new Lazy<Regex>( () => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$")); 
-
-        public static bool IsValidURL(string url)
+        public static bool IsLocalAddr(string url)
         {
-            // Stricter version of URL validation
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-         
-            return _regexURL.Value.IsMatch(url);
+            // Local or external link ?
+            if (url == null || url.Length < 2)
+                return true;
+            return url[0] == '/' && url[1] != '/';
         }
 
-        static readonly Lazy<Regex> _regexURL2 = new Lazy<Regex>(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));  
- 
-        public static bool IsValidURL2(string url)
-        {
-            // More forgiving version of URL
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-           
-            return _regexURL2.Value.IsMatch(url);
-        }
-
-        public static string GetSubDomain(string reqHost)
-        {
-            // reqHost = context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:443" or special "test.localhost:80"
-            // RETURN null for "test.com" or "localhost:44322" (has no subdomain)
-            // ASSUME not /Path\'' 
-            // ASSUME no prefix "http://" etc.
-
-            if (reqHost == null)
-                return null;
-            int i = reqHost.IndexOf(kSep);  // chop off extra stuff.
-            if (i >= 0)
-            {
-                reqHost = reqHost.Substring(0, i);
-            }
-            i = reqHost.IndexOf(':');  // chop off port.
-            if (i >= 0)
-            {
-                reqHost = reqHost.Substring(0, i);
-            }
-
-            i = reqHost.IndexOf('.');
-            if (i < 0)      // no dots.
-                return null;
-
-            if (!reqHost.EndsWith("localhost"))
-            {
-                int j = reqHost.IndexOf('.', i + 1);    // MUST have a second dot.
-                if (j < 0)
-                    return null;
-            }
-
-            return reqHost.Substring(0, i);
-        }
 
         public static string MakeHttpX(string url, bool bSetHttps)
         {
@@ -132,10 +93,67 @@ namespace DotStd
             // Make sure the URL has a prefix. default to HTTPS if it does not.
             if (!url.StartsWith(kHttp) && !url.StartsWith(kHttps))    // make sure it has prefix.
                 url = kHttps + url;
-            if (!url.EndsWith(kSep) && !url.Contains("?"))    // not sure why i have to do this.
+            if (!url.EndsWith(kSep) && !url.Contains(kArg))    // not sure why i have to do this.
                 url += kSep;
             return url;
         }
+
+        static readonly Lazy<Regex> _regexURL = new Lazy<Regex>(() => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$"));
+
+        public static bool IsValidURL(string url)
+        {
+            // Stricter version of URL validation
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            return _regexURL.Value.IsMatch(url);
+        }
+
+        static readonly Lazy<Regex> _regexURL2 = new Lazy<Regex>(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));
+
+        public static bool IsValidURL2(string url)
+        {
+            // More forgiving version of URL
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            return _regexURL2.Value.IsMatch(url);
+        }
+
+        public static string GetSubDomain(string reqHost)
+        {
+            // reqHost = context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:443" or special "test.localhost:80"
+            // RETURN null for "test.com" or "localhost:44322" (has no subdomain)
+            // ASSUME no protocol prefix "http://" etc.
+            // ASSUME not /Path\'' 
+
+            if (reqHost == null)
+                return null;
+            int i = reqHost.IndexOf(kSep);  // chop off extra stuff. WHY DO THIS ???
+            if (i >= 0)
+            {
+                reqHost = reqHost.Substring(0, i);
+            }
+            i = reqHost.IndexOf(':');  // chop off port.
+            if (i >= 0)
+            {
+                reqHost = reqHost.Substring(0, i);
+            }
+
+            i = reqHost.IndexOf('.');
+            if (i < 0)      // no dots.
+                return null;
+
+            if (!reqHost.EndsWith("localhost"))
+            {
+                int j = reqHost.IndexOf('.', i + 1);    // MUST have a second dot.
+                if (j < 0)
+                    return null;
+            }
+
+            return reqHost.Substring(0, i);
+        }
+
 
         public static string Combine(params string[] array)
         {
@@ -175,32 +193,47 @@ namespace DotStd
 
         public static string GetFileName(string url)
         {
-            // Extract just the filename from the URL. No domain name, Clip args after '?' or '#'
-            try
+            // Extract just the filename from the URL. No dir, domain name, Clip args after '?' or '#'
+            if (url == null)
+                return null;
+
+            int i = url.IndexOf(kArg);  // '#' // chop off args.
+            if (i >= 0)
             {
-                int i = url.LastIndexOf(kSep);
-                if (i >= 0)
-                {
-                    url = url.Substring(url.LastIndexOf(kSep) + 1);
-                }
-                i = url.IndexOf("?");  // '#' // chop off args.
-                if (i >= 0)
-                {
-                    url = url.Substring(0, i);
-                }
-                return url;
+                url = url.Substring(0, i);
             }
-            catch
+            i = url.LastIndexOf(kSep);
+            if (i >= 0)
             {
-                return url;
+                url = url.Substring(i + 1);
             }
+            return url;
         }
 
-        public static string GetDir(string url)
+        public static string ReplaceFile(string url, string nameNew)
         {
+            // Replace the file name in the url.
             // Get the dir for the URL.
-            string name = GetFileName(url);
-            return url.Substring(0, url.Length - name.Length);
+            string nameOld = GetFileName(url);
+            string dir = url.Substring(0, url.Length - nameOld.Length);
+            return dir + nameNew;
+        }
+
+        public static string GetHostName(string url)
+        {
+            // Get the host name for the URL.
+            // strip http:// and get "addr:port". strip "/dir?args"
+
+            string proto = GetProtocol(url);
+            if (proto != null)
+                url = url.Substring(proto.Length);
+            int i = url.IndexOf(kSep);
+            if (i >= 0)
+                url = url.Substring(0, i);
+            i = url.IndexOf(kArg);
+            if (i >= 0)
+                url = url.Substring(0, i);
+            return url;
         }
 
         public static string Make(string sPage, params string[] sArgs)
