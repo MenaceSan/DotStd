@@ -90,6 +90,7 @@ namespace DotStd
 
         public static ulong ToULong(IPAddress addr, bool high)
         {
+            // Get a 64 bit part of IPAddress. may not be all of it.
             // ip6 is 2 64 bit parts. high and low. from network order to host order
 
             if (addr.AddressFamily == AddressFamily.InterNetwork)
@@ -98,7 +99,7 @@ namespace DotStd
                 // For example if your IPv4 IP is 209.173.53.167 the valid IPv6 version will be 0:0:0:0:0:ffff:d1ad:35a7
                 if (high)
                     return 0;
-                return (0xfffful << 32) | ByteUtil.ToUIntN(addr.GetAddressBytes(), 0);
+                return (0xfffful << 32) | ToUInt(addr);      // map ip4 into ip6
             }
             else
             {
@@ -176,7 +177,7 @@ namespace DotStd
             {
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
                 {
-                    socket.Connect("8.8.8.8", 65530);
+                    socket.Connect("8.8.8.8", 65530);   // Use Google DNS.
                     IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
                     return endPoint.Address;
                 }

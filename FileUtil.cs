@@ -350,7 +350,7 @@ namespace DotStd
             byte[] bytes = Encoding.UTF8.GetBytes(fileName);  // get UTF8 encoding as bytes.
 
             var sb = new StringBuilder();
- 
+
             for (int i = 0; i < bytes.Length; i++)  // UTF8 length
             {
                 byte b = bytes[i];
@@ -358,12 +358,12 @@ namespace DotStd
 
                 if (!IsNameCharValid(ch, kFileNameUrl))
                 {
-                    if (ch < ' ')   
+                    if (ch < ' ')
                     {
                         return null;   // Special chars are NEVER allowed. Bad filename.
                     }
 
-                    if (sb.Length+3 > kLenMax) // truncate.
+                    if (sb.Length + 3 > kLenMax) // truncate.
                         break;
 
                     sb.Append(kEncoder);    // encode char as %XX
@@ -394,7 +394,7 @@ namespace DotStd
                 return null;
             }
 
-            var lb = new List<byte>(); 
+            var lb = new List<byte>();
             for (int i = 0; i < len; i++)
             {
                 char ch = fileName[i];
@@ -403,7 +403,7 @@ namespace DotStd
                 {
                     // decode char from %XX 
                     i++;
-                    if (i+2 > len)
+                    if (i + 2 > len)
                         break;
                     int v2 = SerializeUtil.FromHexChar2(fileName, i);
                     if (v2 < 0)
@@ -460,11 +460,50 @@ namespace DotStd
             RemoveAttributes(filePath, FileAttributes.ReadOnly);
         }
 
+        /// <summary>
+        /// This is the same default buffer size as
+        /// <see cref="StreamReader"/> and <see cref="FileStream"/>.
+        /// </summary>
+        public const int kDefaultBufferSize = 4096;
+
+        /// <summary>
+        /// Indicates that
+        /// 1. The file is to be used for asynchronous reading.
+        /// 2. The file is to be accessed sequentially from beginning to end.
+        /// </summary>
+        private const FileOptions kDefaultOptions = FileOptions.Asynchronous | FileOptions.SequentialScan;
+
+        public static async Task<List<string>> ReadAllLinesAsync(string path, Encoding encoding)
+        {
+            var lines = new List<string>();
+
+            // Open the FileStream with the same FileMode, FileAccess
+            // and FileShare as a call to File.OpenText would've done.
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, kDefaultBufferSize, kDefaultOptions))
+            {
+                using (var reader = new StreamReader(stream, encoding))
+                {
+                    string line;
+                    while ((line = await reader.ReadLineAsync()) != null)
+                    {
+                        lines.Add(line);
+                    }
+                }
+            }
+
+            return lines;
+        }
+        public static Task<List<string>> ReadAllLinesAsync(string path)
+        {
+            return ReadAllLinesAsync(path, Encoding.UTF8);
+        }
+
+
         public static async Task<string> ReadAllTextAsync(string path)
         {
             // Read a text or HTML format file.
             // NOTE: This may block on open. Not true async. M$ samples say this is ok. Win32 has no async file open !!!!
-            // return await File.ReadAllTextAsync(path, Encoding.UTF8); // ALSO May block on file open!? AND Not available in .net standard ?
+            // return await File.ReadAllTextAsync(path, Encoding.UTF8); // ALSO May block on file open!? AND Not available in .NET standard ?
 
             using (var fileRead = new StreamReader(path, Encoding.UTF8))
             {

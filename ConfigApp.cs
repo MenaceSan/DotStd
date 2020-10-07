@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
@@ -168,5 +169,18 @@ namespace DotStd
         public static bool IsInDocker => (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue); 
 
         public static string EnvironmentName => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");   // related to ConfigInfo.EnvironMode
+
+
+        static int _Pid = ValidState.kInvalidId;
+        public static int GetProcessId()
+        {
+            // The apps ProcessId can not change during its life.
+            if (_Pid == ValidState.kInvalidId)
+            {
+                _Pid = Process.GetCurrentProcess().Id;
+            }
+            return _Pid;
+        }
+
     }
 }

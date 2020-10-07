@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DotStd
 {
-    public static class CSV
+    public static class Csv
     {
         //! Helper to deal with encode and decode of a single line of CSV file.
         //! ex. Email,Fname,Quoted
@@ -202,7 +202,7 @@ namespace DotStd
                         object o = prop.GetValue(item, null);
                         if (o != null)
                         {
-                            sb.Append(CSV.Encode1(o.ToString()));
+                            sb.Append(Encode1(o.ToString()));
                         }
                     }
 
@@ -212,6 +212,5 @@ namespace DotStd
 
             return sb.ToString();
         }
-
     }
 }

@@ -120,41 +120,6 @@ namespace DotStd
             return _regexURL2.Value.IsMatch(url);
         }
 
-        public static string GetSubDomain(string reqHost)
-        {
-            // reqHost = context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:443" or special "test.localhost:80"
-            // RETURN null for "test.com" or "localhost:44322" (has no subdomain)
-            // ASSUME no protocol prefix "http://" etc.
-            // ASSUME not /Path\'' 
-
-            if (reqHost == null)
-                return null;
-            int i = reqHost.IndexOf(kSep);  // chop off extra stuff. WHY DO THIS ???
-            if (i >= 0)
-            {
-                reqHost = reqHost.Substring(0, i);
-            }
-            i = reqHost.IndexOf(':');  // chop off port.
-            if (i >= 0)
-            {
-                reqHost = reqHost.Substring(0, i);
-            }
-
-            i = reqHost.IndexOf('.');
-            if (i < 0)      // no dots.
-                return null;
-
-            if (!reqHost.EndsWith("localhost"))
-            {
-                int j = reqHost.IndexOf('.', i + 1);    // MUST have a second dot.
-                if (j < 0)
-                    return null;
-            }
-
-            return reqHost.Substring(0, i);
-        }
-
-
         public static string Combine(params string[] array)
         {
             // Like Path.Combine() but for URLs. CombineUrl. Ignore nulls.
@@ -236,46 +201,46 @@ namespace DotStd
             return url;
         }
 
-        public static string Make(string sPage, params string[] sArgs)
+        public static string MakeQ(string url, params string[] args)
         {
             // build a local URL link with "Query" args. sPage can be empty.
             // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode() already called.
             // FormUrlEncodedContent already called.
 
-            if (sPage == null)
-                sPage = "";
+            if (url == null)
+                url = "";
             int i = 0;
-            foreach (string x in sArgs)
+            foreach (string x in args)
             {
                 if (i == 0)
                 {
-                    sPage += kArg;
+                    url += kArg;
                 }
                 else
                 {
-                    sPage += kArgSep; // arg usually in the form "X=Y"
+                    url += kArgSep; // arg usually in the form "X=Y"
                 }
-                sPage += x;
+                url += x;
                 i++;
             }
-            return sPage;
+            return url;
         }
 
-        public static string Make2(string sPage, params string[] sArgs)
+        public static string MakeQ2(string url, params string[] args)
         {
             // build a local URL link with paired "Query" args. sPage can be empty.
-            if (sPage == null)
-                sPage = "";
+            if (url == null)
+                url = "";
             string sep = kArg;
-            for (int i = 0; i < sArgs.Length; i += 2)
+            for (int i = 0; i < args.Length; i += 2)
             {
-                if (string.IsNullOrWhiteSpace(sArgs[i + 1]))
+                if (string.IsNullOrWhiteSpace(args[i + 1]))
                     continue;
-                sPage += sep;
-                sPage += sArgs[i] + "=" + WebUtility.UrlEncode(sArgs[i + 1]);
+                url += sep;
+                url += args[i] + "=" + WebUtility.UrlEncode(args[i + 1]);
                 sep = kArgSep;
             }
-            return sPage;
+            return url;
         }
     }
 }

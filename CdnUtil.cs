@@ -16,7 +16,7 @@ namespace DotStd
         // TODO Manage list of CDN services such that they may be enabled/disabled on the fly.
         //   remove CDN hosts known to be bad ? fallback to next alternate.
 
-        public readonly string HostName;         // files from this source.
+        public readonly string HostName;         // all files from this source.
         public bool Enabled;        // If we know its not working, we should disable it and take a backup. or fallback to local.
 
         public CdnHost(string hostname)
@@ -45,10 +45,9 @@ namespace DotStd
     public class CdnResource
     {
         // An object that may be included as js, css, font, or image
-        // TODO: allow listing of local only resources that might need to be minified.
+        // Available locally or via CDN.
+        // allow listing of LOCAL ONLY resources that might need to be minified.
 
-        public const string kMin = ".min.";     // is minified version ?
-        public const string kMin2 = "-min.";    // alternate minified naming style.
 
         public const string kDataMinOnlyAttr = "data-minonly";         // The dev/debug version of this file does not exist! ONLY minified.
         public const string kDataLibAttr = "data-lib";         // LibMan destination directory for equivalent file. NOT USED.
@@ -60,20 +59,20 @@ namespace DotStd
         public readonly string fallback_src;   // Local name/path. asp-fallback-src="/cdn/dropzone/min/dropzone.min.js". unique. usually minified. ALL MUST have this!
 
         public string integrity;    // integrity="sha256-cs4thShDfjkqFGk5s2Lxj35sgSRr4MRcyccmi0WKqCM=". unique for minified version. for CDN access ONLY. 
-        public string map;          // name (NO path info) of a map file. The minified version can use a map file for debug. "data-map", null = no map supplied. 
+        public readonly string map;          // name (NO path info) of a map file. The minified version can use a map file for debug. "data-map", null = no map supplied. 
 
         // NOTE: multiple alternate CDNs ? or is this overkill?
-        public string CdnPath1;      // primary path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js". MUST exist.
+        public readonly string CdnPath1;      // primary path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js". MUST exist.
         public CdnHost CdnHost1;    // host for CdnPath1
         public bool IsCdnEnabled => CdnHost1?.Enabled ?? false;     // assumes CdnPath1
 
-        public string fallback_test;    // for js <script>(fallback_test||document.write("<script>alternate include </script>"))</script> AKA "asp-fallback-test" or "asp-fallback-test-class"
-        public string fallback_test_prop;   // CSS asp-fallback-test-property="position" 
-        public string fallback_test_val;    // CSS asp-fallback-test-value=""
+        public readonly string fallback_test;    // for js <script>(fallback_test||document.write("<script>alternate include </script>"))</script> AKA "asp-fallback-test" or "asp-fallback-test-class"
+        public readonly string fallback_test_prop;   // CSS asp-fallback-test-property="position" 
+        public readonly string fallback_test_val;    // CSS asp-fallback-test-value=""
 
-        public bool minonly;      // No non minified version is available for some reason. "data-minonly". only has minified. dont look for non minified version.
-        public string lib;             // path to libman local install. 'data-lib'="/lib/dropzone/dist"   // NOT USED.
-        public string version;      // For local files ONLY. Equiv to "asp-append-version". Arbitrary value that is used to break client side cache. similar to integrity
+        public readonly bool minonly;      // No non minified version is available for some reason. "data-minonly". only has minified. dont look for non minified version.
+        public readonly string lib;             // path to libman local install. 'data-lib'="/lib/dropzone/dist"   // NOT USED.
+        public readonly string version;      // For local files ONLY. Equiv to "asp-append-version". Arbitrary value that is used to break client side cache. similar to integrity
 
         // has pre-requisites? list of dependencies/requires i need to work.  
         public List<CdnResource> Requires;      // "data-req"
@@ -88,18 +87,6 @@ namespace DotStd
         public const string kCssTestScript = "<script>function CdnCssTest(a,b,c,d){var e,f=document,g=f.getElementsByTagName('SCRIPT'),h=g[g.length-1].previousElementSibling,i=f.defaultView&&f.defaultView.getComputedStyle?f.defaultView.getComputedStyle(h):h.currentStyle;if(i&&i[a]!==b)for(e=0;e<c.length;e++)f.write('<link href=\"'+c[e]+'\" '+d+'/>')}</script> ";
         public const string kCssExtraAttr = "rel='stylesheet'";
 
-        public static bool IsMin(string n)
-        {
-            // Does this seem to be the name of a minified file?
-            if (n == null)
-                return false;
-            return n.Contains(kMin) || n.Contains(kMin2);
-        }
-        public static string GetNonMin(string n)
-        {
-            // Try to find the NON-minified version of the file. If it has one.
-            return n.Replace(kMin, ".").Replace(kMin2, ".").Replace("/min/", UrlUtil.kSep);
-        }
 
         public string GetFallbackScript()
         {
@@ -125,7 +112,7 @@ namespace DotStd
 
         public string GetLocalSrc(bool useDevVersion)
         {
-            string localSrc = (!useDevVersion || this.minonly || !CdnResource.IsMin(this.fallback_src)) ? this.fallback_src : CdnResource.GetNonMin(this.fallback_src);
+            string localSrc = (!useDevVersion || this.minonly || !Minifier.IsMinName(this.fallback_src)) ? this.fallback_src : Minifier.GetNonMinName(this.fallback_src);
             if (this.version != null)
             {
                 // version For local files. Equiv to "asp-append-version"
@@ -196,37 +183,6 @@ namespace DotStd
             LoggerUtil.DebugException(dstPath + " integrity='" + integrity + "'", null);
         }
 
-        public async Task<bool> CreateMinified(string dstPath)
-        {
-            // The minified file didnt exist. I must create it now!
-
-            if (!IsMin(dstPath))
-                return false;
-
-            try
-            {
-                string srcPath = GetNonMin(dstPath);
-                string contents = await FileUtil.ReadAllTextAsync(srcPath);
-                // string[] contents = await File.ReadAllLinesAsync(srcPath);
-
-                // Filter the contents to make the minified file.
-                using (var wr = File.CreateText(dstPath))
-                {
-                    await wr.WriteAsync(contents);
-
-                    // remove extra whitespace.
-                    // remove blank lines.
-                    // remove comments. // Line comments. Block Comments.
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.DebugException("CreateMinified", ex);
-                return false;
-            }
-        }
 
         public async Task<CdnRet> SyncFile(string dstPath)
         {
@@ -278,9 +234,9 @@ namespace DotStd
 
             if (this.CdnPath1 == null)
             {
-                // this file has no CDN. So i cant do anything!
+                // this file has no CDN. So i can't do anything!
 
-                if (await CreateMinified(dstPath))
+                if (Minifier.IsMinName(dstPath) && await Minifier.CreateMinified(dstPath))
                 {
                     // Local only lacked a minified version. so i made one.
                     return CdnRet.Updated;
@@ -370,12 +326,12 @@ namespace DotStd
                 }
 
                 // Pull the non-minified (Dev) version as well. if it has one.
-                if (this.CdnPath1 != null && !this.minonly && IsMin(this.CdnPath1))  // it is minified?
+                if (this.CdnPath1 != null && !this.minonly && Minifier.IsMinName(this.CdnPath1))  // it is minified?
                 {
-                    string devName = GetNonMin(dstPath);
+                    string devName = Minifier.GetNonMinName(dstPath);
                     if (ret == CdnRet.Updated || !File.Exists(devName))
                     {
-                        var dlDev = new HttpDownloader(GetNonMin(this.CdnPath1), devName);
+                        var dlDev = new HttpDownloader(Minifier.GetNonMinName(this.CdnPath1), devName);
                         await dlDev.DownloadFileAsync();
                     }
                 }
@@ -431,7 +387,7 @@ namespace DotStd
             fallback_src = name;
 
             string path1 = GetPhysPathFromWeb(outDir, name);
-            string name2 = GetNonMin(name);
+            string name2 = Minifier.GetNonMinName(name);
             string path2 = GetPhysPathFromWeb(outDir, name2);
             bool exists1 = File.Exists(path1);
             bool exists2 = File.Exists(path2);

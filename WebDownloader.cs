@@ -120,7 +120,7 @@ namespace DotStd
             // Download the larger payload files. Call ProgressEvent periodically.
             try
             {
-                const int nChunkSize = 1024;
+                const int nChunkSize = FileUtil.kDefaultBufferSize;
                 int iTotalBytesRead = 0;
                 using (var oFS = new FileStream(DestPath, FileMode.Create, FileAccess.Write))
                 {

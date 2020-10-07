@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace DotStd
@@ -11,18 +12,22 @@ namespace DotStd
         Unused = 0,
         [Description("Internal Id")]
         InternalId = 1,     // internal messaging is reserved.
-        Email = 2,          // may be openid.
+        Email = 2,          // may also be openid.
+
         [Description("Voice Phone")]
-        VoicePhone = 3,     // land line. voice only.
+        VoicePhone = 3,     // land line. voice only. no SMS
         [Description("Mobile Phone")]
         MobilePhone = 4,    // Voice and text
         SMS,            // Text only. 2 way
-        Pager,          // beeper ? one way.
-        Fax,            // Does anyone still use this ?  
-        Skype = 8,
+        Pager,          // beeper ? one way message.
+        Fax = 7,            // Does anyone still use this ?  
+
         [Description("Google Hangout")]
-        GoogleHangout = 9,      // needs an email id.
-        Other = 10,     // unknown. Don't call this.  
+        GoogleHangout = 10,      // Also an email id.
+
+        // Non email message systems. char id that is not also an email.
+        Skype = 20,              // Skype id is just a number ?
+        Other = 30,     // unknown. Don't call this.  
 
     }
 
@@ -42,12 +47,17 @@ namespace DotStd
             "fab fa-google-plus-g",     //  
             "fas fa-info",      // ComTypeId.Other
         };
+
+        public static string GetHtml(ComTypeId typeId)
+        {
+            return $"<i class='{ComTypes.kTypeIcons[(int)typeId]}'></i>";
+        }
     }
 
     public enum ComValidId
     {
         // Test if SMS or email works. Validate.
-        // used by user_com.ValidId
+        // used by user_com.ValidId, app_hostname.ValidId
 
         Disabled = 0,       // dont use this.
 

@@ -30,6 +30,17 @@ namespace DotStd
             return Regex.IsMatch(email, @"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$");
         }
 
+        public static string GetHostName(string email)
+        {
+            // Get the hostname part of the (assumed valid) email.
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
+            int i = email.LastIndexOf('@');     // IndexOf ?
+            if (i < 0)
+                return null;
+            return email.Substring(i + 1);
+        }
+
         public static bool IsValidEmail(string email)
         {
             // like IsEmailAddress but more accurate.
@@ -58,7 +69,7 @@ namespace DotStd
 
         public static MailAddress GetMailAddress(string addr1, string sDisplayNameDefault = null)
         {
-            // Create MailAddress from string with name parsed correctly.
+            // Create MailAddress object from string with name parsed correctly.
 
             // Allow email formats:
             //  Nellis, Joanne <JNellis@co.dutchess.ny.us>

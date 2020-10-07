@@ -87,7 +87,7 @@ namespace DotStd
 
         public static string ToStringN(object o, bool whitenull = true)
         {
-            // object to a string. strings are always nullable.
+            // object to a nullable string. strings are always nullable.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return null;

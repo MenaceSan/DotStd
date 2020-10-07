@@ -47,7 +47,7 @@ namespace DotStd
 
         public static ulong MakeHashCode(params object[] argsList)
         {
-            // composite args for a cache key. Assume the key has a type/group prefix.
+            // combine/composite args for a cache key. Assume the key has a type/group prefix.
             if (argsList == null)
                 return 0;
             ulong hashCode = 0;
@@ -67,12 +67,12 @@ namespace DotStd
         /// <summary>
         /// Helper to make a cache key.
         /// </summary>
-        /// <param name="list">operation name followed by arguments to make it unique.</param>
+        /// <param name="typePrefix">operation name followed by arguments to make it unique.</param>
         /// <returns>A string represents the query</returns>
-        public static string MakeKey(string type, params object[] argsList)
+        public static string MakeKey(string typePrefix, params object[] argsList)
         {
             // build the string representation of some expression for the cache key. (AKA cacheKey)
-            return string.Concat(type, kSep, MakeKeyArgs(argsList));
+            return string.Concat(typePrefix, kSep, MakeKeyArgs(argsList));
         }
 
         private static void PostEvictionCallback(object cacheKey, object value, EvictionReason reason, object state)
