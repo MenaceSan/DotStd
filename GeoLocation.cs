@@ -28,6 +28,7 @@ namespace DotStd
         AUS = 36,    // AU, au
 
         // More ...
+        Custom = 1000,  // indicate this is a hybrid table. it can grow.
     }
 
     [Serializable()]
@@ -162,6 +163,7 @@ namespace DotStd
 #endif
 
         // More ... in other countries. Manually or Db added.
+        Custom = 10000, // indicate this can grow.
     }
 
     [Serializable]

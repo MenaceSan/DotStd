@@ -12,7 +12,7 @@
     <PackageIcon>DotStd.png</PackageIcon>
     <RepositoryUrl>https://github.com/MenaceSan/DotStd</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Description>Supplimental shared c# common libraries.</Description>
+    <Description>Supplemental shared c# common libraries.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <ApplicationIcon>DotStd.ico</ApplicationIcon>
     <SignAssembly>false</SignAssembly>

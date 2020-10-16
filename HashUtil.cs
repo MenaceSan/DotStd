@@ -93,7 +93,7 @@ namespace DotStd
             // MD5 = Return 128 bits. 16 bytes for contents of a file. Not crypto. just anti-collision.
             // use SHA512 for true crypto.
 
-            using (var fs = new FileStream(filename, FileMode.Open))
+            using (var fs = File.OpenRead(filename))
             {
                 // Convert the input string to a byte array and compute the hash.
                 return _Hasher.ComputeHash(fs);
@@ -102,7 +102,7 @@ namespace DotStd
 
         public async Task<byte[]> GetHashFileAsync(string filename)
         {
-            using (var fs = new FileStream(filename, FileMode.Open))
+            using (var fs = File.OpenRead(filename))
             {
                 // Convert the input string to a byte array and compute the hash.
                 return await GetHashStreamAsync(fs);

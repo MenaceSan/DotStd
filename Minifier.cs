@@ -15,6 +15,9 @@ namespace DotStd
         public const string kMin = ".min.";     // is minified version ?
         public const string kMin2 = "-min.";    // alternate minified naming style.
 
+        public const string kExtJs = ".js";
+        public const string kExtCss = ".css";
+
         public static bool IsMinName(string n)
         {
             // Does this seem to be the name of a minified file name?
@@ -30,35 +33,71 @@ namespace DotStd
 
         public static readonly string[] extensions =
         {
-            ".css",
+            kExtCss,
             ".htm",
             ".html",
-            ".js",
+            kExtJs,
         };
 
-        public static async Task<bool> CreateMinified(string dstMinPath)
+        const string kCommentClose = "*/";
+
+        public static async Task<bool> CreateMinified(string srcPath, string dstMinPath)
         {
             // create a minified version of a file. CSS, JS or HTML.
             try
             {
-                string srcPath = GetNonMinName(dstMinPath);
                 var contents = await FileUtil.ReadAllLinesAsync(srcPath);
 
                 // Filter the contents to make the minified file.
                 using (var wr = File.CreateText(dstMinPath))
                 {
+                    bool commentOpen = false;
                     foreach (string line in contents)
                     {
                         // remove extra whitespace at start and end of lines.
+
                         string line2 = line.Trim();
+                        if (commentOpen)
+                        {
+                            // Look for close of comment.
+                            int j = line2.IndexOf(kCommentClose);
+                            if (j < 0)
+                                continue;
+                            line2 = line2.Substring(j + kCommentClose.Length).Trim();
+                            commentOpen = false;
+                        }
+
                         // remove blank lines.
                         if (string.IsNullOrWhiteSpace(line2))
                             continue;
                         // remove whole line comments. 
                         if (line2.StartsWith("//"))
                             continue;
-                        // remove end line // comments. 
-                        // Block Comments?
+
+                        do_retest:
+                        // remove /* Block Comment */
+                        int i = line2.IndexOf("/*");
+                        if (i >= 0)
+                        {
+                            string lineStart = line2.Substring(0, i).Trim();
+                            int j = line2.IndexOf(kCommentClose, i);
+                            if (j < 0)
+                            {
+                                // to next line.
+                                commentOpen = true;
+                                line2 = lineStart;
+                            } 
+                            else
+                            {
+                                commentOpen = false;
+                                line2 = lineStart + line2.Substring(j + kCommentClose.Length).Trim();
+                                goto do_retest;
+                            }
+                        }
+
+                        // ?? remove end line // comments
+                        if (string.IsNullOrWhiteSpace(line2))
+                            continue;
                         await wr.WriteLineAsync(line2);
                     }
                 }
@@ -72,12 +111,12 @@ namespace DotStd
             }
         }
 
-        public static async Task MakeMinifiedFiles(string dirPath, string searchPattern)
+        public static async Task UpdateDirectory(string dirPath, string searchPattern = null)
         {
             // make minified versions of all the files in this directory if they don't already exist.
 
             var dir = new DirectoryInfo(dirPath);
-            var files1 = dir.GetFiles(searchPattern).Where(x => extensions.Contains(x.Extension));
+            var files1 = ((searchPattern == null) ? dir.GetFiles() : dir.GetFiles(searchPattern)).Where(x => extensions.Contains(x.Extension));
             foreach (FileInfo info in files1)
             {
                 string name = info.Name;
@@ -85,18 +124,22 @@ namespace DotStd
                     continue;
                 // does the non min file have a valid minified version? must be ~newer   
                 string dstMinPath;
-                FileInfo infoMin = files1.FirstOrDefault(x => GetNonMinName(x.Name) == name);
+                FileInfo infoMin = files1.FirstOrDefault(x => GetNonMinName(x.Name) == name && x.Name != name);
                 if (infoMin != null)
                 {
-                    if ((infoMin.CreationTimeUtc - info.CreationTimeUtc).Minutes >= -3)  // newer or close enough.
+                    // Min file exists.
+                    if ((infoMin.CreationTimeUtc - info.CreationTimeUtc).Minutes >= -3)  // minified must be newer or close enough.
                         continue;
                     dstMinPath = infoMin.FullName;
                 }
                 else
                 {
-                    dstMinPath = Path.Combine(Path.GetDirectoryName(info.FullName), Path.GetFileNameWithoutExtension(name) + kMin + Path.GetExtension(name));
+                    dstMinPath = Path.Combine(Path.GetDirectoryName(info.FullName), Path.GetFileNameWithoutExtension(name) + ".min" + Path.GetExtension(name)); // kMin
                 }
-                await CreateMinified(dstMinPath);
+
+                LoggerUtil.DebugEntry($"Update minified file '{dstMinPath}'");
+
+                await CreateMinified(info.FullName, dstMinPath);
             }
         }
     }

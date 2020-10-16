@@ -198,13 +198,12 @@ namespace DotStd
 
         public static string JoinN(string separator, params string[] array)
         {
-            // join with separator = "," but skip nulls and empties.
-
+            // join with separator (e.g. ",") but skip nulls and empties.
             return string.Join(separator, array.Where(s => !string.IsNullOrWhiteSpace(s)));
         }
         public static string JoinTitles(string separator, params string[] array)
         {
-            // separator = ","
+            // separator = (e.g. ",")
             return string.Join(separator, array.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => ToTitleCase(x)));
         }
 

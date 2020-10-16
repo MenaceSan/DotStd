@@ -56,8 +56,8 @@ namespace DotStd
 
     public enum ComValidId
     {
-        // Test if SMS or email works. Validate.
-        // used by user_com.ValidId, app_hostname.ValidId
+        // Test if SMS or email works. Validate. 
+        // defined in app_valid_type. used by user_com.ValidId, app_hostname.ValidId
 
         Disabled = 0,       // dont use this.
 

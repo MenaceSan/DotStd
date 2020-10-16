@@ -13,70 +13,71 @@ namespace DotStd
         // similar to the Windows concept of CultureInfo.
         // https://developers.google.com/admin-sdk/directory/v1/languages
         // https://en.wikipedia.org/wiki/Language_localisation
-        // https://en.wikipedia.org/wiki/Languages_used_on_the_Internet
+        // https://en.wikipedia.org/wiki/Languages_used_on_the_Internet  // sort by popularity.
 
         proper = 0,     // non-translatable proper name.
 
         [Description("Default")]    // default langauge.
         native = 1,     // The native language of the app, whatever that might be.
 
-        [Description("English")]    // English
-        en = 3,        // Default American English. .NET LanguageId =  1033 = 0x409 = 'en-US'
+        [Description("English")]    // English 
+        en = 3,        // Default American English. .NET LanguageId =  1033 = 0x409 = 'en-US' // deployed with ASP
 
         [Description("Русский язык (Russian)")]    //  https://en.wikipedia.org/wiki/Russian_language
-        ru = 4,
+        ru = 4,     // deployed with ASP
 
         [Description("Deutsch (German)")]     //  https://en.wikipedia.org/wiki/German_language
-        de = 5,
+        de = 5,     // deployed with ASP
 
         [Description("Español (Spanish)")]    // Spanish, Espana. https://en.wikipedia.org/wiki/Spanish_language
-        es = 6,
+        es = 6,     // deployed with ASP
 
         [Description("Le Français (French)")]     // French https://en.wikipedia.org/wiki/French_language
-        fr = 7,
+        fr = 7,     // deployed with ASP
 
         [Description("日本語 (Japanese)")]     //   https://en.wikipedia.org/wiki/Japanese_language
-        ja = 8,
+        ja = 8,     // deployed with ASP
 
         [Description("Português (Portuguese)")]     // por https://en.wikipedia.org/wiki/Portuguese_language
-        pt = 9,
+        pt = 9,     // pt-BR deployed with ASP
 
         [Description("Italiano (Italian)")]     //   https://en.wikipedia.org/wiki/Italian_language
-        it = 10,
+        it = 10,        // deployed with ASP
 
         [Description("فارسی (Persian/Farsi)")]     // farsi https://en.wikipedia.org/wiki/Persian_language
-        fa = 11,
+        fa = 11,        // NOT deployed with ASP
 
         [Description("Polski (Polish)")]     // pol  https://en.wikipedia.org/wiki/Polish_language
-        pl = 12,
+        pl = 12,        // deployed with ASP
 
         [Description("汉语/中文 (Chinese)")]     // zho https://en.wikipedia.org/wiki/Chinese_language ???
-        zh = 13,
+        zh = 13,            // zh-Hant and  zh-Hans deployed with ASP
 
         [Description("Nederlands (Dutch)")]     // nld https://en.wikipedia.org/wiki/Dutch_language
-        nl = 14,
+        nl = 14,        // NOT deployed with ASP
 
         [Description("Türkçe (Turkish)")]     // tur https://en.wikipedia.org/wiki/Turkish_language
-        tr = 15,
+        tr = 15,    // deployed with ASP
 
-        [Description("Čeština (Czech)")]     //  ces https://en.wikipedia.org/wiki/Czech_language
-        cs = 16,
+        [Description("Čeština (Czech)")]            // ces https://en.wikipedia.org/wiki/Czech_language
+        cs = 16,        // deployed with ASP
 
-        [Description("한국어/韓國語 (Korean)")]     // kor https://en.wikipedia.org/wiki/Korean_language
-        ko = 17,
+        [Description("한국어/韓國語 (Korean)")]       // kor https://en.wikipedia.org/wiki/Korean_language
+        ko = 17,        // deployed with ASP
 
-        [Description("اَلْعَرَبِيَّةُ‎ (Arabic)")]     // https://en.wikipedia.org/wiki/Arabic
+        [Description("اَلْعَرَبِيَّةُ‎ (Arabic)")]          // https://en.wikipedia.org/wiki/Arabic
         ar = 18,
-        [Description("ελληνικά (Greek)")]     // https://en.wikipedia.org/wiki/Greek_language
+        [Description("ελληνικά (Greek)")]           // https://en.wikipedia.org/wiki/Greek_language
         el = 19,
-        [Description("bahasa (Indonesian)")]     // https://en.wikipedia.org/wiki/Indonesian_language
+        [Description("bahasa (Indonesian)")]        // https://en.wikipedia.org/wiki/Indonesian_language
         id = 20,
-        [Description("हिन्दी (Hindi)")]     // https://en.wikipedia.org/wiki/Hindi
+        [Description("हिन्दी (Hindi)")]                // https://en.wikipedia.org/wiki/Hindi
         hi = 21,
 
         // Swedish
         // Hungarian
         // Romanian
+
         // Thai
         // Slovak
         // Danish

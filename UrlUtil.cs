@@ -228,7 +228,7 @@ namespace DotStd
 
         public static string MakeQ2(string url, params string[] args)
         {
-            // build a local URL link with paired "Query" args. sPage can be empty.
+            // build a local encoded URL link with paired "Query" args. sPage can be empty.
             if (url == null)
                 url = "";
             string sep = kArg;

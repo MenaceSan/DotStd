@@ -53,7 +53,7 @@ namespace DotStd
             ulong hashCode = 0;
             foreach (object o in argsList)
             {
-                hashCode = (hashCode << 13) | (hashCode >> (64 - 13));
+                hashCode = (hashCode << 13) | (hashCode >> (64 - 13)); // rotl
                 hashCode ^= (ulong) o.GetHashCode();
             }
             return hashCode;
@@ -208,7 +208,9 @@ namespace DotStd
                 var keys = _cacheKeys;  // must clone array as it is modified in callbacks to PostEvictionCallback().
                 _cacheKeys = new SortedSet<string>();
                 foreach (string cacheKey in keys)
+                {
                     ClearKey(cacheKey);     // Will try to modify _cacheKeys
+                }
             }
         }
 

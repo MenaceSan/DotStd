@@ -55,14 +55,14 @@ namespace DotStd
         public readonly CdnTagName TagName;     // TagName = element tag name for type. (or ERROR)
         public string AttrSrc => (this.TagName == CdnTagName.script) ? "src" : "href"; // different attr if JavaScript vs CSS/a ?  e.g. <script> JS file using "src" else <a> or <link> uses "href"
 
-        public readonly string name;    // short name or Local path/name for the file. 
+        public readonly string name;    // short name or Local path/name for the file. MUST NOT BE null.
         public readonly string fallback_src;   // Local name/path. asp-fallback-src="/cdn/dropzone/min/dropzone.min.js". unique. usually minified. ALL MUST have this!
 
         public string integrity;    // integrity="sha256-cs4thShDfjkqFGk5s2Lxj35sgSRr4MRcyccmi0WKqCM=". unique for minified version. for CDN access ONLY. 
         public readonly string map;          // name (NO path info) of a map file. The minified version can use a map file for debug. "data-map", null = no map supplied. 
 
         // NOTE: multiple alternate CDNs ? or is this overkill?
-        public readonly string CdnPath1;      // primary path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js". MUST exist.
+        public readonly string CdnPath1;      // primary path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js".  
         public CdnHost CdnHost1;    // host for CdnPath1
         public bool IsCdnEnabled => CdnHost1?.Enabled ?? false;     // assumes CdnPath1
 
@@ -92,7 +92,7 @@ namespace DotStd
         {
             // Test if the CDN failed and take some action.
             // MUST be AFTER the <script src> or <link href css>
-            Debug.Assert(fallback_src != null && this.fallback_test != null);
+            Debug.Assert( this.fallback_test != null);
 
             string extraAttr = "";
 
@@ -166,6 +166,8 @@ namespace DotStd
             return Convert.ToBase64String(hashCode2);
         }
 
+        const char kIntegritySep = '-';
+
         private async Task UpdateIntegrity(string dstPath)
         {
             // Generate integrity if its missing. It should NOT be !
@@ -177,12 +179,11 @@ namespace DotStd
                 return;
 
             string hash = await GetFileHash(dstPath, kIntegrityAlgDef);
-            integrity = kIntegrityAlgDef + "-" + hash;
+            integrity = string.Concat(kIntegrityAlgDef, kIntegritySep, hash);
 
             // Print it out to log so i can update CdnAll manually!!
             LoggerUtil.DebugException(dstPath + " integrity='" + integrity + "'", null);
         }
-
 
         public async Task<CdnRet> SyncFile(string dstPath)
         {
@@ -207,7 +208,7 @@ namespace DotStd
             else
             {
                 // test local file integrity hash e.g. "sha256-", "sha384-"
-                int i = integrity.IndexOf('-');
+                int i = integrity.IndexOf(kIntegritySep);
                 if (i <= 0)     // badly formed integrity ?? Fail ?
                 {
                     // This is bad !! i cant really fix this. fix it manually.
@@ -236,7 +237,7 @@ namespace DotStd
             {
                 // this file has no CDN. So i can't do anything!
 
-                if (Minifier.IsMinName(dstPath) && await Minifier.CreateMinified(dstPath))
+                if (Minifier.IsMinName(dstPath) && await Minifier.CreateMinified(Minifier.GetNonMinName(dstPath), dstPath))
                 {
                     // Local only lacked a minified version. so i made one.
                     return CdnRet.Updated;
@@ -274,7 +275,7 @@ namespace DotStd
                 {
                     // This is BAD. It should never happen!
                     string debugHash2 = Convert.ToBase64String(hashCode2);
-                    LoggerUtil.DebugException($"CDN integrity hash does not match for '{dstPath}'. should be integrity='{debugHash2}'", null);
+                    LoggerUtil.DebugException($"CDN integrity hash does not match for '{dstPath}'. should be integrity='{string.Concat(kIntegrityAlgDef, kIntegritySep, debugHash2)}'", null);
                     return CdnRet.Error;
                 }
             }
@@ -352,11 +353,13 @@ namespace DotStd
 
             TagName = EnumUtil.ParseEnum<CdnTagName>(xl.Name.LocalName);
 
-            name = xl.Attribute(nameof(name))?.Value; // my local name. MUST ALWAYS EXIST.
-            CdnPath1 = xl.Attribute(AttrSrc)?.Value;        // (src or href)
-            fallback_src = xl.Attribute("asp-fallback-" + AttrSrc)?.Value; // my local path (src or href). MUST ALWAYS EXIST.
+            CdnPath1 = xl.Attribute(AttrSrc)?.Value;        // (src or href) MUST be defined.
+            ValidState.ThrowIfWhiteSpace(CdnPath1, nameof(CdnPath1));
 
-            if (UrlUtil.IsLocalAddr(CdnPath1) && fallback_src == null)
+            fallback_src = xl.Attribute("asp-fallback-" + AttrSrc)?.Value; // my local path (src or href). 
+            name = xl.Attribute(nameof(name))?.Value; // my local name. use fallback_src if not supplied.
+
+            if (fallback_src == null && UrlUtil.IsLocalAddr(CdnPath1))
             {
                 // This is really a local only file. no CDN.
                 fallback_src = CdnPath1;
@@ -368,6 +371,7 @@ namespace DotStd
                 fallback_src = name;
 
             ValidState.ThrowIfWhiteSpace(name, "CdnResource name");
+            ValidState.ThrowIfWhiteSpace(fallback_src, nameof(fallback_src));
 
             integrity = xl.Attribute(nameof(integrity))?.Value;       // has integrity hash ? All should. 
             minonly = xl.Attribute(kDataMinOnlyAttr) != null;    // Allow null default. some elements have no non-minified version!
@@ -381,34 +385,53 @@ namespace DotStd
 
         public CdnResource(string _name, string _tagname, string outDir)
         {
-            // create an element on the fly. Assume its a local file.
-            TagName = EnumUtil.ParseEnum<CdnTagName>(_tagname);
+            // create an element on the fly. Assume _name is a local minified file. NOT CDN.
+            // <IncludeRef name="/js/grid_common.min.js" tagname="script" /> // use minified name to indicate it has one.
+
+            ValidState.ThrowIfWhiteSpace(_name, "CdnResource name");
             name = _name;
             fallback_src = name;
 
+            if (_tagname == null)
+            {
+                // derive from the file extension.
+                if (_name.EndsWith(Minifier.kExtJs))
+                    TagName = CdnTagName.script;
+                else if (_name.EndsWith(Minifier.kExtCss))
+                    TagName = CdnTagName.link;
+                else
+                    TagName = CdnTagName.a;
+            }
+            else
+            {
+                TagName = EnumUtil.ParseEnum<CdnTagName>(_tagname);
+            }
+
+            // Does it have a minified file? assume _name is the minified version.
             string path1 = GetPhysPathFromWeb(outDir, name);
             string name2 = Minifier.GetNonMinName(name);
             string path2 = GetPhysPathFromWeb(outDir, name2);
             bool exists1 = File.Exists(path1);
             bool exists2 = File.Exists(path2);
-            if (exists1)
+            if (exists1)    
             {
-                minonly = !exists2;
+                minonly = !exists2; // min exists. but does non-min ?
             }
             else if (exists2)
             {
-                name = name2;
+                name = name2;   // only non-min version exists.
                 path1 = path2;
                 minonly = true;
             }
             else
             {
+                // neither exists. this is bad.
                 TagName = CdnTagName.ERROR;
                 minonly = false;
                 return;
             }
 
-            // version For local files. Equiv to "asp-append-version" (would use SHA256)
+            // cache breaking version For local files. Equiv to "asp-append-version" (would use SHA256)
 
             var hasher = new HashUtil(HashUtil.GetMD5());       // GetSHA256()
             byte[] hashCode2 = hasher.GetHashFile(path1);
