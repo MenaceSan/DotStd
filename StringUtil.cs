@@ -171,6 +171,44 @@ namespace DotStd
             return System.Text.RegularExpressions.Regex.Replace(sValue, "[^A-Za-z0-9]", "");
         }
 
+        public static bool IsWildcardMatch(string wildcardPattern, string subject)
+        {
+            // Simple wildcard match
+            // https://www.hiimray.co.uk/2020/04/18/implementing-simple-wildcard-string-matching-using-regular-expressions/474
+            if (string.IsNullOrWhiteSpace(wildcardPattern))
+            {
+                return false;
+            }
+
+            string newWildcardPattern = wildcardPattern.Replace("*", "");
+            int wildcardCount = wildcardPattern.Length - newWildcardPattern.Length;
+            if (wildcardCount <= 0)
+            {
+                return subject.Equals(wildcardPattern, StringComparison.CurrentCultureIgnoreCase);
+            }
+            else if (wildcardCount == 1)
+            {
+                if (wildcardPattern.StartsWith("*"))
+                {
+                    return subject.EndsWith(newWildcardPattern, StringComparison.CurrentCultureIgnoreCase);
+                }
+                else if (wildcardPattern.EndsWith("*"))
+                {
+                    return subject.StartsWith(newWildcardPattern, StringComparison.CurrentCultureIgnoreCase);
+                }
+            }
+
+            string regexPattern = string.Concat("^", Regex.Escape(wildcardPattern).Replace("\\*", ".*"), "$");
+            try
+            {
+                return Regex.IsMatch(subject, regexPattern);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static string TrimN(string s)
         {
             // trim a string for whitespace but ignore null.

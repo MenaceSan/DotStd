@@ -17,7 +17,7 @@ namespace DotStd
 
         public static int GetDayStampInt(DateTime dtLocal)
         {
-            // encode date as int. e.g. 20180302
+            // encode date as readable int. e.g. 20180302
             // dtLocal = local time zone adjusted time.
             int iVal = dtLocal.Year;
             iVal *= 100;

@@ -214,7 +214,7 @@ namespace DotStd
             // Not officially logged. Just debug console.
             // startup ?
 
-            System.Diagnostics.Debug.WriteLine("Debug " + message);
+            System.Diagnostics.Debug.WriteLine("Debug: " + message);
             // System.Diagnostics.Trace.WriteLine();
 
             if (LogStart != null)
