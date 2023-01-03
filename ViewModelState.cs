@@ -39,16 +39,21 @@ namespace DotStd
             //! Child of ViewModelState
             public string MemberName { get; set; }    //! Property name (must match reflection name of property in _ObjectInstance)
             public ViewPropertyAccess Level { get; set; }   //! Access for the current user and form.
+
+            public ViewProperty(string MemberName, ViewPropertyAccess Level)
+            {
+                this.MemberName = MemberName;
+                this.Level = Level;
+            }
         }
 
         private readonly object _ObjectInstance;    //! What view model object are we tracking? usually based on IValidatable
-        private List<ViewProperty> _aProps;         //! What access to Props do we have in _ObjectInstance?
-        private List<string> _aOrigValues;          //! _ObjectInstance.Property.ToString() encoded state of the Props at start/clean state. same enum as _aProps
+        private List<ViewProperty> _aProps = new List<ViewProperty>();  //! What access to Props do we have in _ObjectInstance?
+        private List<string>? _aOrigValues;          //! _ObjectInstance.Property.ToString() encoded state of the Props at start/clean state. same enum as _aProps
 
         public ViewModelState(object o, bool bTrackChangedValues = true, ViewPropertyAccess nLevelDef = ViewPropertyAccess.Ignored)
         {
             _ObjectInstance = o;   // ASSUME not null.
-            _aProps = new List<ViewProperty>();
             if (bTrackChangedValues)
                 _aOrigValues = new List<string>();
             else
@@ -63,7 +68,7 @@ namespace DotStd
         {
             //! Are we tracking this prop of _ObjectInstance? use nameof(MemberName).
             //! @return -1 = no
-            int i =0;
+            int i = 0;
             foreach (ViewProperty p in _aProps)
             {
                 if (memberName == p.MemberName)
@@ -76,10 +81,10 @@ namespace DotStd
         public string GetPropValue(string propertyName)
         {
             //! Via reflection get the current value of a sPropName on _ObjectInstance.
-            object o = PropertyUtil.GetPropertyValue(_ObjectInstance, propertyName);
+            object? o = PropertyUtil.GetPropertyValue(_ObjectInstance, propertyName);
             if (o == null)
-                return "";
-            return o.ToString();
+                return string.Empty;
+            return o.ToString() ?? string.Empty;
         }
 
         public ViewPropertyAccess GetPropAccess(string memberName)
@@ -104,7 +109,7 @@ namespace DotStd
             }
             else // insert
             {
-                _aProps.Add(new ViewProperty { MemberName = memberName, Level = nLevel });
+                _aProps.Add(new ViewProperty(memberName, nLevel));
                 if (_aOrigValues != null)
                 {
                     // store current value.
@@ -149,6 +154,8 @@ namespace DotStd
         {
             //! Has memberName (in _ObjectInstance) value changed?
             //! NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
+            if (_aOrigValues == null)
+                return false;
             int i = GetPropIndex(memberName);
             if (i < 0)  // not listed.
                 return false;
@@ -165,10 +172,12 @@ namespace DotStd
         {
             // Has anything changed?
             // NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
+            if (_aOrigValues == null)
+                return false;
             int i = 0;
             foreach (ViewProperty p in _aProps)
             {
-                if (p.Level > ViewPropertyAccess.Ignored 
+                if (p.Level > ViewPropertyAccess.Ignored
                     && _aOrigValues[i] != GetPropValue(p.MemberName))
                     return true;
                 i++;
@@ -181,13 +190,14 @@ namespace DotStd
             // List all props that have changed.
             // NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
 
-            ValidState.ThrowIfNull(_aOrigValues,nameof(_aOrigValues));
-
             var aChanged = new List<string>();
+            if (_aOrigValues == null)
+                return aChanged;
+
             int i = 0;
             foreach (ViewProperty p in _aProps)
             {
-                if (p.Level > ViewPropertyAccess.Ignored 
+                if (p.Level > ViewPropertyAccess.Ignored
                     && _aOrigValues[i] != GetPropValue(p.MemberName))
                     aChanged.Add(p.MemberName);
                 i++;

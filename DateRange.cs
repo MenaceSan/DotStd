@@ -7,13 +7,14 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Create a DateRange that is relative to the current date. Or some date in current users time zone and selected starting DoW.
+    /// Used for reporting purposes. This, Last, Next - Week, Month, etc.
+    /// <member name="F:OfficeOpenXml.ConditionalFormatting.eExcelConditionalFormattingTimePeriodType.LastWeek">
+    /// <member name="F:Intuit.Ipp.Data.DateMacro.LastWeek">
+    /// </summary>
     public enum DateRelative
     {
-        // Create a DateRange that is relative to the current date. Or some date in current users time zone and selected starting DoW.
-        // Used for reporting purposes. This, Last, Next - Week, Month, etc.
-        // <member name="F:OfficeOpenXml.ConditionalFormatting.eExcelConditionalFormattingTimePeriodType.LastWeek">
-        // <member name="F:Intuit.Ipp.Data.DateMacro.LastWeek">
-
         Custom = 0,     // may be empty or arbitrary date range.
         [Description("All Dates")]
         All = 1,        // Any data i might have. no filter on time. Max Range.
@@ -241,7 +242,7 @@ namespace DotStd
         /// true if obj and this instance are the same type and represent the same value;
         /// otherwise, false.
         /// </returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is DateRange)
             {

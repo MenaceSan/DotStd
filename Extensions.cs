@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,31 +11,45 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Extensions for common .NET classes
+    /// Extend helpers for string, datetime, enum
+    /// Helper extensions for doing common things like generate fixed length strings.
+    /// This would be <HideModuleName()> Public Module basExtensions   <System.Runtime.CompilerServices.Extension()> in VB.net
+    /// </summary>
     public static class Extensions
     {
-        // Extensions for common .NET classes
-        // Extend helpers for string, datetime, enum
-        // Helper extensions for doing common things like generate fixed length strings.
-        // This would be <HideModuleName()> Public Module basExtensions   <System.Runtime.CompilerServices.Extension()> in VB.net
-
-        public static bool IsNullOrWhiteSpace(this object obj)
+        /// <summary>
+        /// Is this object the same as a whitespace string ?
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static bool IsNullOrWhiteSpace([NotNullWhen(false)] this object obj)
         {
-            // Is this object the same as a whitespace string ?
             return obj == null || string.IsNullOrWhiteSpace(obj.ToString());
         }
 
-        public static object GetPropertyValue(this object thisObject, string propertyName)
+        /// <summary>
+        /// Get a property via reflection from some acquired object. similar to 'dynamic' keyword.
+        /// </summary>
+        /// <param name="thisObject"></param>
+        /// <param name="propertyName"></param>
+        /// <returns>Just return null if property does not exist.</returns>
+        public static object? GetPropertyValue(this object thisObject, string propertyName)
         {
-            // Get a property via reflection from some acquired object. similar to 'dynamic' keyword.
-            // Just return null if property does not exist.
             return PropertyUtil.GetPropertyValue(thisObject, propertyName);
         }
 
         // int 
 
+        /// <summary>
+        /// Round some int to nearest multiple of roundTo
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="roundTo"></param>
+        /// <returns></returns>
         public static int RoundTo(this int value, int roundTo)
         {
-            // Round some int to nearest multiple of roundTo
             return Converter.ToIntRound(value, roundTo);
         }
 
@@ -58,7 +73,9 @@ namespace DotStd
             // Will NOT throw if i is outside range..
             return StringUtil.SubSafe(s, i, lenTake);
         }
-        public static string Truncate(this string value, int len)
+
+        [return: NotNullIfNotNull("value")]
+        public static string? Truncate(this string? value, int len)
         {
             // Left len chars.
             // Take X chars and lose the rest.
@@ -137,7 +154,7 @@ namespace DotStd
 
         //********************
 
-        public static string ToDtString(this DateTime dt, string format = null, IFormatProvider culture = null, string def = null)
+        public static string ToDtString(this DateTime dt, string? format = null, IFormatProvider? culture = null, string? def = null)
         {
             // format DateTime output string as a string.
             // ASSUME timeZone is already accounted for ???
@@ -157,7 +174,7 @@ namespace DotStd
             return dt.ToString(format);
         }
 
-        public static string ToDtTmString(this DateTime dt, IFormatProvider culture = null)
+        public static string ToDtTmString(this DateTime dt, IFormatProvider? culture = null)
         {
             // Make a long detailed string with date and time. 
             // culture = fancy and localized. null = ISO
@@ -166,7 +183,7 @@ namespace DotStd
                 return dt.ToString(culture);
             return dt.ToString();
         }
-        public static string ToDtTmString(this DateTime? obj, IFormatProvider culture = null)
+        public static string ToDtTmString(this DateTime? obj, IFormatProvider? culture = null)
         {
             // Make a long detailed string with date and time. 
             // culture = fancy and localized. null = ISO
@@ -190,7 +207,7 @@ namespace DotStd
             return $"new Date({dt.Year},{dt.Month-1},{dt.Day})";
         }
 
-        public static string ToDateString(this DateTime? obj)
+        public static string? ToDateString(this DateTime? obj)
         {
             // get Date as ISO date string. not time. assume timezone is irrelevant.
             if (obj == null)
@@ -244,12 +261,13 @@ namespace DotStd
 
         public static IEnumerable<T> WhereXStartsWith<T>(this IEnumerable<T> source, string propertyName, string filterStart)
         {
-            // Used for dynamic filtering.
+            // Used for dynamic filtering. Case independant string matching.
             // LIKE Where(s => s.Field<string>(LookupColumn).ToUpper().StartsWith(filter))
             if (!source.Any() || string.IsNullOrEmpty(propertyName))
                 return source;
-            PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-            return source.Where(e => propertyInfo.GetValue(e, null).ToString().ToUpper().StartsWith(filterStart));
+            PropertyInfo? propertyInfo = typeof(T).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            ValidState.ThrowIfNull(propertyInfo, nameof(propertyInfo));
+            return source.Where(e => propertyInfo.GetValue(e, null)!.ToString()!.ToUpper().StartsWith(filterStart));
         }
 
         public static System.Collections.Generic.List<ItemType> ToListDupe<ItemType>(this System.Collections.Generic.IEnumerable<ItemType> a)
@@ -280,12 +298,17 @@ namespace DotStd
                 Type type = propertyDescriptor.PropertyType;
 
                 if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-                    type = Nullable.GetUnderlyingType(type);
+                {
+                    Type? typeUnder = Nullable.GetUnderlyingType(type);
+                    if (typeUnder == null)
+                        continue;
+                    type = typeUnder;
+                }
 
                 dataTable.Columns.Add(propertyDescriptor.Name, type);
             }
 
-            object[] values = new object[propertyDescriptorCollection.Count];
+            object?[] values = new object?[propertyDescriptorCollection.Count];
             foreach (T iListItem in iList)
             {
                 for (int i = 0; i < values.Length; i++)

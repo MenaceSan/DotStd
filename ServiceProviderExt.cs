@@ -4,19 +4,23 @@ using System.Text;
 
 namespace DotStd.ServiceExt
 {
-
     public static class ServiceProviderExt
     {
-        // NOTE: This conflicts with Microsoft.Extensions.DependencyInjection 
-        public static T GetService<T>(this IServiceProvider provider)
+        /// <summary>
+        /// Get a service by its interface
+        /// e.g. ServiceProvider.Instance().GetService<ILogger>()
+        /// NOTE: This conflicts with Microsoft.Extensions.DependencyInjection 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        public static T? GetService<T>(this IServiceProvider provider)
         {
-            // Get a service.
-            // e.g. ServiceProvider._Instance.GetService<ILogger>()
             if (provider == null)
-                return default;
-            object serviceO = provider.GetService(typeof(T));
+                return default(T);
+            object? serviceO = provider.GetService(typeof(T));
             if (serviceO == null)
-                return default;
+                return default(T);
             return (T)serviceO;
         }
     }

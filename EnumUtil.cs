@@ -6,15 +6,19 @@ using System.Reflection;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Utility helper to pull metadata from enums
+    /// </summary>
     public static class EnumUtil
     {
-        // Utility helper to pull metadata from enums
-
+        /// <summary>
+        /// Is value a defined enum member value ?
+        /// like Enum.IsDefined() ? 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static bool IsDefined(Enum value)
         {
-            // Is value a defined enum member value ?
-            // like Enum.IsDefined() ? 
-
             if (value == null)
                 return false;
             Type type = value.GetType();
@@ -64,7 +68,7 @@ namespace DotStd
             return GetValName<T>(value.Value);
         }
 
-        public static string GetDescription(MemberInfo[] memInfo)
+        public static string? GetDescription(MemberInfo[] memInfo)
         {
             // Get value for DescriptionAttribute
 
@@ -87,7 +91,7 @@ namespace DotStd
 
             Type type = value.GetType();
             string name = value.ToString();
-            string desc = GetDescription(type.GetMember(name));   // could use GetField() for FieldInfo ?
+            string? desc = GetDescription(type.GetMember(name));   // could use GetField() for FieldInfo ?
             return desc ?? name;   // default to using the enums name. like: Enum.GetName(type, en);
         }
 
@@ -136,7 +140,7 @@ namespace DotStd
             return list;
         }
 
-        public static bool IsMatch<T>(string value) where T : struct  // where T : System.Enum
+        public static bool IsMatch<T>(string? value) where T : struct  // where T : System.Enum
         {
             T result;
             return Enum.TryParse<T>(value, true, out result);
@@ -152,10 +156,15 @@ namespace DotStd
             return default(T);  // always 0
         }
 
+        /// <summary>
+        /// a much more forgiving version of ParseEnum, ignore case.
+        /// check if its numeric, use GetDescription ??
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static T ParseEnum2<T>(string value) where T : struct  // where T : System.Enum
         {
-            // a much more forgiving version of ParseEnum, ignore case.
-            // check if its numeric, use GetDescription ??
             try
             {
                 // is numeric ?

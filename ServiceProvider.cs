@@ -1,48 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotStd
 {
-    public class ServiceProvider : IServiceProvider
+    /// <summary>
+    /// global service provider. manage application singletons.
+    /// We should use the default global DI provider instead of this! like app.ApplicationServices
+    /// NOTE: This conflicts with Microsoft.Extensions.DependencyInjection.ServiceProvider
+    /// TODO Get rid of all other uses of _Instance. singleton. Replace this with ASP or other versions of a DI/IServiceProvider.
+    /// </summary>
+    public class ServiceProvider : Singleton<IServiceProvider>, IServiceProvider
     {
-        // Fallback global service provider. singletons.
-        // We should use the default global DI provider instead of this! like app.ApplicationServices
-        // NOTE: This conflicts with Microsoft.Extensions.DependencyInjection.ServiceProvider
-
-        public static IServiceProvider _Instance;        // TODO Get rid of all other uses of _Instance. singleton. Replace this with ASP or other versions of a DI/IServiceProvider.
-
-        private readonly Dictionary<int, object> Services = new Dictionary<int, object>(); // Like IServiceCollection.
-
-        public static IServiceProvider Get()
-        {
-            if (_Instance != null)
-            {
-                return _Instance;
-            }
-            _Instance = new ServiceProvider();
-            return (ServiceProvider)_Instance;
-        }
-
-        public static ServiceProvider InitServiceProvider()
-        {
-            // Use this to add new singletons.
-            if (_Instance != null)
-            {
-                if (_Instance is ServiceProvider)
-                    return (ServiceProvider) _Instance;
-
-                // This should never happen!
-                return null;
-            }
-            _Instance = new ServiceProvider();
-            return (ServiceProvider)_Instance;
-        }
+        private readonly Dictionary<int, object> _Services = new Dictionary<int, object>(); // Like IServiceCollection.
 
         public void AddSingleton(Type t, object service)
         {
             // Configure a service by its interface . used for DI registration.
             int hashCode = t.GetHashCode();
-            Services[hashCode] = service;
+            _Services[hashCode] = service;
         }
 
         public void AddSingleton<T>(T service) where T : class
@@ -60,12 +36,12 @@ namespace DotStd
             AddSingleton(typeof(TImplementation), service);
         }
 
-        public object GetService(Type serviceType)  // IServiceProvider
+        public object? GetService(Type serviceType)  // IServiceProvider
         {
-            // Get a service.
+            // Get a service. use the template/generic version of this. ServiceProviderExt.GetService<T>()
             // implement IServiceProvider. DI.
 
-            if (Services.TryGetValue(serviceType.GetHashCode(), out object serviceO))
+            if (_Services.TryGetValue(serviceType.GetHashCode(), out object? serviceO))
             {
                 return serviceO;
             }
@@ -80,5 +56,4 @@ namespace DotStd
             return null;
         }
     }
-
 }

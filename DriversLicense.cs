@@ -4,11 +4,14 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helpers for drivers license.
+    /// </summary>
     public class DriversLicense
     {
         public const int k_DLicense_MaxLen = 21;   // there are no states with DLNum len > 21 (NY)
 
-        public static string GetValidDriversLicense(string sDLNum, GeoStateId stateId, out string sFailure)
+        public static string? GetValidDriversLicense(string sDLNum, GeoStateId stateId, out string sFailure)
         {
             // Is this a generally validate Drivers license format ? Is it valid for a particular issuing state ?
             // Mostly for the US and Canada.

@@ -5,21 +5,21 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helper to deal with encode and decode of a single line of CSV file.
+    /// ex. Email,Fname,Quoted rdeslonde@mydomain.com,Richard,"""This is what I think, suckas!"""
+    /// The .NET library contains Microsoft.VisualBasic.FileIO.TextFieldParser which gives some decent though opaque and complex parsing.
+    /// What i actually want is just the simple and well defined encode/decode rules for CSV files.
+    /// http://stackoverflow.com/questions/10451842/how-to-escape-comma-and-double-quote-at-same-time-for-csv-file.
+    /// NOTE: This should be compatible with Excel spreadsheets as well.
+    /// rfc4180 = https://tools.ietf.org/html/rfc4180
+    /// NOTE: No way to put comments here. Maybe use convention of # or ; ?
+    /// </summary>
     public static class Csv
     {
-        //! Helper to deal with encode and decode of a single line of CSV file.
-        //! ex. Email,Fname,Quoted
-        //!  rdeslonde@mydomain.com,Richard,"""This is what I think, suckas!"""
-        //! The .NET library contains Microsoft.VisualBasic.FileIO.TextFieldParser which gives some decent though opaque and complex parsing.
-        //! What i actually want is just the simple and well defined encode/decode rules for CSV files.
-        //! http://stackoverflow.com/questions/10451842/how-to-escape-comma-and-double-quote-at-same-time-for-csv-file.
-        //! NOTE: This should be compatible with Excel spreadsheets as well.
-        //! rfc4180 = https://tools.ietf.org/html/rfc4180
-        //! NOTE: No way to put comments here. Maybe use convention of # or ; ?
-
         public const string kHeaderBad = "CSV header is not in correct format";
 
-        public static bool IsQuoteNeeded(string value, char q = '\"')
+        public static bool IsQuoteNeeded(string? value, char q = '\"')
         {
             //! Are quotes needed for a single value?
             //! interior spaces are ok. leading or trailing spaces are not.
@@ -42,22 +42,32 @@ namespace DotStd
             return false;
         }
 
+        /// <summary>
+        /// Encode a single value with quotes. double quote = ASCII 34
+        /// NOTE: Newlines are left but the reader must be aware to keep reading lines.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="q1"></param>
+        /// <param name="q2"></param>
+        /// <returns></returns>
         public static string EncodeQ(string value, string q1 = "\"", string q2 = "\"\"")
         {
-            // Encode a single value with quotes.
-            // double quote = ASCII 34
-            // NOTE: Newlines are left but the reader must be aware to keep reading lines.
-
             value = value.Replace(q1, q2);    // interior quotes become double quotes. NOT slash quotes.
-
             return string.Concat(q1, value, q1);   // Quote it.
         }
 
-        public static string Encode1(string value, bool bAlwaysQuote = false)
+        /// <summary>
+        /// Quote intentional leading or ending whitespace for a single value.
+        /// This value needs no encoding if it has no commas or quotes.
+        /// double quote = ASCII 34
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="bAlwaysQuote"></param>
+        /// <returns></returns>
+        public static string Encode1(string? value, bool bAlwaysQuote = false)
         {
-            // Quote intentional leading or ending whitespace for a single value.
-            // This value needs no encoding if it has no commas or quotes.
-            // double quote = ASCII 34
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
             if (!bAlwaysQuote)
             {
                 if (!IsQuoteNeeded(value))
@@ -66,13 +76,13 @@ namespace DotStd
             return EncodeQ(value);  // Quote it.
         }
 
-        public static string Encode(IEnumerable<object> values, bool bAlwaysQuote)
+        public static string? Encode(IEnumerable<object>? values, bool bAlwaysQuote)
         {
             // Encode a single line of a CSV .
             if (values == null)
                 return null;
             var sb = new StringBuilder();
-            foreach (object value in values)
+            foreach (object? value in values)
             {
                 if (sb.Length > 0)
                     sb.Append(",");
@@ -85,12 +95,12 @@ namespace DotStd
             return sb.ToString();
         }
 
-        public static string Encode(params object[] values)
+        public static string? Encode(params object[]? values)
         {
             // Add quotes only if necessary.
             return Encode(values, false);
         }
-        public static string EncodeQ(params object[] values)
+        public static string? EncodeQ(params object[]? values)
         {
             // Always quoted
             return Encode(values, true);
@@ -101,8 +111,6 @@ namespace DotStd
             // Decode a single line of a CSV .
             // Like VB TextFieldParser
             // Ignore/strip non quoted whitespace at begin/end of values.
-            if (sLine == null)
-                return null;
             var a = new List<string>();
             var sb = new StringBuilder();
             bool bInQuotes = false;
@@ -196,10 +204,10 @@ namespace DotStd
                         {
                             sb.Append(",");
                         }
-                        PropertyInfo prop = fromType.GetProperty(propInfos[j].Name);
-                        if (!prop.CanRead)
+                        PropertyInfo? prop = fromType.GetProperty(propInfos[j].Name);
+                        if (prop == null || !prop.CanRead)
                             continue;
-                        object o = prop.GetValue(item, null);
+                        object? o = prop.GetValue(item, null);
                         if (o != null)
                         {
                             sb.Append(Encode1(o.ToString()));

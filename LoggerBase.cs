@@ -2,12 +2,13 @@ using System;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Level of importance of what I'm logging. Defines logging severity levels.
+    /// similar to System.Diagnostics.EventLogEntryType
+    /// same as Microsoft.Extensions.Logging.LogLevel
+    /// </summary>
     public enum LogLevel
     {
-        // Level of importance of what I'm logging. Defines logging severity levels.
-        // similar to System.Diagnostics.EventLogEntryType
-        // same as Microsoft.Extensions.Logging.LogLevel
-
         //
         // Summary:
         //     Logs that contain the most detailed messages. These messages may contain sensitive
@@ -48,20 +49,21 @@ namespace DotStd
         None = 6,
     }
 
+    /// <summary>
+    /// An entry to be logged. may be logged async to producer. (on another thread)
+    /// Assume time stamp is Now.
+    /// </summary>
     public class LogEntryBase
     {
-        // An entry to be logged. may be logged async to producer. (on another thread)
-        // Assume time stamp is Now.
-
-        public string Message;      // Description of the event. NOTE: Use ToString() instead of this directly to get args.
+        public string Message = string.Empty;   // Description of the event. NOTE: Use ToString() instead of this directly to get args.
         public LogLevel LevelId = LogLevel.Information;
         public int UserId = ValidState.kInvalidId;  // id for a thread of work for this user/worker. GetCurrentThreadId() ?
-        public object Detail;       // extra information. that may be stored via ToString();
+        public object? Detail;       // extra information. that may be stored via ToString();
 
         public LogEntryBase()       // props to be populated later.
         { }
 
-        public LogEntryBase(string message, LogLevel levelId = LogLevel.Information, int userId = ValidState.kInvalidId, object detail = null)
+        public LogEntryBase(string message, LogLevel levelId = LogLevel.Information, int userId = ValidState.kInvalidId, object? detail = null)
         {
             Message = message;
             LevelId = levelId;
@@ -75,26 +77,35 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Emulate System.Diagnostics.WriteEntry
+    /// This can possibly be forwarded to NLog or Log4Net ? AKA Appender.
+    /// similar to Microsoft.Extensions.Logging.ILogger
+    /// NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
+    /// </summary>
     public interface ILogger
     {
-        // Emulate System.Diagnostics.WriteEntry
-        // This can possibly be forwarded to NLog or Log4Net ? AKA Appender.
-        // similar to Microsoft.Extensions.Logging.ILogger
-        // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
-
-        // Is this log message important enough to be logged?
+        /// <summary>
+        /// Is this log message important enough to be logged?
+        /// </summary>
+        /// <param name="levelId"></param>
+        /// <returns></returns>
         bool IsEnabled(LogLevel levelId = LogLevel.Information);
 
-        // Log this. assume will also check IsEnabled().
+        /// <summary>
+        /// Log this. assume will also check IsEnabled().
+        /// </summary>
+        /// <param name="entry"></param>        
         void LogEntry(LogEntryBase entry);
     }
 
+    /// <summary>
+    /// Logging of events. base class.
+    /// Similar to System.Diagnostics.EventLog
+    /// NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
+    /// </summary>
     public class LoggerBase : ILogger
     {
-        // Logging of events. base class.
-        // Similar to System.Diagnostics.EventLog
-        // NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
-
         protected LogLevel _FilterLevel = LogLevel.Debug;      // Only log stuff at this level and above in importance.
 
         public LogLevel FilterLevel => _FilterLevel;         // Only log stuff at this level and above in importance.
@@ -147,34 +158,34 @@ namespace DotStd
 
         public void LogEntry(string message, LogLevel levelId = LogLevel.Information,
             int userId = ValidState.kInvalidId,
-            object detail = null)
+            object? detail = null)
         {
             LogEntry(new LogEntryBase(message, levelId, userId, detail));
         }
 
-        public void info(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void info(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             // Helper.
             LogEntry(message, LogLevel.Information, userId, detail);
         }
-        public void warn(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void warn(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             // Helper.
             LogEntry(message, LogLevel.Warning, userId, detail);
         }
-        public void debug(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void debug(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             LogEntry(message, LogLevel.Debug, userId, detail);
         }
-        public void trace(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void trace(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             LogEntry(message, LogLevel.Trace, userId, detail);
         }
-        public void error(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void error(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             LogEntry(message, LogLevel.Error, userId, detail);
         }
-        public void fatal(string message, int userId = ValidState.kInvalidId, object detail = null)
+        public void fatal(string message, int userId = ValidState.kInvalidId, object? detail = null)
         {
             LogEntry(message, LogLevel.Critical, userId, detail);
         }
@@ -195,7 +206,7 @@ namespace DotStd
         {
             // Helper for Special logging for exceptions.
 
-            object detail = null;
+            object? detail = null;
             if (IsExceptionDetailLogged(levelId))
                 detail = ex;
 
@@ -207,7 +218,7 @@ namespace DotStd
     {
         // Global static logging helper.
 
-        public static LoggerBase LogStart;     // always log fine detail at startup.
+        public static LoggerBase? LogStart;     // always log fine detail at startup.
 
         public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
         {
@@ -223,7 +234,7 @@ namespace DotStd
             }
         }
 
-        public static void DebugException(string subject, Exception ex, int userId = ValidState.kInvalidId)
+        public static void DebugException(string subject, Exception? ex, int userId = ValidState.kInvalidId)
         {
             // an exception that I don't do anything about! NOT going to call LogException
             // set a break point here if we want.

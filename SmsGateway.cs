@@ -4,12 +4,13 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Can i send SMS to this phone carrier?
+    /// https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
+    /// https://en.wikipedia.org/wiki/Mobile_phone_industry_in_the_United_States
+    /// </summary>
     public enum SmsCarrierId
     {
-        // Can i send SMS to this phone ?
-        // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
-        // https://en.wikipedia.org/wiki/Mobile_phone_industry_in_the_United_States
-
         Unknown = 0,  // unknown. 
         [Description("Other Carrier")]
         OtherCarrier = 1,     // Need to use some external provider to figure out the SMS routing. Twilio?
@@ -32,19 +33,23 @@ namespace DotStd
         // Metro
         // Ting
         // TracPhone
+        // Mint
 
     }
 
     public class SmsMessage : IMessageBase
     {
         public SmsCarrierId CarrierId { get; set; }
-        public string ToNumber { get; set; }        // International format E164 phone number.
-        public string Body { get; set; }
+        public string ToNumber { get; set; } = string.Empty;   // International format E164 phone number.
+        public string Body { get; set; } = string.Empty;    // override
     }
 
+    /// <summary>
+    /// Send messages to a phone number.
+    /// </summary>
     public class SmsGateway : IMessageSender<SmsMessage>
     {
-        // Send messages to a phone number.
+        // 
         // Use this for 2 factor auth (2fa). (can also use email)
 
         public static readonly Dictionary<SmsCarrierId, string> _dicTo = new Dictionary<SmsCarrierId, string>
@@ -68,32 +73,36 @@ namespace DotStd
             _mailFrom = mailFrom;
         }
 
-        public static string GetEmailForm(SmsCarrierId carrierId)
+        public static string? GetEmailForm(SmsCarrierId carrierId)
         {
             // Get email gateway for SMS by provider. for Format("{0}",number).
             // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
 
-            string formTo;
-            if (_dicTo.TryGetValue(carrierId, out formTo))
+            if (_dicTo.TryGetValue(carrierId, out string? formTo))
             {
                 return formTo;
             }
             return null;
         }
 
-        public Task<string> SendAsync(SmsCarrierId carrierId, string toNumber, string subject, string body = null)
+        /// <summary>
+        /// Send SMS via (FREE) email gateway.
+        /// Via email. Will impose an odd style on the Text message.
+        /// </summary>
+        /// <param name="carrierId"></param>
+        /// <param name="toNumber"></param>
+        /// <param name="subject"></param>
+        /// <param name="body">is optional</param>
+        /// <returns></returns>
+        public Task<string> SendAsync(SmsCarrierId carrierId, string toNumber, string subject, string? body = null)
         {
-            // Send SMS via (FREE) email.
-            // NOTE: body is optional.
-            // Via email. Will impose an odd style on the Text message.
             // Will look like: (empty subject is not allowed)
             // FRM: email name
             // SUBJ: xxx
             // MSG: stuff in body. (optional)
             // Any responses will be back to the sender email.
 
-            string formTo;
-            if (!_dicTo.TryGetValue(carrierId, out formTo))
+            if (!_dicTo.TryGetValue(carrierId, out string? formTo))
             {
                 return Task.FromResult("Unknown carrier for free SMS sending.");
             }
@@ -101,14 +110,14 @@ namespace DotStd
             var msg = new EmailMessage(_mailFrom, false)
             {
                 Subject = subject,
-                Body = body,
+                Body = body ?? string.Empty,
             };
             msg.AddMailTo(string.Format(formTo, toNumber));
 
             return _mailGateway.SendAsync(msg);
         }
 
-        public Task<string> SendAsync(SmsMessage msg)
+        public Task<string> SendAsync(SmsMessage? msg)
         {
             if (msg == null)
                 return Task.FromResult("Bad message type");
@@ -116,7 +125,7 @@ namespace DotStd
             return SendAsync(msg.CarrierId, msg.ToNumber, msg.Body, null);
         }
 
-        public Task<string> SendAsync(IMessageBase msg)
+        public Task<string> SendAsync(IMessageBase? msg)
         {
             return SendAsync(msg as SmsMessage);
         }

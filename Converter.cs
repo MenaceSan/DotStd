@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -8,13 +7,14 @@ using System.Linq;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Convert from some (unknown) type object to a known type.
+    /// Data type converter. usually for database derived objects. Deal with null and DBNull?
+    /// Similar to System.Convert.To*() or System.Convert.ChangeType() but more forgiving.
+    /// NOTE: NEVER allow untrusted sources to serialize to object/any types. This is an injection attack!
+    /// </summary>
     public static class Converter
     {
-        // Convert from some (unknown) type object to a known type.
-        // Data type converter. usually for database derived objects. Deal with null and DBNull?
-        // Similar to System.Convert.To*() or System.Convert.ChangeType() but more forgiving.
-        // NOTE: NEVER allow untrusted sources to serialize to object/any types. This is an injection attack!
-
         public const char kMinus2 = '−';      // Weird alternate char sometimes used as minus. '-'
 
         private static void ThrowConvertException()
@@ -22,10 +22,14 @@ namespace DotStd
             // Put a breakpoint or debug code here to catch this.
         }
 
-        public static bool ToBool(object o, bool defVal = false)
+        /// <summary>
+        /// A forgiving conversion to bool
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="defVal">false</param>
+        /// <returns></returns>
+        public static bool ToBool(object? o, bool defVal = false)
         {
-            // A forgiving conversion to bool
-            // defVal = false
             if (ValidState.IsNull(o))
                 return defVal;
 
@@ -41,7 +45,7 @@ namespace DotStd
                 return Convert.ToInt32(o) != 0;
             }
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return defVal;
 
@@ -57,47 +61,45 @@ namespace DotStd
                     return true;
             }
 
-            bool val;
-            if (bool.TryParse(s, out val))     // The strict conversion.  Boolean.TrueString,  Boolean.FalseString 
-                return val;
+            if (bool.TryParse(s, out bool valBool))     // The strict conversion.  Boolean.TrueString,  Boolean.FalseString 
+                return valBool;
 
-            int val2;
-            if (int.TryParse(s, out val2))     // some sort of number? not 0.
-                return val2 != 0;
+            if (int.TryParse(s, out int valInt))     // some sort of number? not 0.
+                return valInt != 0;
 
             return defVal;
         }
 
-        public static string ToString(object o, string nullStr)
+        public static string ToString(object? o, string nullStr)
         {
             // object to a string. don't return null.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return nullStr;    // NEVER null. use ToStringN() for that.
-            return o.ToString();
+            return o.ToString() ?? nullStr;
         }
-        public static string ToString(object o)
+        public static string ToString(object? o)
         {
             // object to a string. don't return null.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return string.Empty;    // NEVER null. use ToStringN() for that.
-            return o.ToString();
+            return o.ToString() ?? string.Empty; 
         }
 
-        public static string ToStringN(object o, bool whitenull = true)
+        public static string? ToStringN(object? o, bool whitenull = true)
         {
             // object to a nullable string. strings are always nullable.
             // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return null;
-            string s = o.ToString();
+            string? s = o.ToString();
             if (whitenull && string.IsNullOrWhiteSpace(s))
                 return null;
             return s;
         }
 
-        public static int ToInt(object o, int defVal = 0)
+        public static int ToInt(object? o, int defVal = 0)
         {
             // un-box to int. handle null and DBNull.
             // should never throw.
@@ -119,7 +121,7 @@ namespace DotStd
                 return Convert.ToInt32(o);
             }
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return defVal;
 
@@ -129,9 +131,8 @@ namespace DotStd
 
             return val;
         }
- 
 
-        public static int ToIntSloppy(string s, int offset = 0)
+        public static int ToIntSloppy(string? s, int offset = 0)
         {
             // try to read a string. End on any non digit. skip leading spaces.
             if (s == null)
@@ -151,7 +152,7 @@ namespace DotStd
             return val;
         }
 
-        public static ulong ToULong(object o)
+        public static ulong ToULong(object? o)
         {
             // Used for NPI. 10 digit integer. https://en.wikipedia.org/wiki/National_Provider_Identifier
             if (ValidState.IsNull(o))
@@ -170,18 +171,16 @@ namespace DotStd
                 return (ulong)Convert.ToInt32(o);
             }
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return 0;
-
-            ulong val;
-            if (!ulong.TryParse(s, out val))
+            if (!ulong.TryParse(s, out ulong val))
                 return 0;
 
             return val;
         }
 
-        public static DateTime ToDateTime(object o)
+        public static DateTime ToDateTime(object? o)
         {
             // should not throw.
             // defVal = DateTime.MinValue
@@ -196,7 +195,7 @@ namespace DotStd
             if (type == typeof(DateTime?))     // faster convert
                 return ((DateTime?)o) ?? DateTime.MinValue;
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return DateTime.MinValue;
 
@@ -223,7 +222,7 @@ namespace DotStd
             return dt;
         }
 
-        public static DateTime? ToDateTimeN(object o)
+        public static DateTime? ToDateTimeN(object? o)
         {
             DateTime dt = ToDateTime(o);
             if (dt.IsExtremeDate())
@@ -231,7 +230,7 @@ namespace DotStd
             return dt;
         }
 
-        public static double ToDouble(object o, double defVal = 0)
+        public static double ToDouble(object? o, double defVal = 0)
         {
             if (ValidState.IsNull(o))
                 return defVal;
@@ -247,18 +246,16 @@ namespace DotStd
             if (type == typeof(float?))     // faster convert
                 return ((float?)o) ?? defVal;
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return defVal;
-
-            double val;
-            if (!double.TryParse(s, out val))
+            if (!double.TryParse(s, out double val))
                 return defVal;
 
             return val;
         }
 
-        public static decimal ToDecimal(object o, decimal defVal = 0m)
+        public static decimal ToDecimal(object? o, decimal defVal = 0m)
         {
             // defVal = 0
             if (ValidState.IsNull(o))
@@ -274,12 +271,10 @@ namespace DotStd
                 return Convert.ToInt32(o);
             }
 
-            string s = o.ToString();    // cast to intermediate string.
+            string? s = o.ToString();    // cast to intermediate string.
             if (string.IsNullOrWhiteSpace(s))
                 return defVal;
-
-            decimal val;
-            if (!decimal.TryParse(s, out val))
+            if (!decimal.TryParse(s, out decimal val))
                 return defVal;
 
             return val;
@@ -306,7 +301,7 @@ namespace DotStd
             return id ?? ValidState.kInvalidId;
         }
 
-        public static string ToUnique(string id)
+        public static string? ToUnique(string? id)
         {
             // A string FK to some other table.
             if (!ValidState.IsValidUnique(id))
@@ -331,7 +326,7 @@ namespace DotStd
               t.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
         }
 
-        static object GetSingle(IEnumerable a)
+        static object? GetSingle(IEnumerable a)
         {
             var a2 = a.Cast<object>();
             if (a2 == null || a2.Count() != 1)
@@ -344,7 +339,7 @@ namespace DotStd
         /// nullables as of version 2.0 (2.0.50727.42) of the .NET Framework.
         /// Try to be much more forgiving than Convert.ChangeType for enums, bool and int.
         /// </remarks>
-        public static object ChangeType(object value, Type convertToType)
+        public static object? ChangeType(object? value, Type convertToType)
         {
             // Note: This if block was taken from Convert.ChangeType as is, and is needed here since we're
             // checking properties on conversionType below.
@@ -359,7 +354,7 @@ namespace DotStd
 
             if (typeCodeFrom == TypeCode.Object)    // NOT string. for 'StringValues'
             {
-                IEnumerable array = value as IEnumerable;
+                IEnumerable? array = value as IEnumerable;
                 if (array != null)
                 {
                     value = GetSingle(array);
@@ -402,6 +397,11 @@ namespace DotStd
             if (convertToType == typeof(int))
             {
                 return ToInt(value);
+            }
+            if (convertToType == typeof(System.DateOnly) && typeCodeFrom == TypeCode.String)
+            {
+                // Not handled below !?
+                return System.DateOnly.Parse(value.ToString() ?? string.Empty);
             }
 
             // Now that we've guaranteed conversionType is something Convert.ChangeType can handle (i.e. not a

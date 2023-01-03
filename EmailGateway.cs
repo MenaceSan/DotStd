@@ -6,23 +6,23 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
-
+    /// <summary>
+    /// Email Send settings.
+    /// my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
+    /// https://developer.telerik.com/featured/new-configuration-model-asp-net-core/
+    /// Similar to System.Net.Configuration.SmtpNetworkElement from MailSettingsSectionGroup, 
+    /// like .NET framework <system.net> GetMailSettings as default for SmtpClient. no action required.
+    /// system.net/mailSettings/smtp
+    /// </summary>
     public class EmailGatewaySettings   // IOptions
     {
-        // Email Send settings.
-        // my settings from the config file ConfigInfo used to populate SmtpClient for sending emails.
-        // https://developer.telerik.com/featured/new-configuration-model-asp-net-core/
-        // Similar to System.Net.Configuration.SmtpNetworkElement from MailSettingsSectionGroup, 
-        // like .NET framework <system.net> GetMailSettings as default for SmtpClient. no action required.
-        // system.net/mailSettings/smtp
-
-        public string Host { get; set; }  // AKA host, 
+        public string Host { get; set; } = ""; // AKA host, 
         public int Port { get; set; }       // (ushort) for SMTP 587 or 25.
-        public string Username { get; set; }    // AKA userName
-        public string Password { get; set; }    // AKA password. might be encrypted? SecureString
+        public string Username { get; set; } = "";    // AKA userName
+        public string Password { get; set; } = "";   // AKA password. might be encrypted? SecureString
         public bool EnableSsl { get; set; } = true;
 
-        public IValidatorT<string> AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
+        public IValidatorT<string>? AllowedFilter = null;    // Filter who we can and cannot send emails to. White list email addresses.
 
         public void Init(IPropertyGetter config)
         {
@@ -30,12 +30,12 @@ namespace DotStd
             PropertyUtil.InjectProperties(this, config, ConfigInfoBase.kSmtp);
         }
 
-        public EmailGatewaySettings(ConfigInfoBase config = null, IValidatorT<string> allowedFilter = null)
+        public EmailGatewaySettings(ConfigInfoBase? config = null, IValidatorT<string>? allowedFilter = null)
         {
             // No need to manually get GetMailSettings MailSettingsSectionGroup in .NET Framework. That is automatic.
             // https://hassantariqblog.wordpress.com/2017/03/20/asp-net-core-sending-email-with-gmail-account-using-asp-net-core-services/
 
-            var app = ConfigApp._Instance.Value;
+            var app = ConfigApp.Instance();
             if (config == null)
             {
                 config = app.ConfigInfo;
@@ -59,14 +59,14 @@ namespace DotStd
 
         public EmailGatewaySettings Settings { get; set; }  // only used if not already set by system.net/mailSettings/smtp
 
-        private SmtpClient _client;     // Create a client to send mail.
+        private SmtpClient? _client;     // Create a client to send mail.
 
         public EmailGateway(EmailGatewaySettings settings)
         {
             Settings = settings;
         }
 
-        public EmailGateway(ConfigInfoBase config, IValidatorT<string> allowedFilter)
+        public EmailGateway(ConfigInfoBase config, IValidatorT<string>? allowedFilter)
         {
             Settings = new EmailGatewaySettings(config, allowedFilter);
         }
@@ -105,7 +105,7 @@ namespace DotStd
             return true;
         }
 
-        public bool PrepareToSend(EmailMessage msg)
+        public bool PrepareToSend(EmailMessage? msg)
         {
             // Is this EmailMessage valid to send ?
             if (msg == null)
@@ -144,7 +144,7 @@ namespace DotStd
 
             if (!PrepareToSend(msg))      // Is it valid?
                 return "Incomplete email cannot be sent";
-            if (!InitClient())
+            if (!InitClient() || _client == null)
                 return "The system is not configured to send email";
             _client.Send(msg.GetMailMessage());
             return StringUtil._NoErrorMsg;    // ok
@@ -166,18 +166,18 @@ namespace DotStd
             }
         }
 
-        public async Task<string> SendAsync(EmailMessage msg)
+        public async Task<string> SendAsync(EmailMessage? msg)
         {
             // return error message or null = success.
-            if (!PrepareToSend(msg))      // Is it valid?
+            if (!PrepareToSend(msg) || msg == null)      // Is it valid?
                 return "Incomplete email cannot be sent";
-            if (!InitClient())
+            if (!InitClient() || _client == null)
                 return "The system is not configured to send email";
             await _client.SendMailAsync(msg.GetMailMessage());
             return StringUtil._NoErrorMsg;    // ok
         }
 
-        public async Task<string> SendSafeAsync(EmailMessage msg)
+        public async Task<string> SendSafeAsync(EmailMessage? msg)
         {
             // safe send.  no throw.
             // return error message or StringUtil._NoErrorMsg = success.

@@ -5,18 +5,27 @@ using System.Security.Cryptography;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Base for helper mechanism to store key for crypt/decrypt of some string.
+    /// </summary>
     public abstract class CryptKey
     {
-        // Base for helper mechanism to store key for crypt/decrypt of some string.
-
-        protected byte[] _Key; // kLen bytes.
-        protected byte[] _IV; // kLen bytes.
+        protected byte[] _Key; // kLen bytes. pad to size that fits _Algo.KeySize/8
+        protected byte[] _IV; // kLen bytes. pad to size that fits _Algo.BlockSize/8
         protected SymmetricAlgorithm _Algo; // what crypto algorithm to use ?
+
+        protected CryptKey(byte[] key, byte[] iv, SymmetricAlgorithm algo)
+        {
+            _Key = key;
+            _IV = iv;
+            _Algo = algo;
+        }
 
         public string EncryptStr(string value)
         {
-            // To Base64 string
+            // To Base64 string. pad out to proper size for algorithm?
             // Can throw. "System.Security.Cryptography.CryptographicException: 'Specified key is not a valid size for this algorithm.'"
+            // or Specified initialization vector (IV) does not match the block size for this algorithm. (Parameter 'rgbIV')
 
             if (string.IsNullOrEmpty(value))
                 return "";
@@ -59,38 +68,34 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Standard DES encryption.
+    /// 8 bytes randomly selected for both the Key and the Initialization Vector.
+    /// the IV is used to encrypt the first block of text so that any repetitive patterns are not apparent
+    /// </summary>
     public class cCryptD : CryptKey
     {
-        // Standard DES encryption
-        // 8 bytes randomly selected for both the Key and the Initialization Vector
-        // the IV is used to encrypt the first block of text so that any repetitive patterns are not apparent
-
         public const int kLen = 8;
 
-        public cCryptD(byte[] k, byte[] i)
+        public cCryptD(byte[] k, byte[] iv) : base(k, iv, DES.Create())
         {
             //Assert.IsTrue(k.Length == kLen);
             //Assert.IsTrue(i.Length == kLen);
-            _Key = k;
-            _IV = i;
-            _Algo = new DESCryptoServiceProvider();
         }
     }
 
+    /// <summary>
+    /// TRIPLE DES encryption, decryption.
+    /// 24 byte or 192 bit key and IV for TripleDES
+    /// </summary>
     public class cCryptD3 : CryptKey
     {
-        // TRIPLE DES encryption, decryption
-        // 24 byte or 192 bit key and IV for TripleDES
-
         public const int kLen = 24;
 
-        public cCryptD3(byte[] k, byte[] i)
+        public cCryptD3(byte[] k, byte[] iv) : base(k, iv, TripleDES.Create())
         {
             //Assert.IsTrue(k.Length == kLen);
             //Assert.IsTrue(i.Length == kLen);
-            _Key = k;
-            _IV = i;
-            _Algo = new TripleDESCryptoServiceProvider();
         }
     }
 }

@@ -4,12 +4,13 @@ using System.Net.Mail;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helper for System.Net.Mail.MailMessage
+    /// Send Emails used for : password reset, password recovery, instant reports, etc. 
+    /// Wrapper for MailMessage
+    /// </summary>
     public class EmailMessage : IMessageBase // : IValidatable
     {
-        // Helper for System.Net.Mail.MailMessage
-        // Send Emails used for : password reset, password recovery, instant reports, etc. 
-        // Wrapper for MailMessage
-
         protected readonly MailMessage _message;
 
         public EmailMessage(string sMailFromAddr, bool isBodyHtml)

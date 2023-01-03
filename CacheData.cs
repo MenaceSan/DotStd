@@ -2,12 +2,13 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace DotStd
 {
     /// <summary>
-    /// Manage a process shared cache, prefix keys by type.
+    /// Manage a process shared (Singleton) cache, prefix keys by type.
     /// needs NuGet for Caching Support.
     /// based on IMemoryCache for ASP .NET Core.
     /// like the OLD .NET MemoryCache.Default. 
@@ -23,10 +24,10 @@ namespace DotStd
 
         public const int kSecond = 1;       // multiplier for seconds. for debug.
 
-        private static IMemoryCache _memoryCache;       // my global/shared singleton instance of the Cache.
+        private static IMemoryCache? _memoryCache;       // my global/shared singleton instance of the Cache.
         private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. manual make thread safe.
 
-        public static void Init(IMemoryCache memoryCache)
+        public static void Init(IMemoryCache? memoryCache)
         {
             // set memoryCache = my global instance of the Cache.
             //  maybe Microsoft.Extensions.Caching.Memory.IMemoryCache else default.
@@ -45,50 +46,50 @@ namespace DotStd
             _memoryCache = memoryCache;
         }
 
+        /// <summary>
+        /// combine/composite args for a cache key. Assume the key has a type/group prefix.
+        /// </summary>
+        /// <param name="argsList"></param>
+        /// <returns></returns>
         public static ulong MakeHashCode(params object[] argsList)
         {
-            // combine/composite args for a cache key. Assume the key has a type/group prefix.
             if (argsList == null)
                 return 0;
             ulong hashCode = 0;
             foreach (object o in argsList)
             {
                 hashCode = (hashCode << 13) | (hashCode >> (64 - 13)); // rotl
-                hashCode ^= (ulong) o.GetHashCode();
+                hashCode ^= (ulong)o.GetHashCode();
             }
             return hashCode;
         }
 
-        public static string MakeKeyArgs(params object[] argsList)
+        public static string MakeKeyArgsHash(params object[] argsList)
         {
+            // Make hashcode from args.
             return MakeHashCode(argsList).ToString();
         }
 
         /// <summary>
-        /// Helper to make a cache key.
+        /// Memory cache uses this callback PostEvictionDelegate => its gone.
         /// </summary>
-        /// <param name="typePrefix">operation name followed by arguments to make it unique.</param>
-        /// <returns>A string represents the query</returns>
-        public static string MakeKey(string typePrefix, params object[] argsList)
-        {
-            // build the string representation of some expression for the cache key. (AKA cacheKey)
-            return string.Concat(typePrefix, kSep, MakeKeyArgs(argsList));
-        }
-
+        /// <param name="cacheKey">might be string or int ?</param>
+        /// <param name="value"></param>
+        /// <param name="reason"></param>
+        /// <param name="state"></param>
         private static void PostEvictionCallback(object cacheKey, object value, EvictionReason reason, object state)
         {
-            // Memory cache uses this callback PostEvictionDelegate => its gone.
             if (reason != EvictionReason.Replaced)
             {
                 lock (_cacheKeys)
                 {
-                    _cacheKeys.Remove(cacheKey.ToString());
+                    _cacheKeys.Remove(cacheKey.ToString() ?? string.Empty);
                 }
             }
         }
 
         /// <inheritdoc cref="IMemoryCache.TryGetValue"/>
-        public static bool TryGetValue(string cacheKey, out object value)
+        public static bool TryGetValue(string cacheKey, [NotNullWhen(true)] out object? value)
         {
             if (_memoryCache == null)
             {
@@ -102,10 +103,10 @@ namespace DotStd
         /// Find cacheKey in the cache, 
         /// </summary>
         /// <returns>The cacheKey object or null</returns>
-        public static object Get(string cacheKey)
+        public static object? Get(string cacheKey)
         {
             // try to get the query result from the cache
-            if (!TryGetValue(cacheKey, out object value))
+            if (!TryGetValue(cacheKey, out object? value))
             {
                 // Debug.Assert(!_cacheKeys.Contains(cacheKey));
                 return null;
@@ -126,6 +127,7 @@ namespace DotStd
             if (_memoryCache == null)
             {
                 Init(null);
+                ValidState.ThrowIfNull(_memoryCache, nameof(_memoryCache));
             }
             ICacheEntry entry = _memoryCache.CreateEntry(cacheKey);
             _cacheKeys.Add(cacheKey); // add or replace.
@@ -136,7 +138,7 @@ namespace DotStd
         /// <summary>
         /// Store/replace some object in the cache. Assume it isn't already here??
         /// </summary>
-        public static void Set(string cacheKey, object value, int decaySec = 10 * kSecond)
+        public static void Set(string cacheKey, object? value, int decaySec = 10 * kSecond)
         {
             // obj CANT be null, even though it might make sense.
             if (value == null)
@@ -154,18 +156,17 @@ namespace DotStd
         {
             lock (_cacheKeys)
             {
-                if (!TryGetValue(cacheKey, out var value))
+                if (!TryGetValue(cacheKey, out object? value))
                 {
                     // Debug.Assert(!_cacheKeys.Contains(cacheKey));
                     ICacheEntry entry = CreateEntry(cacheKey);
-                    value = factory(cacheKey);
-                    entry.Value = value;
+                    T valueNew = factory(cacheKey);
+                    entry.Value = valueNew;
                     entry.Dispose();    // This is what actually adds it to the cache. Weird.
+                    return valueNew;
                 }
-                else
-                {
-                    // Debug.Assert(_cacheKeys.Contains(cacheKey));
-                }
+
+                // Debug.Assert(_cacheKeys.Contains(cacheKey));
                 return (T)value;
             }
         }
@@ -174,15 +175,16 @@ namespace DotStd
         {
             // async version of GetOrCreate
 
-            if (!TryGetValue(cacheKey, out object value))
+            if (!TryGetValue(cacheKey, out object? value))
             {
-                value = await factory(cacheKey);        // NOT thread locked. but safe-ish.
+                T valueNew = await factory(cacheKey);        // NOT thread locked. but safe-ish.
                 lock (_cacheKeys)
                 {
                     // Debug.Assert(!_cacheKeys.Contains(cacheKey));
                     ICacheEntry entry = CreateEntry(cacheKey);
-                    entry.Value = value;
+                    entry.Value = valueNew;
                     entry.Dispose();    // This is what actually adds it to the cache. Weird.
+                    return valueNew;
                 }
             }
             else
@@ -216,9 +218,10 @@ namespace DotStd
 
         public static void ClearKeyPrefix(string cacheKeyPrefix)
         {
-            // Force clear the cache for some objects of a type. (e.g. prefixed with key name)
+            // Force clear the cache for some objects of a type. (e.g. prefixed with key type name)
             // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
             // BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
+            // Not to be used with MakeHashCode()/MakeKeyArgsHash()
 
             if (string.IsNullOrWhiteSpace(cacheKeyPrefix))
             {
@@ -239,76 +242,143 @@ namespace DotStd
         }
     }
 
-    public static class CacheT<T> where T : class // : CacheData
+    /// <summary>
+    /// A cache with a unique type prefix name.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>    
+    public class CacheNameT<T> where T : class // : CacheData
     {
-        // A Type specific variation of the global cache singleton CacheData.
-        // Build on CacheData with Type
+        protected readonly string _TypePrefix;     // unique type prefix. manually set or typeof(T).Name.
 
-        private static string MakeKey(string id)
+        public CacheNameT(string typePrefix)
         {
-            return string.Concat(typeof(T).Name, CacheData.kSep, id);
+            _TypePrefix = typePrefix;
         }
+        public CacheNameT()
+        {
+            // just use the type name.
+            _TypePrefix = typeof(T).Name;
+        }
+    }
 
-        public static T Get(string id)
+    /// <summary>
+    /// Cache a singleton based on type. _TN = typeof(T).Name
+    /// </summar>
+    public class CacheSingleT<T> : CacheNameT<T> where T : class
+    {
+        public T? Get()
         {
-            // Find the object in the cache if possible.
-            if (id == null)       // shortcut.
-                return null;
-            ValidState.ThrowIfWhiteSpace(id, nameof(id));       // must have id. else use GetSingleton
-            string cacheKey = MakeKey(id);
-            object o = CacheData.Get(cacheKey);
-            return (T)o;
+            // Get singleton for type T. Instance().
+            // null = may need to lazy load it.
+            return (T?)CacheData.Get(_TypePrefix);
         }
-        public static T Get(int id)
+        public void Set(T obj, int decaySec = 60 * CacheData.kSecond)
+        {
+            CacheData.Set(_TypePrefix, obj, decaySec);
+        }
+        public void Clear()
+        {
+            CacheData.ClearKey(_TypePrefix);
+        }
+        public CacheSingleT(string typePrefix) : base(typePrefix)
+        {
+        }
+        public CacheSingleT() : base()
+        {
+        }
+    }
+
+    /// <summary>
+    /// Cache objects of type T where the key is an int.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class CacheIntT<T> : CacheNameT<T> where T : class // : CacheData
+    {
+        private string MakeKey(int id)
+        {
+            // CacheData::MakeKey
+            return string.Concat(_TypePrefix, CacheData.kSep, id);
+        }
+        public T? Get(int id)
         {
             ValidState.ThrowIfBadId(id, nameof(id));       // should check this before now.
-            return Get(id.ToString());
+            string cacheKey = MakeKey(id);
+            object? o = CacheData.Get(cacheKey);
+            return (T?)o;
         }
-
-        public static T GetSingleton()
+        public void Set(int id, T? obj, int decaySec = 60 * CacheData.kSecond)
         {
-            // Get singleton. Instance()
-            return (T)CacheData.Get(typeof(T).Name);
-        }
-
-        public static void Set(string id, T obj, int decaySec = 60 * CacheData.kSecond)
-        {
+            if (obj == null)
+                return;
             string cacheKey = MakeKey(id);
             CacheData.Set(cacheKey, obj, decaySec);
         }
-        public static void Set(int id, T obj, int decaySec = 60 * CacheData.kSecond)
-        {
-            Set(id.ToString(), obj, decaySec);
-        }
-        public static void SetSingleton(T obj, int decaySec = 60 * CacheData.kSecond)
-        {
-            CacheData.Set(typeof(T).Name, obj, decaySec);
-        }
-
-        public static void ClearKey(string id)
+        public void ClearKey(int id)
         {
             // Clear a single object by key.
             string cacheKey = MakeKey(id);
             CacheData.ClearKey(cacheKey);
         }
-        public static void ClearKey(int id)
+        public CacheIntT(string typePrefix) : base(typePrefix)
         {
-            // Clear a single object by key.
-            ClearKey(id.ToString());
         }
-        public static void ClearSingleton()
+        public CacheIntT()
         {
-            CacheData.ClearKey(typeof(T).Name);
+        }
+    }
+
+    /// <summary>
+    /// A Type specific variation of the global cache. 
+    /// Build on CacheData with Type Id as complex string
+    /// </summary>
+    /// <typeparam name="T">object being cached</typeparam>
+    public class CacheStrT<T> : CacheNameT<T> where T : class // : CacheData
+    {
+        private string MakeKey(string keyArg)
+        {
+            // CacheData::MakeKey
+            return string.Concat(_TypePrefix, CacheData.kSep, keyArg);
         }
 
-        public static void ClearKeyPrefix(string cacheKeyPrefix = null)
+        public T? Get(string? keyArg)
+        {
+            // Find the object in the cache if possible. id is a unique string.
+            if (keyArg == null)       // shortcut null check.
+                return null;
+            ValidState.ThrowIfWhiteSpace(keyArg, nameof(keyArg));       // must have id. else use CacheSingleT
+            string cacheKey = MakeKey(keyArg);
+            object? o = CacheData.Get(cacheKey);
+            return (T?)o;
+        }
+
+        public void Set(string keyArg, T obj, int decaySec = 60 * CacheData.kSecond)
+        {
+            string cacheKey = MakeKey(keyArg);
+            CacheData.Set(cacheKey, obj, decaySec);
+        }
+
+        public void ClearKey(string keyArg)
+        {
+            // Clear a single object by key.
+            string cacheKey = MakeKey(keyArg);
+            CacheData.ClearKey(cacheKey);
+        }
+
+        public void ClearKeyPrefix(string? cacheKeyPrefix = null)
         {
             // Clear this type or a sub set of this type.
             if (cacheKeyPrefix == null)
-                cacheKeyPrefix = nameof(T);
+                cacheKeyPrefix = typeof(T).Name;
             else if (!string.IsNullOrEmpty(cacheKeyPrefix))
                 cacheKeyPrefix = MakeKey(cacheKeyPrefix);   // A weird sub-group ?
             CacheData.ClearKeyPrefix(cacheKeyPrefix);
+        }
+
+        public CacheStrT(string typePrefix) : base(typePrefix)
+        {
+        }
+        public CacheStrT()
+        {
         }
     }
 }

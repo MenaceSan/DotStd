@@ -1,25 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// wrapper/helper to support System.Net.Mail.MailAddress
+    /// parse the email to get First and Last Names, display names.
+    /// </summary>
     public class EmailAddress : IValidatorT<string>
     {
-        // wrapper/helper to support System.Net.Mail.MailAddress
-        // parse the email to get First and Last Names, display names.
-
         public const int kMaxLen = 128;   // there are no valid email addresses > kMaxLen
 
-        public static bool IsEmailAddress(string email)
+        /// <summary>
+        /// Is string in a deneral format that seems like an email address ? renamed from IsValidEmail()
+        /// http://emailregex.com/
+        /// ASSUME will not throw if passed to System.Net.Mail.MailAddress(email)
+        /// Sample valid emails: "jim+somecoolshop22@example.com"
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        public static bool IsEmailAddress([NotNullWhen(true)] string? email)
         {
-            // http://emailregex.com/
-            // General format seems like an email address ? renamed from IsValidEmail()
-            // ASSUME will not throw if passed to System.Net.Mail.MailAddress(email)
-            // Sample valid emails:
-            //  jim+somecoolshop22@example.com
-
             if (string.IsNullOrWhiteSpace(email) || email.Length > kMaxLen)
                 return false;
 
@@ -30,7 +34,7 @@ namespace DotStd
             return Regex.IsMatch(email, @"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$");
         }
 
-        public static string GetHostName(string email)
+        public static string? GetHostName(string? email)
         {
             // Get the hostname part of the (assumed valid) email.
             if (string.IsNullOrWhiteSpace(email))
@@ -41,7 +45,7 @@ namespace DotStd
             return email.Substring(i + 1);
         }
 
-        public static bool IsValidEmail(string email)
+        public static bool IsValidEmail([NotNullWhen(true)] string? email)
         {
             // like IsEmailAddress but more accurate.
 
@@ -57,17 +61,17 @@ namespace DotStd
             catch
             {
                 // catch throw on fail.
-                return false;   
+                return false;
             }
         }
 
-        public virtual bool IsValid(string email)
+        public virtual bool IsValid([NotNullWhen(true)] string? email)
         {
             // virtual IValidatorT<string>
             return IsValidEmail(email);
         }
 
-        public static MailAddress GetMailAddress(string addr1, string sDisplayNameDefault = null)
+        public static MailAddress GetMailAddress(string addr1, string? sDisplayNameDefault = null)
         {
             // Create MailAddress object from string with name parsed correctly.
 
@@ -109,5 +113,4 @@ namespace DotStd
             }
         }
     }
-
 }

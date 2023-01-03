@@ -15,16 +15,13 @@ namespace DotStd
 
     public class HttpDownloader
     {
-        // Use HttpClient to pull data. instead of WebClient
+        // Use HttpClient to pull URL to a local file. instead of WebClient
 
         public string SrcURL { get; set; }
         public string DestPath { get; set; }    // local dest file path.
 
-        public event Progress2.EventHandler ProgressEvent;        // Called as the download progresses. Report
+        public event Progress2.EventHandler? ProgressEvent;        // Called as the download progresses. Report
 
-        public HttpDownloader()
-        {
-        }
         public HttpDownloader(string srcUrl, string dstPath)
         {
             SrcURL = srcUrl;

@@ -47,7 +47,7 @@ namespace DotStd
             return '\0';
         }
 
-        public static string GetEntityName(string src, int startIndex)
+        public static string? GetEntityName(string src, int startIndex)
         {
             // assume any entity name starts with & and ends with ;
             if (src[startIndex] != '&')
@@ -69,7 +69,7 @@ namespace DotStd
 
             for (int i = 0; i < src.Length; i++)
             {
-                string entityName = GetEntityName(src, i);
+                string? entityName = GetEntityName(src, i);
                 if (entityName == null)
                     continue;
                 char ch = GetEntityChar(entityName);
@@ -83,7 +83,7 @@ namespace DotStd
 
         public const string kSelected = "selected ";
 
-        public static string GetOpt(string value, string desc, bool selected = false, string extra = null)
+        public static string GetOpt(string value, string? desc, bool selected = false, string? extra = null)
         {
             // construct HTML option for <select>
             // construct HTML "<option value='1'>Main</option>");
@@ -94,10 +94,10 @@ namespace DotStd
                 extra = string.Concat(kSelected, extra);
             }
 
-            return string.Concat("<option ", extra, "value='", value, "'>", desc, "</option>");
+            return string.Concat("<option ", extra, "value='", value, "'>", desc ?? value, "</option>");
         }
 
-        public static string GetOpt(int value, string desc, bool selected = false)
+        public static string GetOpt(int value, string? desc, bool selected = false)
         {
             // construct HTML option for <select> 
             return GetOpt(value.ToString(), desc, selected);

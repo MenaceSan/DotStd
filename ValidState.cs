@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace DotStd
@@ -30,23 +31,31 @@ namespace DotStd
         // Similar to System.ComponentModel.DataAnnotations.ValidationResult
         // MemberName = "" for global form error.
         public string MemberName;       // reflection name of some property/field.
-        public ValidLevel Level;
-        public string Description;      // Why did we validate it this way ? null or "" = ok.
+        public string Description;      // Why did we validate it this way ? null or "" = OK.
+        public ValidLevel Level;    // fail or warn ?
+
+        public ValidField(string memberName, string description, ValidLevel level = ValidLevel.OK)
+        {
+            MemberName = memberName;
+            Description = description;
+            Level = level;
+        }
     }
 
     public class ValidState : System.ComponentModel.IDataErrorInfo
     {
-        // Hold the validation state for some object.
+        // Hold the validation state for some object. untranslated.
         // helper class for general validation of some object.
         // A View model may have SUGGESTIONS for validation. We may optionally ignore them. (Postal code looks weird, etc)
         // Similar to System.ComponentModel.DataAnnotations.Validator
         // Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
 
         public const int kInvalidId = default;    // 0 This is never a valid id/PK in the db. ValidState.IsValidId() default(int)
+        public static readonly string kInvalidName = "??";   // This data is broken but display something. 
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
-        public const string kSavedChanges = "Saved Changes";
-        public const string kNoChanges = "No Changes";      // We pressed 'save' but there was nothing to do.
+        public const string kSavedChanges = "Saved Changes";    // used with errorMsg = StringUtil._NoErrorMsg = ""
+        public const string kNoChanges = "No Changes";      // We pressed 'save' but there was nothing to do. used with errorMsg = null
 
         public ValidLevel ValidLevel;       // aggregate state for all Fields
 
@@ -63,7 +72,7 @@ namespace DotStd
             }
             set
             {
-                Fields[columnName] = new ValidField { MemberName = columnName, Description = value };
+                Fields[columnName] = new ValidField(columnName, value);
             }
         }
 
@@ -72,26 +81,25 @@ namespace DotStd
         {
             get
             {
-                ValidField val;
-                if (!Fields.TryGetValue(string.Empty, out val))
+                if (!Fields.TryGetValue(string.Empty, out ValidField? val))
                     return "";
                 return val.Description;
             }
             set
             {
-                Fields[string.Empty] = new ValidField { MemberName = string.Empty, Description = value };
+                Fields[string.Empty] = new ValidField(string.Empty, value);
             }
         }
 
         //**********************
 
-        public static bool IsNull(object obj)
+        public static bool IsNull([NotNullWhen(false)] object? obj)
         {
             // is a null ref type or a nullable value type that is null.
             return obj == null || obj == DBNull.Value;
         }
 
-        public static bool IsEmpty(object obj)
+        public static bool IsEmpty([NotNullWhen(false)] object? obj)
         {
             // is object equiv to null or empty string. string.IsNullOrEmpty() but NOT whitespace.
             // DateTime.MinValue might qualify ?
@@ -103,14 +111,14 @@ namespace DotStd
             return false;
         }
 
-        public static bool IsWhiteSpaceStr(object obj)  // similar to IsEmpty()
+        public static bool IsWhiteSpaceStr([NotNullWhen(false)] object? obj)  // similar to IsEmpty()
         {
             if (IsNull(obj) || String.IsNullOrWhiteSpace(obj.ToString()))
                 return true;
             return false;
         }
 
-        public static bool IsNullOrDefault<T>(T obj)
+        public static bool IsNullOrDefault<T>([NotNullWhen(false)] T? obj)
         {
             return obj == null || obj.Equals(default(T));
         }
@@ -153,9 +161,9 @@ namespace DotStd
             return id.ToInt() != kInvalidId;
         }
 
-        public const string kUniqueAllowX = "_@.-+"; // special allowed chars.
+        public const string kUniqueAllowX = "_@.-+"; // special allowed chars for unique ids.
 
-        public static bool IsValidUnique(string s)
+        public static bool IsValidUnique(string? s)
         {
             // Is string valid as a unique id ? might be email ?
             // This should be a proper unique string for Uid. 
@@ -167,7 +175,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             string sl = s.ToLower();
-            if (sl == SerializeUtil.kNull || sl == "none" || sl == "-none")
+            if (sl == SerializeUtil.kNull || sl == "none" || sl == "-none") // disallow this.
                 return false;
 
             foreach (char ch in s)
@@ -185,12 +193,16 @@ namespace DotStd
 
         //*********************
 
-        public void AddError(string nameField, string error)
+        public void AddError(string nameField, string? errorMsg)
         {
             // Record some error. nameField = nameof(x);
             // nameField = "" = global error.
+            // error = untranslated error description.
+
+            if (string.IsNullOrWhiteSpace(errorMsg))    // not a real error.
+                return;
             this.ValidLevel = ValidLevel.Fail;
-            Fields.Add(nameField, new ValidField { MemberName = nameField, Description = error, Level = ValidLevel.Fail });
+            Fields.Add(nameField, new ValidField(nameField, errorMsg, ValidLevel.Fail));
         }
 
         public string GetErrorHTML(bool allFields = true)
@@ -221,7 +233,7 @@ namespace DotStd
             Debug.WriteLine("AssertTrue FAIL " + msg);
         }
 
-        public static void ThrowIf(bool isBad, string msg = null)
+        public static void ThrowIf(bool isBad, string? msg = null)
         {
             // Assert that this is true. throe if not.
             // like Trace.Assert()
@@ -242,8 +254,9 @@ namespace DotStd
         /// <param name="argument">The object that will be validated.</param>
         /// <param name="name">The name of the <i>argument</i> that will be used to identify it should an exception be thrown. use nameof(Property)</param>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
-        public static void ThrowIfNull(object argument, string name)
+        public static void ThrowIfNull([NotNull] object? argument, string name)
         {
+            // ala AssertTrue().IsNotNull()
             if (null == argument)
             {
                 throw new ArgumentNullException(name);
@@ -285,7 +298,7 @@ namespace DotStd
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <i>argument</i> is an empty string.</exception>
-        public static void ThrowIfEmpty(string argument, string name)
+        public static void ThrowIfEmpty([NotNull] string? argument, string name)
         {
             ThrowIfNull(argument, name);
             if (string.IsNullOrEmpty(argument))
@@ -299,7 +312,7 @@ namespace DotStd
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <i>argument</i> is either an empty string or contains only white space.</exception>
-        public static void ThrowIfWhiteSpace(string argument, string name)
+        public static void ThrowIfWhiteSpace([NotNull] string? argument, string name)
         {
             ThrowIfNull(argument, name);
             if (string.IsNullOrWhiteSpace(argument))

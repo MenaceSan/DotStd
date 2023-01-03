@@ -3,14 +3,16 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Get Weather at a location (or near it)
+    /// ConfigInfoBase.kApps + "OpenWeatherMap"
+    /// </summary>
     public class GeoWeatherService : GeoLocation
     {
-        // Weather at a location (or near it)
-        // ConfigInfoBase.kApps + "OpenWeatherMap"
-
         public async Task<string> GetWeatherJson(string apiKey)
         {
             // Get a JSON blob for the weather near some Location.
+            // 401 = unauthorized. https://home.openweathermap.org/api_keys
             const string baseUrl = "http://api.openweathermap.org/data/2.5/weather";
 
             using (var client = new HttpClient())

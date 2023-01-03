@@ -5,14 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotStd
 {
+    /// <summary>
+    /// String formatting for display.
+    /// Compliments StringUtil
+    /// </summary>
     public static class Formatter
     {
-        // String formatting for display.
-        // Compliments StringUtil
-
         public const string kCrLf = "\r\n";     // Windows style. like VB vbCrLf or Environment.NewLine
 
         // handlebars for email templates.
@@ -77,20 +79,29 @@ namespace DotStd
                 kSizeSuffixes[mag]);
         }
 
-        public static string ToTitleCase(string str)
+        /// <summary>
+        /// Capitalize word. CultureInfo cultureInfo
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string ToTitleCase(string? s)
         {
-            // capitalize word. CultureInfo cultureInfo
-            if (string.IsNullOrWhiteSpace(str))
+            if (string.IsNullOrWhiteSpace(s))
                 return "";
             CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             TextInfo ti = cultureInfo.TextInfo;
-            return ti.ToTitleCase(str).Trim();
+            return ti.ToTitleCase(s).Trim();
         }
 
-        public static string ToLower1(string s)
+        /// <summary>
+        /// Make lower case titles. Opposite of Formatter.ToTitleCase()
+        /// make sure the first letter is lower case char. JavaScript names like this?
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull("s")]
+        public static string? ToLower1(string? s)
         {
-            // Opposite of Formatter.ToTitleCase()
-            // make sure the first letter is lower case char. JavaScript names like this?
             if (string.IsNullOrEmpty(s))
                 return s;
             if (!StringUtil.IsUpper1(s[0]))
@@ -98,14 +109,15 @@ namespace DotStd
             return char.ToLower(s[0]) + s.Substring(1);
         }
 
-        static readonly Dictionary<string, string> _SpecialPlurals = new Dictionary<string, string> {
-            { "word", "work" },
-            { "Work", "Work" },
-            { "fish", "fish" },
-            { "Fish", "Fish" },
+        static readonly List<string> _Plurals1 = new List<string> {  // already plural.
+            "clientpayerins",
+            "fish",
+            "hcpcs",
+            "work",
         };
 
-        public static string ToPlural(string text)
+        [return: NotNullIfNotNull("text")]
+        public static string? ToPlural(string? text)
         {
             // Attempt to pluralize a word. Assume its not plural already.
             // Preserve case.
@@ -114,41 +126,49 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(text))
                 return text;
 
-            if (_SpecialPlurals.TryGetValue(text, out string pluralized))
-                return pluralized;
+            string textLower = text.ToLower();
+            if (_Plurals1.BinarySearch(textLower) >= 0)
+                return text;
 
-            if (text.EndsWith("y", StringComparison.OrdinalIgnoreCase) &&
-                (text.Length <= 1 || !StringUtil.IsVowel(text[text.Length - 2])))
+            if (textLower.EndsWith("y") &&
+                (textLower.Length <= 1 || !StringUtil.IsVowel(textLower[text.Length - 2])))
             {
                 return text.Substring(0, text.Length - 1) + "ies";
             }
-            else if (text.EndsWith("us", StringComparison.InvariantCultureIgnoreCase))
+            else if (textLower.EndsWith("us"))
             {
                 // http://en.wikipedia.org/wiki/Plural_form_of_words_ending_in_-us
                 return text + "es";
             }
-            else if (text.EndsWith("ss", StringComparison.InvariantCultureIgnoreCase))
+            else if (textLower.EndsWith("ss") ||
+                textLower.EndsWith("s"))
             {
                 return text + "es";
             }
-            else if (text.EndsWith("s", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return text;
-            }
-            else if (text.EndsWith("x", StringComparison.InvariantCultureIgnoreCase) ||
-                text.EndsWith("ch", StringComparison.InvariantCultureIgnoreCase) ||
-                text.EndsWith("sh", StringComparison.InvariantCultureIgnoreCase))
+            else if (textLower.EndsWith("x") ||
+                textLower.EndsWith("ch") ||
+                textLower.EndsWith("sh"))
             {
                 return text + "es";
             }
-            else if (text.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
+
+#if false
+            else if (textLower.EndsWith("s", StringComparison.InvariantCultureIgnoreCase))
             {
+                return text; // already plural ?
+            }
+            else if (textLower.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
+            {
+                // Half, calf, loaf. NOT beef, proof
                 return text.Substring(0, text.Length - 1) + "ves";
             }
-            else if (text.EndsWith("fe", StringComparison.InvariantCultureIgnoreCase) && text.Length > 2)
+            else if (textLower.EndsWith("fe", StringComparison.InvariantCultureIgnoreCase) && text.Length > 2)
             {
+                // safe?, 
                 return text.Substring(0, text.Length - 2) + "ves";
             }
+#endif
+
             else
             {
                 return text + "s";
@@ -196,18 +216,18 @@ namespace DotStd
             return result;
         }
 
-        public static string JoinN(string separator, params string[] array)
+        public static string JoinN(string separator, params string?[] array)
         {
             // join with separator (e.g. ",") but skip nulls and empties.
             return string.Join(separator, array.Where(s => !string.IsNullOrWhiteSpace(s)));
         }
-        public static string JoinTitles(string separator, params string[] array)
+        public static string JoinTitles(string separator, params string?[] array)
         {
             // separator = (e.g. ",")
             return string.Join(separator, array.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => ToTitleCase(x)));
         }
 
-        public static string FullName(params string[] array)
+        public static string FullName(params string?[] array)
         {
             // Puts together first,middle,last names separated by spaces. Always capitalize.
             // ignores null, whitespace. 
@@ -288,7 +308,7 @@ namespace DotStd
             return s.Substring(0, len);
         }
 
-        public static string ReplaceToken0(string body, string token, string value)
+        public static string ReplaceToken0(string body, string token, string? value)
         {
             // replace an exact token in a boiler plate template email.
             // Name the template file XX.html such that it highlights correctly in VS editor.
@@ -299,14 +319,14 @@ namespace DotStd
             return body.Replace(token, value);
         }
 
-        public static string ReplaceTokenX(string body, string token, string value)
+        public static string ReplaceTokenX(string body, string token, string? value)
         {
             // Use handlebar style.
             // Prefer this token style {{x}} for templates. Go/? syntax
             return ReplaceToken0(body, kBlockStart + token + kBlockEnd, value);
         }
 
-        public static string ReplaceTokenX(string body, IPropertyGetter props, string errorStr = null)
+        public static string ReplaceTokenX(string body, IPropertyGetter props, string? errorStr = null)
         {
             // Replace a set of possible {{tokens}} from IPropertyGetter
 
@@ -346,7 +366,7 @@ namespace DotStd
 
                 if (ifTrue)
                 {
-                    object val = props.GetPropertyValue(name);
+                    object? val = props.GetPropertyValue(name);
                     if (val == null)
                     {
                         if (errorStr == null) // just leave errors.

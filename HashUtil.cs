@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Fast 64 bit hash. ulong output.
+    /// like GetKnuthHash
+    /// https://stackoverflow.com/questions/8820399/c-sharp-4-0-how-to-get-64-bit-hash-code-of-given-string
+    /// https://github.com/brandondahler/Data.HashFunction/blob/master/src/System.Data.HashFunction.xxHash/xxHash_Implementation.cs
+    /// </summary>
     public class HashXXH64 : HashAlgorithm
     {
-        // Fast 64 bit hash. ulong output.
-        // like GetKnuthHash
-        // https://stackoverflow.com/questions/8820399/c-sharp-4-0-how-to-get-64-bit-hash-code-of-given-string
-        // https://github.com/brandondahler/Data.HashFunction/blob/master/src/System.Data.HashFunction.xxHash/xxHash_Implementation.cs
-
-        // TODO
-
         public ulong Value { get; private set; }   // output short cut.
 
         public override void Initialize()
         {
+            // TODO
             throw new NotImplementedException();
         }
 
@@ -34,16 +34,18 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Wrapper for HashAlgorithm for use in crypto . 
+    /// Hashes can be used for 1. Id. Avoid Accidental Collision, 2. Security. Avoid intentional collision.
+    /// Crypto hashes are usually on strings (passwords). Actual Hash is on String.ToByteArray().
+    /// If we assume a unique salt per user and >= 128 bits of hash, the best attack left is dictionary/brute force password guessing. 
+    /// Length of the hash beyond ~256 bits is no longer useful. we need to make it expensive for the attacker.
+    /// Algorithms: PDFKDF2 = weak to FPGA usage. scrypt newer. control cost of attack.
+    /// NOTE: might wrap byte[] hash output in StringUtil.ToHexStr() or Convert.ToBase64String() for db storage as string ?
+    /// https://www.srihash.org/
+    /// </summary>
     public class HashUtil
     {
-        // Wrapper for HashAlgorithm for use in crypto . 
-        // Hashes can be used for 1. Id. Avoid Accidental Collision, 2. Security. Avoid intentional collision.
-        // Crypto hashes are usually on strings (passwords). Actual Hash is on String.ToByteArray().
-        // If we assume a unique salt per user and >= 128 bits of hash, the best attack left is dictionary/brute force password guessing. 
-        // Length of the hash beyond ~256 bits is no longer useful. we need to make it expensive for the attacker.
-        // Algorithms: PDFKDF2 = weak to FPGA usage. scrypt newer. control cost of attack.
-        // NOTE: might wrap byte[] hash output in StringUtil.ToHexStr() or Convert.ToBase64String() for db storage as string ?
-
         private HashAlgorithm _Hasher;
 
         public void Init()
@@ -77,13 +79,14 @@ namespace DotStd
             // like HashAlgorithm.ComputeHash(Stream) but async
 
             var buffer = new byte[8192];
-            int bytesRead;
+            int bytesRead = 0;
 
             // compute the hash on 8KiB blocks
             while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                 _Hasher.TransformBlock(buffer, 0, bytesRead, buffer, 0);
 
             _Hasher.TransformFinalBlock(buffer, 0, bytesRead);
+            ValidState.ThrowIfNull(_Hasher.Hash, nameof(_Hasher.Hash));
             return _Hasher.Hash;
         }
 
@@ -194,7 +197,7 @@ namespace DotStd
             // Wrap a MD5 HashAlgorithm.
             // NIST recommends SHA-256 or better for passwords.
             // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-            return new MD5CryptoServiceProvider();
+            return MD5.Create();
         }
         public static HashAlgorithm GetSHA256()
         {
@@ -204,14 +207,14 @@ namespace DotStd
             // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
             // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
 
-            return new SHA256CryptoServiceProvider();
+            return SHA256.Create();
         }
         public static HashAlgorithm GetSHA512()
         {
             // secure enough for crypto. 
             // SHA512 = Return 512 bits. 64 bytes for a base64 string of ?? chars.
             // assume >= 64 bit random salt is added to this.
-            return new SHA512CryptoServiceProvider();
+            return SHA512.Create();
         }
 
         public const string kMd5 = "md5";
@@ -236,17 +239,17 @@ namespace DotStd
                 // Secure hash. 
                 // SHA384 = Return 384 bits. 48 bytes for a base64 string of ??? chars.
 
-                return new SHA384CryptoServiceProvider();
+                return SHA384.Create();
             }
             else if (hashAlgName.StartsWith("sha512"))
             {
-                // Secure hash. 
+                // Secure hash. "sha512-Wkxbeuy81yHqZNrMurMURCOCMzkJqaFYnvToublHiOGoVXQ2DS1lOUjKwstbe0GwELrRb9sicdV2y6GiAnVxuw=="
                 // SHA512 = Return 512 bits. 64 bytes for a base64 string of ??? chars.
 
                 return GetSHA512();
             }
 
-            return null;    // or default ?
+            throw new ArgumentException("FindHasherByName invalid name");
         }
     }
 }

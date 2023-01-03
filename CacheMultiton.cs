@@ -3,23 +3,26 @@ using System.Collections.Generic;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Build on CacheT<T> for Multiton pattern. Manager is singleton per type T.
+    /// https://en.wikipedia.org/wiki/Multiton_pattern
+    /// All users get the SAME version of the object! There is only one version of an object with the same TId 'Id'. It can be updated dynamically for all consumers.
+    /// This is a cache like CacheData that also has a weak reference to tell if the object might still be referenced some place.
+    /// 1. The data stays around for cache time with the hard reference.
+    /// 2. The data also has a weak reference count which makes sure the object is the same for all callers. 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public static class CacheMultiton<T> where T : class
     {
-        // Build on CacheT<T> for Multiton pattern. Manager is singleton per type T.
-        // https://en.wikipedia.org/wiki/Multiton_pattern
-        // All users get the SAME version of the object! There is only one version of an object with the same TId 'Id'. It can be updated dynamically for all consumers.
-        // This is a cache like CacheData that also has a weak reference to tell if the object might still be referenced some place.
-        // 1. The data stays around for cache time with the hard reference.
-        // 2. The data also has a weak reference count which makes sure the object is the same for all callers. 
-
         public static Dictionary<string, WeakReference> _WeakRefs = new Dictionary<string, WeakReference>();  // use this to tell if the object might still be referenced by someone even though the cache has aged out.
         public static DateTime _LastFlushTime = DateTime.MinValue;      // Flush dead stuff out of the _WeakRefs cache eventually.
 
+        /// <summary>
+        /// flush the disposed weak refs.
+        /// Periodically Throttle calling this using FlushDeadTick()
+        /// </summary>
         internal static void FlushDead()
         {
-            // Periodically flush the disposed weak refs.
-            // Throttle calling this using FlushDeadTick()
-
             lock (_WeakRefs)
             {
                 var removals = new List<string>();
@@ -39,42 +42,49 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// Periodically flush the disposed weak refs.
+        /// Make sure we don't call FlushDead too often. throttle
+        /// </summary>
+        /// <param name="utcNow"></param>
         public static void FlushDeadTick(DateTime utcNow)
         {
-            // Periodically flush the disposed weak refs.
-            // Make sure we don't call FlushDead too often. throttle
             if ((utcNow - _LastFlushTime).TotalMinutes < 2)    // throttle.
                 return;
             _LastFlushTime = utcNow;
             FlushDead();
         }
 
-        public static T GetKeyT<TId>(TId id, int decaysec, Func<TId, T> factory)
+        /// <summary>
+        /// Get object from cache and Load/Create it if needed.
+        /// like IMemoryCache GetOrCreate
+        /// NOTE: await Task<T> cant be done inside lock !???
+        /// </summary>
+        /// <typeparam name="TId"></typeparam>
+        /// <param name="id">int or string.</param>
+        /// <param name="decaysec"></param>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public static T? GetKeyT<TId>(TId id, int decaysec, Func<TId, T>? factory)
         {
-            // Get object from cache and Load/Create it if needed.
-            // NOTE: await Task<T> cant be done inside lock !???
-            // TId = int or string.
-            // like IMemoryCache GetOrCreate
-
             string cacheKey = string.Concat(typeof(T).Name, CacheData.kSep, id);
 
             lock (_WeakRefs)
             {
                 // Find in the hard ref cache first.
-                T obj = (T)CacheData.Get(cacheKey);
+                T? obj = (T?)CacheData.Get(cacheKey);
                 if (obj != null)
                 {
                     return obj;  // got it.
                 }
 
                 // Fallback to the weak ref cache next. e.g. someone has a ref that existed longer than the cache? get it.
-                WeakReference wr;
-                if (_WeakRefs.TryGetValue(cacheKey, out wr))
+                if (_WeakRefs.TryGetValue(cacheKey, out WeakReference? wr))
                 {
                     if (wr.IsAlive)
                     {
                         // someone still has a ref to this . so continue to use it. we should reload this from the db though.
-                        obj = (T)wr.Target;
+                        obj = (T?)wr.Target;
                     }
                 }
 
@@ -82,7 +92,7 @@ namespace DotStd
                 if (factory != null)
                 {
                     // NOTE: await Task<T> cant be done inside lock !
-                    T objLoad = factory.Invoke(id);
+                    T? objLoad = factory.Invoke(id);
                     ValidState.ThrowIfNull(objLoad, nameof(objLoad));
 
                     if (obj == null)
@@ -110,15 +120,19 @@ namespace DotStd
             }
         }
 
-        public static T Get(int id, int decaysec, Func<int, T> factory)
+        /// <summary>
+        /// Find this object in the cache. Load/Create it if it isn't present.
+        /// T loader(int)
+        /// like IMemoryCache GetOrCreate
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="decaysec"></param>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public static T? Get(int id, int decaysec, Func<int, T>? factory)
         {
-            // Find this object in the cache. Load/Create it if it isn't present.
-            // T loader(int)
-            // like IMemoryCache GetOrCreate
-
             if (!ValidState.IsValidId(id))  // can't do anything about this. always null.
                 return null;
-
             return GetKeyT(id, decaysec, factory);
         }
 
@@ -128,7 +142,7 @@ namespace DotStd
             // id is not int ?
             lock (_WeakRefs)
             {
-                T obj = GetKeyT(id, 10, null);
+                T? obj = GetKeyT(id, 10, null);
                 if (obj == null)
                     return;     // Its not loaded so do nothing.
                 PropertyUtil.InjectProperties<T>(obj, newValues); // refresh props in old weak ref.
@@ -151,6 +165,5 @@ namespace DotStd
             return Get(id, decaysec, factory2);
         }
 #endif
-
     }
 }

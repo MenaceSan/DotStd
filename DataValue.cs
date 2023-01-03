@@ -4,14 +4,15 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// data units. What type of data? SI units + more.
+    /// https://en.wikipedia.org/wiki/SI_base_unit
+    /// </summary>
     enum DataUnit
     {
-        // units. What type of data? SI units + more.
-        // https://en.wikipedia.org/wiki/SI_base_unit
-
         unk = 0,        // can be fractional. percent?
         boolean = 1,       // true or false state.
-        quantity = 2,   // quantity of some X, typically whole numbers.
+        quantity = 2,   // quantity of some arbitrary X, typically whole numbers.
 
         m,      // meters distance.
         g,      // grams mass. (kg)
@@ -27,27 +28,26 @@ namespace DotStd
         // https://en.wikipedia.org/wiki/Non-SI_units_mentioned_in_the_SI
 
         v,          // Velocity = m/s
-        hectare,    // square - 100 m2
+        hectare,    // square area - 100 m2
         litre,      // volume - 0.001 m3
         radian,     // Pi angle.
 
-        // Medical.
+        // Medical. complex units.
 
         bpm,        // something per minute. Beats, breaths, etc.
         bmi,        // kg weight per m2 = density.
         bp,         // blood pressure = mmHg (Systolic/Diastolic)
         SpO2,       // %. Pulse oximetry. https://en.wikipedia.org/wiki/Pulse_oximetry
         Glucose,    // mg/dL
-
-
     }
 
+    /// <summary>
+    /// A single point of data from the real world.
+    /// a sample, measurement, reading, point, value,
+    /// </summary>
     public class DataValue
     {
-        // A single point of data from the real world.
-        // a sample, measurement, reading, point, value,
-
         DataUnit Unit { get; set; }
-        object Value { get; set; }      // double ?
+        object? Value { get; set; }      // double ?
     }
 }

@@ -1,14 +1,21 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helper for arrays of bytes.
+    /// byte[] can also be stored/serialized as Base64 or UUCode/uuencode or yEnc. see SerializeUtil.
+    /// </summary>
     public static class ByteUtil
     {
-        // byte[] can also be stored/serialized as Base64 or UUCode/uuencode or yEnc. see SerializeUtil.
-
-        public static bool IsNullOrZero(this byte[] val)
+        /// <summary>
+        /// similar to string.IsNullOrEmpty()
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static bool IsNullOrZero([NotNullWhen(false)] this byte[]? val)
         {
-            // similar to string.IsNullOrEmpty()
             if (val == null)
                 return true;
             foreach (var b in val)
@@ -19,15 +26,19 @@ namespace DotStd
             return true;
         }
 
+        /// <summary>
+        /// Truncate 0 off the end of byte array. No need to encode that.
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static byte[] TruncateZeros(this byte[] b)
         {
-            // Truncate 0 off the end. No need to encode that.
             int len = b.Length;
             for (; len > 0 && b[len - 1] == 0; len--)
             {
             }
             if (len <= 0)
-                return null;
+                return Array.Empty<byte>();
             if (len == b.Length)
                 return b;
             var b2 = new byte[len];
@@ -95,11 +106,17 @@ namespace DotStd
         }
 #endif
 
-        public static byte[] GetChunk(this byte[] val, int offset, int size)
+        /// <summary>
+        /// Get some chunk of a byte array. Used in place of Skip/Take
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public static byte[] GetChunk(this byte[]? val, int offset, int size)
         {
-            // Get some chunk of a byte array. Used in place of Skip/Take
             if (val == null)
-                return null;
+                return Array.Empty<byte>();
             size = Math.Min(val.Length - offset, size);  // Don't overrun the end.
             byte[] newBytes = new byte[size];
             Array.Copy(val, offset, newBytes, 0, size);
@@ -145,9 +162,14 @@ namespace DotStd
             return (uint)b[offset + 0] | ((uint)b[offset + 1] << 8) | ((uint)b[offset + 2] << 16) | ((uint)b[offset + 3] << 24);
         }
 
+        /// <summary>
+        /// Get little endian value
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static ulong ToULongLE(byte[] b, int offset = 0)
         {
-            // little endian
             if (b == null)
                 return 0;
             uint valLow = ToUIntLE(b, offset);
@@ -215,6 +237,12 @@ namespace DotStd
                 ((ulong)b[offset + 0] << 56);
         }
 
+        /// <summary>
+        /// Serialize as network order.
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
         public static void PackULongN(byte[] b, int offset, ulong value)
         {
             // network order.

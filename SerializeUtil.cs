@@ -169,8 +169,6 @@ namespace DotStd
             // value strings are JSON encoded ! for quotes use \"
             // A JSON string must be double-quoted, according to the specs, so you don't need to escape single ' . 
 
-            if (tuples == null)
-                return null;
             if (tuples.Length == 0)
                 return "";
             var sb = new StringBuilder();
@@ -309,7 +307,7 @@ namespace DotStd
             }
         }
 
-        public static object FromXML(string xml, Type toType)
+        public static object? FromXML(string xml, Type toType)
         {
             // Create object from XML string.
             using (var stream = xml.ToMemoryStream())

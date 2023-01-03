@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -7,14 +8,15 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Get an address range in CIDR format.
+    /// e.g. s = "2001:200::/37"
+    /// https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+    /// https://networkengineering.stackexchange.com/questions/3697/the-slash-after-an-ip-address-cidr-notation
+    /// </summary>
     public class IpAddrCidr
     {
-        // Get an address range in CIDR format.
-        // e.g. s = "2001:200::/37"
-        // https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
-        // https://networkengineering.stackexchange.com/questions/3697/the-slash-after-an-ip-address-cidr-notation
-
-        public IPAddress Addr;
+        public IPAddress? Addr;
         public int Bits;            // PrefixBits. High to low bits in a mask.
 
         public uint GetSize4()
@@ -39,6 +41,7 @@ namespace DotStd
             return (ulong)((1ul << (64 - Bits)) - 1);
         }
 
+        [MemberNotNullWhen(returnValue: true, member: nameof(Addr))]
         public bool ParseCidr(string s)
         {
             // Get an IPAddress range in string CIDR format.
@@ -52,8 +55,7 @@ namespace DotStd
             }
             Bits = prefixBits;
 
-            IPAddress addr2;
-            if (!IPAddress.TryParse(addrA[0], out addr2))
+            if (!IPAddress.TryParse(addrA[0], out IPAddress? addr2))
             {
                 return false;
             }
@@ -137,10 +139,13 @@ namespace DotStd
             return 0;
         }
 
+        /// <summary>
+        /// Is a private ip/local range. not external. similar to IPAddress.IsLoopback(addr)
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <returns></returns>
         public static bool IsPrivate(IPAddress addr)
         {
-            // A private ip/local range. not external. similar to IPAddress.IsLoopback(addr)
-
             if (addr.AddressFamily == AddressFamily.InterNetwork)
             {
                 byte[] ip = addr.GetAddressBytes();
@@ -160,7 +165,7 @@ namespace DotStd
             return IPAddress.IsLoopback(addr);
         }
 
-        public static IPAddress FindIPAddrLocal()
+        public static IPAddress? FindIPAddrLocal()
         {
             // Get my local address.
             // https://stackoverflow.com/questions/6803073/get-local-ip-address
@@ -178,8 +183,8 @@ namespace DotStd
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
                 {
                     socket.Connect("8.8.8.8", 65530);   // Use Google DNS.
-                    IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-                    return endPoint.Address;
+                    IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
+                    return endPoint?.Address;
                 }
             }
             catch (Exception ex)
@@ -189,11 +194,15 @@ namespace DotStd
             }
         }
 
-        public static async Task<string> FindIPAddrExternal2(CancellationToken token)
+        /// <summary>
+        /// Use an external service to find my public IP address. May throw.
+        /// only works if: System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
+        /// https://stackoverflow.com/questions/3253701/get-public-external-ip-address
+        /// </summary>
+        /// <param name="token">CancellationToken</param>
+        /// <returns>ip address as string</returns>
+        public static async Task<string?> FindIPAddrExternal2(CancellationToken token)
         {
-            // Use an external service to find my public IP address. May throw.
-            // only works if: System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
-            // https://stackoverflow.com/questions/3253701/get-public-external-ip-address
             try
             {
                 using (var client = new HttpClient())
@@ -214,11 +223,11 @@ namespace DotStd
             }
         }
 
-        public static async Task<IPAddress> FindIPAddrExternal(CancellationToken token)
+        public static async Task<IPAddress?> FindIPAddrExternal(CancellationToken token)
         {
-            string externalip = await FindIPAddrExternal2(token);
-            IPAddress addr;
-            if (!IPAddress.TryParse(externalip, out addr))
+            string? externalip = await FindIPAddrExternal2(token);
+
+            if (!IPAddress.TryParse(externalip, out IPAddress? addr))
             {
                 return null;
             }

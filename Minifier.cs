@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Minify some client site script file that has comments etc.
+    /// https://docs.microsoft.com/en-us/aspnet/core/client-side/bundling-and-minification?view=aspnetcore-3.1
+    /// use for: CSS, HTML, JavaScript
+    /// </summary>
     public static class Minifier
     {
-        // https://docs.microsoft.com/en-us/aspnet/core/client-side/bundling-and-minification?view=aspnetcore-3.1
-        // CSS Minifier
-        // HTML Minifier
-        // JavaScript Minifier
-
         public const string kMin = ".min.";     // is minified version ?
         public const string kMin2 = "-min.";    // alternate minified naming style.
 
@@ -34,8 +34,8 @@ namespace DotStd
         public static readonly string[] extensions =
         {
             kExtCss,
-            ".htm",
-            ".html",
+            FileUtil.kExtHtm,
+            FileUtil.kExtHtml,
             kExtJs,
         };
 
@@ -111,10 +111,14 @@ namespace DotStd
             }
         }
 
-        public static async Task UpdateDirectory(string dirPath, string searchPattern = null)
+        /// <summary>
+        /// make minified versions of all the files in this directory if they don't already exist.
+        /// </summary>
+        /// <param name="dirPath"></param>
+        /// <param name="searchPattern"></param>
+        /// <returns></returns>
+        public static async Task UpdateDirectory(string dirPath, string? searchPattern = null)
         {
-            // make minified versions of all the files in this directory if they don't already exist.
-
             var dir = new DirectoryInfo(dirPath);
             var files1 = ((searchPattern == null) ? dir.GetFiles() : dir.GetFiles(searchPattern)).Where(x => extensions.Contains(x.Extension));
             foreach (FileInfo info in files1)
@@ -124,17 +128,17 @@ namespace DotStd
                     continue;
                 // does the non min file have a valid minified version? must be ~newer   
                 string dstMinPath;
-                FileInfo infoMin = files1.FirstOrDefault(x => GetNonMinName(x.Name) == name && x.Name != name);
+                FileInfo? infoMin = files1.FirstOrDefault(x => GetNonMinName(x.Name) == name && x.Name != name);
                 if (infoMin != null)
                 {
                     // Min file exists.
-                    if ((infoMin.CreationTimeUtc - info.CreationTimeUtc).Minutes >= -3)  // minified must be newer or close enough.
+                    if ((infoMin.LastWriteTimeUtc - info.LastWriteTimeUtc).Minutes >= -2)  // minified must be newer or close enough.
                         continue;
                     dstMinPath = infoMin.FullName;
                 }
                 else
                 {
-                    dstMinPath = Path.Combine(Path.GetDirectoryName(info.FullName), Path.GetFileNameWithoutExtension(name) + ".min" + Path.GetExtension(name)); // kMin
+                    dstMinPath = Path.Combine(Path.GetDirectoryName(info.FullName) ?? string.Empty, Path.GetFileNameWithoutExtension(name) + ".min" + Path.GetExtension(name)); // kMin
                 }
 
                 LoggerUtil.DebugEntry($"Update minified file '{dstMinPath}'");

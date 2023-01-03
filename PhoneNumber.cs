@@ -20,7 +20,7 @@ namespace DotStd
 
         public int CountryCode { get; set; } = kCodeUSA;   // We get the country part of the Phone number. 1 = USA. NOT the same as CountryId. AKA CallingCode
         public ulong NationalNumber { get; set; }   // Get number without country code. (NOT in PhoneNumberFormat.E164 format)
-        public string Extension { get; set; }       // optional extension.
+        public string? Extension { get; set; }       // optional extension.
 
         public bool IsValidPhone
         {
@@ -38,16 +38,16 @@ namespace DotStd
         public PhoneNumber()
         {
         }
-        public PhoneNumber(ulong nationalNumber, int countryCode = kCodeUSA, string extension = null)
+        public PhoneNumber(ulong nationalNumber, int countryCode = kCodeUSA, string? extension = null)
         {
             CountryCode = countryCode;
             NationalNumber = nationalNumber;
             Extension = extension;
         }
 
-        readonly string _seps = " ()-."; // only valid separators.
+        const string _seps = " ()-."; // only valid separators.
 
-        public bool Parse(string phone, bool isOptional = false, int countryCodeDef = kCodeUSA)
+        public bool Parse(string? phone, bool isOptional = false, int countryCodeDef = kCodeUSA)
         {
             // Must have 10 or more digits.
             // isOptional = empty string is ok.

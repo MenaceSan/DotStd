@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace DotStd
@@ -31,7 +32,7 @@ namespace DotStd
 
         public const string kDefaultPrefix = "/tmp/Log_";  // fallback log location. should be valid on most systems. try not to use this.
 
-        protected virtual TextWriter OpenLogFile(DateTime dtLocal)
+        protected virtual TextWriter? OpenLogFile(DateTime dtLocal)
         {
             // open a log file, append or create.
             // make sure the directory exists. May throw ?
@@ -53,7 +54,7 @@ namespace DotStd
             if (_Created)
             {
                 // All log files should have this header.
-                var app = ConfigApp._Instance.Value;
+                var app = ConfigApp.Instance();
                 w.WriteLine($"Log File Created '{dtLocal}' ({TimeZoneInfo.Local.DisplayName}) for '{app.AppName}' v{app.AppVersionStr}");
                 w.Flush();
             }
@@ -113,12 +114,12 @@ namespace DotStd
             _FilePathPrefix = GetPathPrefix();
         }
 
-        public static string GetPathPrefix(ConfigInfoBase config = null)
+        public static string GetPathPrefix(ConfigInfoBase? config = null)
         {
             // Get directory and name of the log file
 
             string prefix = kDefaultPrefix;
-            var app = ConfigApp._Instance.Value;
+            var app = ConfigApp.Instance();
 
             if (config == null)
             {
@@ -127,7 +128,7 @@ namespace DotStd
 
             if (config != null)
             {
-                string logDir = config.GetSetting(ConfigInfoBase.kAppsLogFileDir);
+                string? logDir = config.GetSetting(ConfigInfoBase.kAppsLogFileDir);
                 if (!string.IsNullOrWhiteSpace(logDir))
                 {
                     prefix = logDir;
@@ -152,7 +153,7 @@ namespace DotStd
             return string.Concat(_FilePathPrefix, GetDayStampInt(dtLocal).ToString(), kExt);
         }
 
-        protected override TextWriter OpenLogFile(DateTime dtLocal)
+        protected override TextWriter? OpenLogFile(DateTime dtLocal)
         {
             // open a log file for today , append or create.
             // check for Day transition
@@ -169,6 +170,7 @@ namespace DotStd
             return base.OpenLogFile(dtLocal);
         }
 
+        [MemberNotNullWhen(returnValue: true, member: nameof(_FilePathPrefix))]
         public override bool IsEnabled(LogLevel level = LogLevel.Information)
         {
             // ILogger

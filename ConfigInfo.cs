@@ -4,26 +4,28 @@ using System.ComponentModel;
 
 namespace DotStd
 {
+    /// <summary>
+    /// What type of deployment Environment is this ? AKA EnvironmentName.
+    /// Can have sub categories. Postfix by number for sub type.
+    /// Assume upper case. 
+    /// Similar to .NET Core IHostingEnvironment.IsDevelopment or IHostingEnvironment.EnvironmentName
+    /// </summary>
     public enum EnvironMode
     {
-        //! What type of deployment Environment is this ? AKA EnvironmentName.
-        //! Can have sub categories. Postfix by number for sub type.
-        //! Assume upper case. 
-        //! Similar to .NET Core IHostingEnvironment.IsDevelopment or IHostingEnvironment.EnvironmentName
-
         [Description("Development")]        // EnvironmentName
         DEV,        // local deploy of code, maybe shared db or local db. May have variations, Dev3, Dev2 etc. AKA "Development" in Core
-        TEST,       // Testing server for QA people usually.
-        STAGING,    // Optional staging server, More public access. Some projects skip this mode.
+        TEST,       // Testing server for QA people usually. AKA "QA"
+        STAGING,    // Optional staging server, More public access. Some projects skip this mode. AKA "QA-SIT"
         [Description("Production")]         // EnvironmentName
         PROD,       // prod server seen by customers. AKA "Production" in Core. trunk code branch.
     }
 
+    /// <summary>
+    /// Support for the new .NET core JSON config file style.
+    /// Wrapper for .NET Core IConfiguration
+    /// </summary>
     public class ConfigInfoCore : IPropertyGetter
     {
-        // Support for the new .NET core JSON config file style.
-        // Wrapper for .NET Core IConfiguration
-
         public readonly Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
 
         private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT => EnvironmentName
@@ -42,14 +44,14 @@ namespace DotStd
             _EnvironMode = environmentName;
         }
 
-        public virtual object GetPropertyValue(string name)
+        public virtual object? GetPropertyValue(string name)
         {
             // sName = "Sec:child" IPropertyGetter
 
             if (_Configuration != null)
             {
                 var sec = _Configuration.GetSection(name);
-                object val = sec?.Value;
+                object? val = sec?.Value;
                 if (val != null)
                     return val;
             }
@@ -63,12 +65,13 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Common config files stuff for any app. Regardless of where the config info comes from.
+    /// abstracted _ConfigSource Might be .NET core JSON or framework XML.
+    /// Similar to IConfiguration
+    /// </summary>
     public class ConfigInfoBase : IPropertyGetter 
     {
-        // Common config files stuff for any app. Regardless of where the config info comes from.
-        // abstracted _ConfigSource Might be .NET core JSON or framework XML.
-        // Similar to IConfiguration
-
         public const string kApps = "Apps:";    // AKA appSettings
         public const string kConnectionStrings = "ConnectionStrings:";      // ConnectionStrings to db.
         public const string kSmtp = "Smtp:";    // configure how to send emails. Old XML config had weird format.
@@ -82,7 +85,7 @@ namespace DotStd
 
         private readonly IPropertyGetter _ConfigSource;   // Get my config info from here. e.g. ConfigInfoCore
 
-        public string ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
+        public string? ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
  
         public bool IsEnvironModeLike(EnvironMode environMode)
         {
@@ -107,25 +110,25 @@ namespace DotStd
             return IsEnvironMode(DotStd.EnvironMode.PROD);
         }
 
-        public virtual object GetPropertyValue(string name)
+        public virtual object? GetPropertyValue(string name)
         {
             // IPropertyGetter
             // Maybe prefixed with "Apps" or "ConnectionStrings"
             return _ConfigSource.GetPropertyValue(name);
         }
 
-        public string GetSetting(string name)
+        public string? GetSetting(string name)
         {
             // GetPropertyValue cast to string. null = not present.
             var o = GetPropertyValue(name);
             return o?.ToString();
         }
 
-        public ConfigInfoBase(IPropertyGetter configSource, string connectionStringName = null)
+        public ConfigInfoBase(IPropertyGetter configSource, string? connectionStringName = null)
         {
             // Assign my config source. (file?)
             _ConfigSource = configSource;
-            EnvironMode = GetSetting(kAppsEnvironMode);
+            EnvironMode = GetSetting(kAppsEnvironMode) ?? string.Empty;
             ValidState.ThrowIfWhiteSpace(EnvironMode, nameof(EnvironMode));  // MUST have EnvironMode
 
             if (connectionStringName != null)

@@ -1,116 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helper for paging of lists of data for LINQ and EF. SQL.
+    /// Allow deferred (server/db side) paging.
+    /// </summary>
     public static class DataPage
     {
-        // Helper for paging of lists of data for LINQ and EF. SQL.
-        // Allow deferred (server side) paging.
-
-        private static IOrderedQueryable<T> OrderingHelper5X<T, TK>(IQueryable<T> source, MemberExpression property, ParameterExpression param1, bool isSortAscending, bool thenByLevel)
-        {
-            // UNUSED
-            // similar to OrderingHelper5 but the type must be known at compile time. But since there are few types we 
-            var orderByExp = Expression.Lambda<Func<T, TK>>(property, param1);
-            if (thenByLevel)
-            {
-                var source2 = (IOrderedQueryable<T>)source;
-                if (isSortAscending)
-                    return source2.ThenBy(orderByExp);
-                else
-                    return source2.ThenByDescending(orderByExp);
-            }
-            if (isSortAscending)
-                return source.OrderBy(orderByExp);
-            else
-                return source.OrderByDescending(orderByExp);
-        }
-
-        private static IOrderedQueryable<T> OrderingHelper5<T>(IQueryable<T> source, string propertyName, bool isSortAscending, bool thenByLevel)
-        {
-            // UNUSED
-
-            ParameterExpression param = Expression.Parameter(typeof(T), string.Empty); // I don't care about some naming?
-            MemberExpression property = Expression.PropertyOrField(param, propertyName);    // T for prop. propertyName case not sensitive.
-
-            TypeCode typeCodeProp = Type.GetTypeCode(property.Type);
-            switch (typeCodeProp)
-            {
-                case TypeCode.String:
-                    return OrderingHelper5X<T, string>(source, property, param, isSortAscending, thenByLevel);
-
-                case TypeCode.Int32:
-                    if (property.Type.IsEnum)
-                    {
-                        return OrderingHelper5X<T, Enum>(source, property, param, isSortAscending, thenByLevel);
-                    }
-                    else
-                    {
-                        return OrderingHelper5X<T, int>(source, property, param, isSortAscending, thenByLevel);
-                    }
-            }
-
-            return null;
-        }
-
-        public static IOrderedQueryable<TEntityType> OrderingHelper3_TEST<TEntityType>(this IQueryable<TEntityType> query, string propertyname)
-        {
-            var param = Expression.Parameter(typeof(TEntityType), "s");
-            var prop = Expression.PropertyOrField(param, propertyname);
-            var sortLambda = Expression.Lambda(prop, param);
-
-            Expression<Func<IOrderedQueryable<TEntityType>>> sortMethod = (() => query.OrderBy<TEntityType, object>(k => null));
-
-            var methodCallExpression = (sortMethod.Body as MethodCallExpression);
-            if (methodCallExpression == null)
-                throw new Exception("Oops");
-
-            var method = methodCallExpression.Method.GetGenericMethodDefinition();
-            var genericSortMethod = method.MakeGenericMethod(typeof(TEntityType), prop.Type);
-            var orderedQuery = (IOrderedQueryable<TEntityType>)genericSortMethod.Invoke(query, new object[] { query, sortLambda });
-
-            return orderedQuery;
-        }
-
-        public static IOrderedQueryable<T> OrderingHelper4_TEST<T>(this IQueryable<T> source, string propertyName)
-        {
-            // Test this.
-            var entityType = typeof(T);
-
-            //Create x=>x.PropName
-            var propertyInfo = entityType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
-            ParameterExpression param1 = Expression.Parameter(entityType, "x");
-            MemberExpression property = Expression.Property(param1, propertyName);
-            var orderByExp = Expression.Lambda(property, param1);
-
-            //Get System.Linq.Queryable.OrderBy() method.
-            var enumarableType = typeof(System.Linq.Queryable);
-            var method = enumarableType.GetMethods()
-                 .Where(m => m.Name == "OrderBy" && m.IsGenericMethodDefinition)
-                 .Where(m =>
-                 {
-                     var parameters = m.GetParameters().ToList();
-                     //Put more restriction here to ensure selecting the right overload                
-                     return parameters.Count == 2;//overload that has 2 parameters
-                 }).Single();
-
-            //The LINQ's OrderBy<TSource, TKey> has two generic types, which provided here
-            MethodInfo genericMethod = method.MakeGenericMethod(entityType, propertyInfo.PropertyType);
-
-            /*Call query.OrderBy(selector), with query and selector: x=> x.PropName
-              Note that we pass the selector as Expression to the method and we don't compile it.
-              By doing so EF can extract "order by" columns and generate SQL for it.*/
-            var newQuery = (IOrderedQueryable<T>)genericMethod
-                 .Invoke(genericMethod, new object[] { source, orderByExp });
-            return newQuery;
-        }
-
-        //***********************************//
-
         public static IOrderedQueryable<T> OrderingHelperX<T>(this IQueryable<T> source, LambdaExpression orderByExp, bool isSortAscending = false, bool thenByLevel = false)
         {
             // Order by some named property.
@@ -135,7 +37,8 @@ namespace DotStd
             // NOTE: This will throw if the column/propertyName doesn't exist !
 
             Type entityType = typeof(T);
-            PropertyInfo prop1 = entityType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
+            PropertyInfo? prop1 = entityType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
+            ValidState.ThrowIfNull(prop1, nameof(prop1));
 
 #if false
             // NOTE: This doesn't work for EF 3.1 for MySQL!!!!!!!!!!!!
@@ -164,12 +67,12 @@ namespace DotStd
             return OrderingHelper1(source, propertyName, isSortAscending, true);
         }
 
-        public static IOrderedQueryable<T> OrderByList1<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
+        public static IOrderedQueryable<T>? OrderByList1<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
         {
             // Order by some named property(s). use reflection to get property type.
             // NOTE: This will throw if the column/propertyName doesn't exist !
 
-            IOrderedQueryable<T> ret2 = null;
+            IOrderedQueryable<T>? ret2 = null;
             foreach (var sort in sorts)
             {
                 ret2 = OrderingHelper1(ret2 ?? source, sort.PropName, sort.SortDir == SortDirection.Ascending, ret2 != null);
@@ -180,30 +83,38 @@ namespace DotStd
 
         //***********************************//
 
-        public static IOrderedQueryable<T> OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, LambdaExpression> propExp)
+        /// <summary>
+        /// Order by some named property(s). use IPropertyExpression to get property type.
+        /// NOTE: This will throw if the column/propertyName doesn't exist !
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="sorts"></param>
+        /// <param name="propExp">GetPropertyExp</param>
+        /// <returns></returns>
+        public static IOrderedQueryable<T>? OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, LambdaExpression?> propExp)
         {
-            // Order by some named property(s). use IPropertyExpression to get property type.
-            // NOTE: This will throw if the column/propertyName doesn't exist !
-            // propExp = GetPropertyExp
-
             Type entityType = typeof(T);
 
-            IOrderedQueryable<T> ret2 = null;
+            IOrderedQueryable<T>? ret2 = null;
             foreach (var sort in sorts)
             {
-                PropertyInfo prop1 = entityType.GetProperty(sort.PropName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
-                LambdaExpression orderByExp = propExp(prop1.Name);    // call GetPropertyExp()
+                PropertyInfo? prop1 = entityType.GetProperty(sort.PropName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
+                ValidState.ThrowIfNull(prop1, nameof(prop1));
+                ValidState.ThrowIf(!prop1.Name.Equals(sort.PropName, StringComparison.InvariantCultureIgnoreCase));    // NOTE: ISNT prop1.Name THE SAME AS sort.PropName ??? remove entityType.GetProperty??
+
+                LambdaExpression? orderByExp = propExp(prop1.Name);    // call GetPropertyExp()
                 if (orderByExp == null)
                 {
-                    // this should not happen!
+                    // this should not happen! don't allow sort by this prop ?
                     return ret2;
                 }
+
                 ret2 = OrderingHelperX(ret2 ?? source, orderByExp, sort.SortDir == SortDirection.Ascending, ret2 != null);
             }
 
             return ret2;
         }
-
     }
 
     [Serializable]
@@ -213,12 +124,18 @@ namespace DotStd
         // Some Service returns the set of data i want. from DataPageReq
 
         public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
-        public int RowsTotal { get; set; }          // Total rows in the request. ignore paged result. All pages. ASSUME RowsTotal >= Rows.Length
+        public int RowsOnPage => this.Rows.Count;
+        public int RowsTotal { get; set; }          // Total rows in the request. All pages. ASSUME RowsTotal >= RowsOnPage, Rows.Length
 
-        public void UpdateRowsTotal()
+        public void SetEmpty()
         {
-            // SetRowsTotal
-            this.RowsTotal = this.Rows.Count;
+            Rows.Clear();
+            RowsTotal = 0;
+        }
+        protected DataPageRsp()
+        {
+            // EF/Serializable construct
+            Rows = default!;
         }
     }
 
@@ -227,35 +144,35 @@ namespace DotStd
         // Response set for a data page.
         // Rows cast to type T
 
-        public T GetRow(int i)
+        public DataPageRsp()
         {
-            // default(T)
-            return (T)Rows[i];
+            Rows = new List<T>();
         }
+
         public List<T> GetRows()
         {
-            if (Rows is List<T>)
-                return (List<T>)Rows;
-            return Rows.Cast<T>().ToList();
+            return (List<T>)Rows;
+        }
+        public T GetRow(int i)
+        {
+            return GetRows()[i];
         }
 
         public void SetRowsTotal(DataPageReq req, IQueryable<T> q)
         {
             // Total rows from paged results.
-            if (this.Rows.Count < req.PageSize || req.PageSize <= 0)    // we can infer total if not enough for PageSize = end.
+
+            int rowsOnPage = RowsOnPage;
+
+            if (rowsOnPage < req.PageSize || req.PageSize <= 0)    // we can infer total if not enough for PageSize = end.
             {
-                this.RowsTotal = req.GetSkip() + this.Rows.Count;
+                this.RowsTotal = req.GetSkip() + rowsOnPage;
             }
             else
             {
                 // TODO: try to avoid a second round trip to populate RowsTotal !??
                 this.RowsTotal = q.Count();     //  2 trips to db ??? TODO FIXME
             }
-        }
-
-        public void SetEmpty()
-        {
-            Rows = new List<T>();
         }
     }
 
@@ -267,7 +184,7 @@ namespace DotStd
 
         public int StartOfPage { get; set; }    // start of the current page. 0 based.
         public int PageSize { get; set; }       // Max number of rows on page.
-        public List<ComparerDef> SortFields { get; set; }   // How to sort fields.
+        public List<ComparerDef>? SortFields { get; set; }   // How to sort/filter fields.
 
         public DataPageReq()
         {
@@ -299,24 +216,7 @@ namespace DotStd
             return pagesTotal;
         }
 
-        public IEnumerable<T> GetHack31<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
-        {
- 
-            if (this.SortFields != null && this.SortFields.Count > 0)
-            {
-                var q2 = q.OrderByList2(this.SortFields, propExp); // will return IOrderedQueryable
-                if (q2 == null) // prop didn't exist ! this is bad.
-                    return q;
-                q = q2;
-            }
-            if (this.PageSize > 0)  // paging. assume IOrderedQueryable.
-            {
-                q = q.Take(this.PageSize);
-            }
-            return q.AsEnumerable();            // put this right before the call to Union().
-        }
-
-        public IQueryable<T> GetQuery<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
+        public IQueryable<T> GetQuery<T>(IQueryable<T> q, Func<string, LambdaExpression?> propExp)
         {
             // get Paging query.
             // RETURN: IOrderedQueryable<T> or not.
@@ -336,7 +236,7 @@ namespace DotStd
             return q;
         }
 
-        public DataPageRsp<T> GetRsp<T>(IQueryable<T> q, Func<string, LambdaExpression> propExp)
+        public DataPageRsp<T> GetRsp<T>(IQueryable<T> q, Func<string, LambdaExpression?> propExp)
         {
             // Query and return the rows for the current page. NOT async.
             var rsp = new DataPageRsp<T>();
@@ -353,13 +253,13 @@ namespace DotStd
         // I am setting up a query to a Db.
         // overload this to add more search filters.
 
-        public string SearchFilter { get; set; }    // Filter on some important text field(s). Which ?? 
+        public string? SearchFilter { get; set; }    // Filter on some important text field(s). Which ?? 
         public int FilterId { get; set; }           // A custom selection of predefined filters. enum. 0 = unused.  // optional.
 
         public DataPageFilter()
         {
         }
-        public DataPageFilter(int startOfPage, int pageSize, List<ComparerDef> sortFields, string searchFilter = null, int filterId = 0)
+        public DataPageFilter(int startOfPage, int pageSize, List<ComparerDef> sortFields, string? searchFilter = null, int filterId = 0)
             : base(startOfPage, pageSize, sortFields)
         {
             SearchFilter = searchFilter;

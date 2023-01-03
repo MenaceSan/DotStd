@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -40,8 +41,10 @@ namespace DotStd
 
         // TODO AddReturnUrl and build args.
 
-        public static string GetProtocol(string url)
+        public static string? GetProtocol(string? url)
         {
+            if (url == null)
+                return null;
             if (url.StartsWith(kHttps))
                 return kHttps;
             if (url.StartsWith(kHttp))
@@ -59,7 +62,7 @@ namespace DotStd
             // is Https Scheme ?
             return url.StartsWith(kHttps);
         }
-        public static bool IsLocalAddr(string url)
+        public static bool IsLocalAddr(string? url)
         {
             // Local or external link ?
             if (url == null || url.Length < 2)
@@ -100,27 +103,25 @@ namespace DotStd
 
         static readonly Lazy<Regex> _regexURL = new Lazy<Regex>(() => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$"));
 
-        public static bool IsValidURL(string url)
+        public static bool IsValidURL([NotNullWhen(true)] string? url)
         {
             // Stricter version of URL validation
             if (string.IsNullOrWhiteSpace(url))
                 return false;
-
             return _regexURL.Value.IsMatch(url);
         }
 
         static readonly Lazy<Regex> _regexURL2 = new Lazy<Regex>(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));
 
-        public static bool IsValidURL2(string url)
+        public static bool IsValidURL2([NotNullWhen(true)] string? url)
         {
             // More forgiving version of URL
             if (string.IsNullOrWhiteSpace(url))
                 return false;
-
             return _regexURL2.Value.IsMatch(url);
         }
 
-        public static string Combine(params string[] array)
+        public static string Combine(params string?[] array)
         {
             // Like Path.Combine() but for URLs. CombineUrl. Ignore nulls.
             // Does not add an end or start /
@@ -129,7 +130,7 @@ namespace DotStd
             int i = 0;
             bool endSep = false; // last entry ends with sep?
 
-            foreach (string a in array)
+            foreach (string? a in array)
             {
                 if (string.IsNullOrWhiteSpace(a))    // doesn't count. skip it.
                     continue;
@@ -156,7 +157,8 @@ namespace DotStd
             return sb.ToString();
         }
 
-        public static string GetFileName(string url)
+        [return: NotNullIfNotNull("url")]
+        public static string? GetFileName(string? url)
         {
             // Extract just the filename from the URL. No dir, domain name, Clip args after '?' or '#'
             if (url == null)
@@ -188,8 +190,7 @@ namespace DotStd
         {
             // Get the host name for the URL.
             // strip http:// and get "addr:port". strip "/dir?args"
-
-            string proto = GetProtocol(url);
+            string? proto = GetProtocol(url);
             if (proto != null)
                 url = url.Substring(proto.Length);
             int i = url.IndexOf(kSep);

@@ -15,18 +15,22 @@ namespace DotStd
 
         public const int kMaxLen = 32;   // there are no countries that use PostalCode > 32 (i'm pretty sure)
 
-        public string PostalCode { get; set; }      // AKA Zip Code/ZipCode can have multiple possible cities (Not PK)!
+        public string? PostalCode { get; set; }  // AKA Zip Code/ZipCode can have multiple possible cities (Not PK)!
+        public string? City { get; set; } // Converted to TitleCase. Maybe was all caps e.g. "ALLSTON". 
+        public string? State { get; set; }  // 2 letter code "MA" (can be added to cache dynamically) (should exist in geo_state db)
+        public string? CountryCode { get; set; }  // 3 letter code. "USA" (MUST exist in geo_country db)
 
-        public string City { get; set; }            // Converted to TitleCase. Maybe was all caps e.g. "ALLSTON". 
-        public string State { get; set; }           // 2 letter code "MA" (can be added to cache dynamically) (should exist in geo_state db)
-        public string CountryCode { get; set; }     // 3 letter code. "USA" (MUST exist in geo_country db)
-
-
-        public static string CityStatePostal(string city, string state, string postal, string country = null)
+        /// <summary>
+        /// Format string "city, state postal" and account for missing info in USA normal style. 
+        /// uses Formatter.ToTitleCase 
+        /// </summary>
+        /// <param name="city"></param>
+        /// <param name="state"></param>
+        /// <param name="postal"></param>
+        /// <param name="country"></param>
+        /// <returns></returns>
+        public static string CityStatePostal(string city, string state, string postal, string? country = null)
         {
-            // Format "city, state postal" and account for missing info in USA normal style. 
-            // uses Formatter.ToTitleCase 
-
             string ret = Formatter.JoinTitles(", ", city, state);
             if (ValidState.IsValidUnique(postal))
             {
@@ -43,12 +47,15 @@ namespace DotStd
             return ret;
         }
 
+        /// <summary>
+        /// What country does this postal code seem to be foire ? USA, Canada
+        /// http://stackoverflow.com/questions/578406/what-is-the-ultimate-postal-code-and-zip-regex
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="eCountryDef">CountryId default</param>
+        /// <returns>CountryId</returns>
         public static CountryId GetCountryFromPostal(string code, CountryId eCountryDef = CountryId.ANY)
         {
-            // Is this a valid PostalCode for a country ? USA, Canada
-
-            // http://stackoverflow.com/questions/578406/what-is-the-ultimate-postal-code-and-zip-regex
-
             // "US"=>"^\d{5}([\-]?\d{4})?$",
             // "UK"=>"^(GIR|[A-Z]\d[A-Z\d]??|[A-Z]{2}\d[A-Z\d]??)[ ]??(\d[A-Z]{2})$",
             // "DE"=>"\b((?:0[1-46-9]\d{3})|(?:[1-357-9]\d{4})|(?:[4][0-24-9]\d{3})|(?:[6][013-9]\d{3}))\b",
@@ -79,14 +86,17 @@ namespace DotStd
                 return CountryId.AUS;
 
             // Look for bad chars or bad length that no valid zip would use?
-            return CountryId.ANY;   // no idea what country this might be.
+            return eCountryDef;   // no idea what country this might be.
         }
 
+        /// <summary>
+        /// Convert US Postal codes to GeoStateId. 
+        /// https://en.wikipedia.org/wiki/ZIP_Code
+        /// </summary>
+        /// <param name="zip"></param>
+        /// <returns></returns>
         public static GeoStateId GetStateFromPostalUS(int zip)
         {
-            // Convert US Postal codes to GeoStateId. 
-            // https://en.wikipedia.org/wiki/ZIP_Code
-
             if ((zip >= 600 && zip <= 799) || (zip >= 900 && zip <= 999)) // Puerto Rico (00600-00799 and 900--00999 ranges)
                 return GeoStateId.PR;
             else if (zip >= 800 && zip <= 899) // US Virgin Islands (00800-00899 range)            
@@ -212,9 +222,9 @@ namespace DotStd
     public class PostalCodeZT
     {
         // Poco for ZT REST service
-        [DataMember] public string country { get; set; } // 2 letter code! US
-        [DataMember] public string state { get; set; }   // MA
-        [DataMember] public string city { get; set; }    // ALSTON
+        [DataMember] public string? country { get; set; } // 2 letter code! US
+        [DataMember] public string? state { get; set; }   // MA
+        [DataMember] public string? city { get; set; }    // ALSTON
     }
 
     public class PostalCodeFinder
@@ -225,8 +235,8 @@ namespace DotStd
         // https://stackoverflow.com/questions/7129313/zip-code-lookup-api
         // https://www.melissa.com/lookups/ZipCityPhone.asp?InData=02134
 
-        public string m_sResponse;  // Raw response.
-        public PostalCode1 m_z;        // parsed m_sResponse.
+        public string? _sResponse;  // Raw response.
+        public PostalCode1? _z;        // parsed m_sResponse.
 
         private static async Task<string> RequestStringAsync(string url)
         {
@@ -235,7 +245,7 @@ namespace DotStd
             using (var client = new HttpClient())
             {
                 return await client.GetStringAsync(url);
-            }        
+            }
         }
 
         public async Task QueryUSPS(string sPostalCode)
@@ -246,9 +256,9 @@ namespace DotStd
             string urlServer = "http://production.shippingapis.com/ShippingAPI.dll";  // Test
             const string sUserID = "771LMGHO5723";
             string sReq = $"{urlServer}?API=CityStateLookup&XML=<CityStateLookupRequest%20USERID=\"{sUserID}\"><ZipCode ID=\"0\"><Zip5>{sPostalCode}</Zip5></ZipCode></CityStateLookupRequest>";
-            m_sResponse = await RequestStringAsync(sReq);
+            _sResponse = await RequestStringAsync(sReq);
             // TODO populate m_z
-            m_z = new PostalCode1 { PostalCode = sPostalCode };
+            _z = new PostalCode1 { PostalCode = sPostalCode };
         }
 
         public async Task QueryWSX_JUNK(string sPostalCode)
@@ -257,9 +267,9 @@ namespace DotStd
             // Ask WSX about the Postal code.
             // http://webservicex.net/uszip.asmx?op=GetInfoByZIP (out of disk space)
             string sReq = "http://webservicex.net/uszip.asmx/GetInfoByZIP?USZip=" + sPostalCode;
-            m_sResponse = await RequestStringAsync(sReq);
+            _sResponse = await RequestStringAsync(sReq);
             // TODO populate m_z
-            m_z = new PostalCode1 { PostalCode = sPostalCode };
+            _z = new PostalCode1 { PostalCode = sPostalCode };
         }
 
         public async Task QueryZT(string sPostalCode)
@@ -270,27 +280,30 @@ namespace DotStd
             // may get 503 error intermittently?
 
             string sReq = "http://ziptasticapi.com/" + sPostalCode;
-            m_sResponse = await RequestStringAsync(sReq);
+            _sResponse = await RequestStringAsync(sReq);
 
             // populate m_z from JSON
             // Newtonsoft.Json.JsonConvert.PopulateObject(m_sResponse,m_z);
             var xs = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PostalCodeZT));
-            var x = xs.ReadObject(m_sResponse.ToMemoryStream()) as PostalCodeZT;
-
-            m_z = new PostalCode1
+            var x = xs.ReadObject(_sResponse.ToMemoryStream()) as PostalCodeZT;
+            if (x == null)
+            {
+                return;
+            }
+            _z = new PostalCode1
             {
                 PostalCode = sPostalCode,
                 City = Formatter.ToTitleCase(x.city),   // NOT all caps.
                 State = x.state,
                 CountryCode = x.country,
             };
-            if (m_z.CountryCode == "US")
-                m_z.CountryCode = "USA"; // use 3 letter code not 2 letter.
+            if (_z.CountryCode == "US")
+                _z.CountryCode = "USA"; // use 3 letter code not 2 letter.
         }
 
         public async Task<bool> QueryAsync(string sPostalCode)
         {
-            m_z = null;
+            _z = null;
             try
             {
                 await QueryZT(sPostalCode);

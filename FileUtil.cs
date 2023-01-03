@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Common IANA MIME types and related file extensions.
+    /// in table app_mime
+    /// .NET defines many of these in System.Net.Mime.MediaTypeNames (BUT NOT ALL)
+    /// Sample icons for each mime/file type can be found: https://fileicons.org/?view=square-o
+    /// </summary>
     public enum MimeId
     {
-        // Common IANA MIME types and related file extensions.
-        // in table app_mime
-        // .NET defines many of these in System.Net.Mime.MediaTypeNames (BUT NOT ALL)
-
         [Description(@"application/octet-stream")]  // System.Net.Mime.MediaTypeNames.Application.Octet
         bin = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ?
 
@@ -63,42 +65,51 @@ namespace DotStd
         ico = 21,
         [Description(@"image/tiff")]
         tiff = 22,
+
+        [Description(@"image/tga")]
+        tga = 23,
+        [Description(@"image/webp")]
+        webp = 24,  // google image.
+
         [Description(@"image/svg+xml")]
-        svg = 23,        //  Vector images              // Get SVG icons from https://fileicons.org/?view=square-o
+        svg = 25,        //  Vector images              // Get SVG icons from https://fileicons.org/?view=square-o
 
         [Description(@"audio/wav")]
-        wav = 24,
+        wav = 26,
         [Description(@"audio/mp4")]     // iphone or android voice memos.
-        m4a = 25,
+        m4a = 27,
         [Description(@"audio/mpeg")]
-        mp3 = 26,
+        mp3 = 28,
+        [Description(@"audio/webm")]
+        weba = 29,
 
         [Description(@"video/avi")] // AKA "video/msvideo"
-        avi = 27,
+        avi = 30,
         [Description(@"video/mp4")]
-        mp4 = 28,        //  video consumed by chrome. HTML5
+        mp4 = 31,        //  video consumed by chrome. HTML5
         [Description(@"video/mpeg")]
-        mpg = 29,        //  video AKA mpg, mpe
+        mpg = 32,        //  video AKA mpg, mpe
         [Description(@"video/x-flv")]
-        flv = 30,        //  video
+        flv = 33,        //  video
         [Description(@"video/quicktime")]
-        mov = 31,   // iPhone movie clips.
+        mov = 34,   // iPhone movie clips.
+        [Description(@"video/webm")]
+        webm = 35,   // Google video 
 
-        // Other common types:
-        // webm (Google video)
+        // Other common file types:
         // CAB  (zip type)
-        // CSS
-        // TGA, (image)
-        // TTF (font)
+        // BZ2,     // compressed binary
         // AIF, (audio)
+        // CSS
+        // TTF (font)
         // MKV, SWF, WMV (video)
-        // BZ2,     // compressed
         // ISO  (?)
         // CFG, INI, (text config)
         // DAT, DB
         // CS, CPP
         // JS, 
         // RichText ?? for email NOT the same as RTF.
+        // ogg (supported by mozilla)
 
         MaxValue,
     }
@@ -114,7 +125,7 @@ namespace DotStd
         // NOTE: Linux does not like & used in file names? Though Windows would allow it.
         public const string kFileNameUrl = "!'()-_~";  // Extra chars that are safe for URL, DOS and NT.
         public const string kFileNameDos = "!'()-_~#$&@^`{}";     // allow these, but Avoid "%" as it can  be used for encoding? safe for DOS and NT
-        public const string kFileNameNT = "!'()-_~#$&@^`{},=";   // allow DOS characters + ",=". Safe for NT.
+        public const string kFileNameNT  = "!'()-_~#$&@^`{},=";   // allow DOS characters plus ",=". Safe for NT. what about '+' ?
 
         public const char kCharNT = '=';        // extra char allowed by NT. used to extend the file name.
         public const char kEncoder = '%';       // reserve this as it can be used to encode chars and hide things in the string ?
@@ -126,6 +137,11 @@ namespace DotStd
         public const string kDir = "/";     // path directory separator as string. Windows doesn't mind forward slash used as path. Normal for Linux.
 
         public const string kVirtualStore = "VirtualStore";     // Windows virtualization junk.
+
+        public const string kExtHtm = ".htm";
+        public const string kExtHtml = ".html";
+        public const string kExtCsv = ".csv";
+
         public const string kMimePng = @"image/png";       // like System.Net.Mime.MediaTypeNames.Image.Gif
 
         public enum AccessType
@@ -144,23 +160,25 @@ namespace DotStd
 
         public static bool IsImageType(MimeId mimeId)
         {
-            // Is this mime type an image? e.g. Avatar, Logo etc.
+            // Is this MimeId type an image? e.g. Avatar, Logo etc.
             switch (mimeId)
             {
                 case MimeId.jpg:
                 case MimeId.gif:
                 case MimeId.png:
                 case MimeId.bmp:
-                case MimeId.ico:
-                case MimeId.svg:
+                // case MimeId.ico:    // Supported?
                 case MimeId.tiff:
+                case MimeId.tga:
+                case MimeId.webp:
+                case MimeId.svg:
                     return true;
                 default:
                     return false;
             }
         }
 
-        public static MimeId GetMimeIdExt(string fileExtension)
+        public static MimeId GetMimeIdFromExt(string fileExtension)
         {
             // Convert file name extension to enum MimeId.
             // like Mime type. MimeMapping.GetMimeMapping()
@@ -168,6 +186,10 @@ namespace DotStd
 
             switch (fileExtension.ToLower())
             {
+                case kExtHtml:
+                case kExtHtm:
+                    return MimeId.html;
+
                 case ".jpg":    // more commonly used than .jpeg ext.
                 case ".jpeg":
                     return MimeId.jpg;
@@ -193,7 +215,7 @@ namespace DotStd
                     return MimeId.pptx;
                 case ".txt":
                     return MimeId.txt;
-                case ".csv":
+                case kExtCsv:
                     return MimeId.csv;
                 case ".ico":
                     return MimeId.ico;
@@ -202,6 +224,10 @@ namespace DotStd
                 case ".tif":
                 case ".tiff":
                     return MimeId.tiff;
+                case ".tga":
+                    return MimeId.tga;
+                case ".webp":
+                    return MimeId.webp;
                 case ".mpe":
                 case ".mpg":
                     return MimeId.mpg;
@@ -211,11 +237,11 @@ namespace DotStd
             }
         }
 
-        public static MimeId GetMimeId(string fileName)
+        public static MimeId GetMimeIdFromFileName(string fileName)
         {
-            // Infer MIME type from the name extension.
+            // Infer MIME type from the file name (and extension).
 
-            return GetMimeIdExt(Path.GetExtension(fileName));
+            return GetMimeIdFromExt(Path.GetExtension(fileName));
         }
 
         public static string GetContentType(MimeId mimeId)
@@ -233,11 +259,19 @@ namespace DotStd
             return mimeId.ToDescription();
         }
 
+        public static MimeId GetMimeIdFromContentType(string contentType)
+        {
+            // convert the mime trype name to enum . MimeId
+            // TODO Reversee lookup string against. MimeId.Description
+
+            return MimeId.bin;
+        }
+
         public static string GetContentTypeExt(string fileExtension)
         {
-            // given a file extension get the mime type. like MimeMapping.GetMimeMapping()
+            // given a file extension get the mime type as mime type name string. like MimeMapping.GetMimeMapping()
             // Used with HttpContext.Current.Response.ContentType
-            return GetContentType(GetMimeId(fileExtension));
+            return GetContentType(GetMimeIdFromFileName(fileExtension));
         }
 
         public static string GetContentType(string fileName)
@@ -336,16 +370,13 @@ namespace DotStd
             return true;
         }
 
-        public static string EncodeSafeName(string fileName)
+        public static string? EncodeSafeName(string fileName)
         {
             // encode a UNICODE string into a valid/safe file name. a form that only uses valid chars safe for file systems and URL.
             // Max chars = 255 = kLenMax
             // allow file name chars like "-_". NOT kDir
             // https://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
             // https://www.w3schools.com/tags/ref_urlencode.ASP
-
-            if (fileName == null)
-                return null;
 
             byte[] bytes = Encoding.UTF8.GetBytes(fileName);  // get UTF8 encoding as bytes.
 
@@ -379,14 +410,11 @@ namespace DotStd
             return sb.ToString();
         }
 
-        public static string DecodeSafeName(string fileName)
+        public static string? DecodeSafeName(string fileName)
         {
             // Get the displayable UNICODE name from the safe encoded (URL or file system) name.
             // Decode the encoded special chars.
             // @RETURN null if  this is not a valid encoded name!
-
-            if (fileName == null)
-                return null;
 
             int len = fileName.Length;
             if (len > kLenMax) // max length exceeded! this is not a valid encoded name!
@@ -425,7 +453,7 @@ namespace DotStd
             return Encoding.UTF8.GetString(lb.ToArray());      // filename is now UNICODE.
         }
 
-        public static string GetVirtualStoreName(string filePath)
+        public static string? GetVirtualStoreName(string filePath)
         {
             // Windows File can be translated from "C:\Program Files\DirName\config.ini" (Where i put it)
             // to "C:\Users\<account>\AppData\Local\VirtualStore\Program Files\DirName\config.ini  (Where Windows actually put it)
@@ -436,7 +464,7 @@ namespace DotStd
 
             string appData = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string virtualStore = Path.Combine(appData, kVirtualStore);   // M$ has a localized version of "VirtualStore" !?
-            int lenRoot = Path.GetPathRoot(filePath).Length;
+            int lenRoot = Path.GetPathRoot(filePath)?.Length ?? 0;
             return Path.Combine(virtualStore, filePath.Substring(lenRoot));  // skip root info "c:" etc.
         }
 
@@ -483,7 +511,7 @@ namespace DotStd
             {
                 using (var reader = new StreamReader(stream, encoding))
                 {
-                    string line;
+                    string? line;
                     while ((line = await reader.ReadLineAsync()) != null)
                     {
                         lines.Add(line);
@@ -519,11 +547,15 @@ namespace DotStd
             System.IO.File.Delete(filePath);
         }
 
+        /// <summary>
+        /// Move/Copy and silently replace any file if it exists.
+        /// Assume Dir for filePathDest exists.
+        /// </summary>
+        /// <param name="filePathSrc"></param>
+        /// <param name="filePathDest"></param>
+        /// <param name="bMove"></param>
         public static void FileReplace(string filePathSrc, string filePathDest, bool bMove = true)
         {
-            // Move/Copy and silently replace any file if it exists.
-            // Assume Dir for filePathDest exists.
-
             if (filePathSrc == filePathDest)
                 return;
             if (!DirUtil.DirCreateForFile(filePathDest))

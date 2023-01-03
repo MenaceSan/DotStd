@@ -23,13 +23,14 @@ namespace DotStd
         // TODO CultureInfo GetCulture();
     }
 
+    /// <summary>
+    /// Translate from some source language to some/multiple target language.
+    /// May use underlying cache.
+    /// Ignored/filtered stuff : <XML> may be filtered out, {0} MUST NOT be filtered/altered. 
+    /// Similar to ASP Core IStringLocalizer
+    /// </summary>
     public interface ITranslatorProvider
     {
-        // Translate from some source language to some target language.
-        // May use underlying cache. 
-        // Ignored/filtered stuff : <XML> may be filtered out, {0} MUST NOT be filtered/altered. 
-        // Similar to ASP Core IStringLocalizer
-
         LanguageId FromLangId { get; }
 
         // Select FromLangId
@@ -247,7 +248,7 @@ namespace DotStd
 
         // You will only be allowed to translate about 100 words per hour using the free API. If you abuse this, Google API will return a 429 (Too many requests) error.
 
-        public string ApiKey; // send this to Google for commercial usage.
+        public string? ApiKey; // send this to Google for commercial usage.
 
         public override List<TupleKeyValue> GetToLanguages()
         {
@@ -300,11 +301,15 @@ namespace DotStd
 
         const string kUrlGoogTrans = "https://translation.googleapis.com/language/translate/v2";
 
+        /// <summary>
+        /// use the newer JSON format translation.
+        /// https://cloud.google.com/translate/docs/basic/translating-text
+        /// </summary>
+        /// <param name="fromEnc"></param>
+        /// <param name="toLang"></param>
+        /// <returns></returns>
         public async Task<string> TranslateJsonAsync(string fromEnc, LanguageId toLang = LanguageId.native)
         {
-            // use the newer JSON format translation.
-            // https://cloud.google.com/translate/docs/basic/translating-text
-
             if (toLang == _fromLang)    // nothing to do.
                 return fromEnc;
 
@@ -324,17 +329,27 @@ namespace DotStd
                 resp.EnsureSuccessStatusCode();
 
                 string respStr = await resp.Content.ReadAsStringAsync();
-                dynamic respObj = JsonConvert.DeserializeObject(respStr);
+                dynamic? respObj = JsonConvert.DeserializeObject(respStr);
+                if (respObj==null)
+                {
+                    return "?";
+                }
 
                 // detectedSourceLanguage
-                string toText = respObj.data.translations[0].translatedText;
+                string toText = respObj.data.translations[0].translatedText;    // this will throw if malformed?!
                 return toText;
             }
         }
 
+        /// <summary>
+        /// translate a single line of text.
+        /// ASSUME this does not throw an exception. We can safely call this in non-async code.
+        /// </summary>
+        /// <param name="fromText"></param>
+        /// <param name="toLang"></param>
+        /// <returns></returns>
         public override async Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native)
         {
-            // ASSUME this does not throw an exception. We can safely call this in non-async code.
             try
             {
                 if (string.IsNullOrWhiteSpace(ApiKey))
@@ -344,22 +359,26 @@ namespace DotStd
             }
             catch
             {
-                return null;
+                return fromText;    // just leave untransalted
             }
         }
 
+        /// <summary>
+        /// translate a batch of texts.
+        /// </summary>
+        /// <param name="fromTexts"></param>
+        /// <param name="toLang"></param>
+        /// <returns></returns>
         public override async Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native)
         {
-            // translate a batch of texts.
-
             if (toLang == _fromLang)    // nothing to do.
-                return null;
+                return fromTexts;
 
             var lstResp = new List<string>();
-            string url = kUrlGoogTrans;
 
             using (var client = new HttpClient())
             {
+                string url = kUrlGoogTrans;
                 if (!string.IsNullOrWhiteSpace(ApiKey))
                 {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
@@ -374,12 +393,15 @@ namespace DotStd
                 resp.EnsureSuccessStatusCode();
 
                 string respStr = await resp.Content.ReadAsStringAsync();
-                dynamic respObj = JsonConvert.DeserializeObject(respStr);
+                dynamic? respObj = JsonConvert.DeserializeObject(respStr);
 
                 // detectedSourceLanguage
-                foreach (dynamic tran in respObj.data.translations)
+                if (respObj != null)
                 {
-                    lstResp.Add(tran.translatedText);
+                    foreach (dynamic tran in respObj.data.translations)
+                    {
+                        lstResp.Add(tran.translatedText);
+                    }
                 }
             }
 

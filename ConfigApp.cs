@@ -1,26 +1,25 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 
 namespace DotStd
 {
-    // NOTE .NET Core and Std need NuGet for Configuration Support.
-
-    public class ConfigApp
+    /// <summary>
+    /// Singleton for config info that applies to the app. App config only applies once. AppDomain
+    /// NOTE .NET Core and Std need NuGet for Configuration Support.
+    /// </summary>
+    public class ConfigApp : Singleton<ConfigApp>
     {
-        // App singleton config. AppDomain
-        // Singleton for config info that applies to the app. App config only applies once.
-
-        public static readonly Lazy<ConfigApp> _Instance = new Lazy<ConfigApp>();  // singleton.
-
         public int AppId { get; set; }         // int Id for logging. enum these in app space. This app is part of a Cluster PK .
         public int AppTypeId { get; private set; } // AppId enum these in app space. Never changed.
 
         public int MainThreadId { get; set; }        // Environment.CurrentManagedThreadId at start. AKA 'GUIThread'.
         public bool IsOnMainThread => Environment.CurrentManagedThreadId == MainThreadId;    // caller is on main thread? Equiv to IsInvokeRequired()
 
-        private string _AppName;
+        private string? _AppName;
+        [MemberNotNull(nameof(_AppName))]
         public string AppName
         {
             get
@@ -28,18 +27,25 @@ namespace DotStd
                 if (_AppName == null)
                 {
                     // We really shouldn't need to do this. Should be set via SetConfigInfo.
-                    _AppName = Path.GetFileNameWithoutExtension(System.AppDomain.CurrentDomain.FriendlyName);
+                    lock (Instance())
+                    {
+                        _AppName = Path.GetFileNameWithoutExtension(System.AppDomain.CurrentDomain.FriendlyName);
+                    }
                 }
                 return _AppName;
             }
         }
 
-        public int AppVersion { get; private set; }  // (Major.Minor.Build) encoded as an int for sorting migration data.
-        public string AppRevision { get; private set; }   // extra Version control tag.
+        /// <summary>
+        /// (Major.Minor.Build) encoded as an int for sorting migration data.
+        /// Should match SchemaVersion for Db if applicable.
+        /// </summary>
+        public int AppVersion { get; private set; }
+        public string AppRevision { get; private set; } = string.Empty;   // extra Version control tag.
         public string AppVersion3Str
         {
             // AppVersion should be read from Version.targets.template.
-            // Might be in the format "1.2.3.4-EXTRA"
+            // Convert to format (Major.Minor.Build)
             get { return VersionUtil.ToVersionStr(AppVersion); }
         }
         public string AppVersionStr
@@ -49,9 +55,6 @@ namespace DotStd
             get { return VersionUtil.ToVersionStr(AppVersion, AppRevision); }
         }
 
-        private bool _IsUnitTesting_Checked = false;    // have i checked s_IsUnitTesting ?
-        private bool _IsUnitTesting;                // cached state of IsUnitTestingX after s_IsUnitTesting_Checked
-
         public static bool IsUnitTestingX()
         {
             // Determine if we are running inside a unit test. detect any UnitTestFramework version.
@@ -59,6 +62,8 @@ namespace DotStd
             {
                 foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
+                    if (asm.FullName == null)
+                        continue;
                     if (asm.FullName.StartsWith("Microsoft.VisualStudio.QualityTools.UnitTestFramework"))   // VS2015
                         return true;
                     if (asm.FullName.StartsWith("Microsoft.TestPlatform.PlatformAbstractions"))  // VS2017
@@ -76,11 +81,14 @@ namespace DotStd
             return false;
         }
 
+        private bool _IsUnitTesting_Checked = false;    // have i checked _IsUnitTesting ?
+        private bool _IsUnitTesting;                // cached state of IsUnitTestingX after _IsUnitTesting_Checked
+
         public bool IsUnitTesting()
         {
             // Determine if we are running inside a unit test. detect any version.
             // Cached
-            if (!_IsUnitTesting_Checked)
+            if (!_IsUnitTesting_Checked) // do this just once.
             {
                 _IsUnitTesting = IsUnitTestingX();
                 _IsUnitTesting_Checked = true;
@@ -88,14 +96,16 @@ namespace DotStd
             return _IsUnitTesting;
         }
 
-        private string _BaseDir;        // The base directory (for the app) we will use to find resource files.
+        private string? _BaseDir;        // The base directory (for the app) we will use to find resource files. e.g. "C:\FourTe\BinDev\AdminWeb"
 
+        /// <summary>
+        /// What is my install directory? i have resource files here.
+        /// i may be a web app or not. don't use HttpContext.Current.Server.MapPath
+        /// Similar to IHostingEnvironment.ContentRootPath
+        /// </summary>
+        [MemberNotNull(nameof(_BaseDir))]
         public string BaseDirectory
         {
-            // What is my install directory? i have resource files here.
-            // i may be a web app or not. don't use HttpContext.Current.Server.MapPath
-            // Similar to IHostingEnvironment.ContentRootPath
-
             get
             {
                 if (string.IsNullOrEmpty(_BaseDir))
@@ -125,29 +135,44 @@ namespace DotStd
             _BaseDir = baseDir;
         }
 
-        // The applications top level config read from some config file. May be redirected for testing.
-        // get app global config info. support IServiceProvider.
-        public ConfigInfoBase ConfigInfo { get; private set; }
+        /// <summary>
+        /// The applications top level config read from some config file. May be redirected for testing.
+        /// get app global config info. support IServiceProvider.
+        /// </summary>
+        public ConfigInfoBase? _ConfigInfo;
 
+        [MemberNotNull(nameof(_ConfigInfo))]
+        public ConfigInfoBase ConfigInfo
+        {
+            get
+            {
+                ValidState.ThrowIfNull(_ConfigInfo, nameof(_ConfigInfo));   // must call SetConfigInfo()
+                return _ConfigInfo;
+            }
+        }
+
+        [MemberNotNull(nameof(_ConfigInfo))]
         public void SetConfigInfo(ConfigInfoBase cfgInfo, int appId, string appName)
         {
             // Set app global config info.
             // MUST do this when first stating an app.
             // cfgInfo = new ConfigInfoServer()
 
-            ConfigInfo = cfgInfo;
+            _ConfigInfo = cfgInfo;
             AppId = appId;  // What app in the cluster am i ? may be updated later?
             AppTypeId = appId;
             _AppName = appName;
             MainThreadId = Environment.CurrentManagedThreadId;
         }
 
+        [MemberNotNull(nameof(_ConfigInfo))]
         public void SetConfigInfo(ConfigInfoBase cfgInfo, Enum appId)
         {
             // Set app global config info.
             SetConfigInfo(cfgInfo, appId.ToInt(), appId.ToDescription());
         }
 
+        [MemberNotNull(nameof(AppRevision))]
         public void SetAppVersion(Assembly asm)
         {
             // Set version based on System.Version metadata in the top assembly.
@@ -155,7 +180,13 @@ namespace DotStd
             // TODO Store and Get extra string tags for GIT hash id, etc ? [assembly: AssemblyInformationalVersion("13.3.1.74-g5224f3b")]
             // https://stackoverflow.com/questions/15141338/embed-git-commit-hash-in-a-net-dll
 
-            System.Version ver = asm.GetName().Version;
+            System.Version? ver = asm.GetName().Version;
+            if (ver == null)
+            {
+                AppVersion = 0;
+                AppRevision = "?";
+                return;
+            }
             AppVersion = VersionUtil.ToVersionInt(ver);
             AppRevision = ver.Revision.ToString();
         }
@@ -166,9 +197,9 @@ namespace DotStd
             return System.Diagnostics.Debugger.IsAttached;
         }
 
-        public static bool IsInDocker => (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue); 
+        public static bool IsInDocker => (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == SerializeUtil.kTrue);
 
-        public static string EnvironmentName => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");   // related to ConfigInfo.EnvironMode
+        public static string? EnvironmentName => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");   // related to ConfigInfo.EnvironMode
 
 
         static int _Pid = ValidState.kInvalidId;
@@ -181,6 +212,5 @@ namespace DotStd
             }
             return _Pid;
         }
-
     }
 }

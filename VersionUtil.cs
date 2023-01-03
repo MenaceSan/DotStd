@@ -4,17 +4,21 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Encode a version as a string, a System.Version or as a single int.
+    /// e.g. Version=4.0.0.0
+    /// </summary>
     public static class VersionUtil
     {
-        // Encode a version as a string, a System.Version or as a single int.
-        // e.g. Version=4.0.0.0
-
+        /// <summary>
+        /// take a version integer (for compare) and make a 3 unit string for display. Like System.Version.
+        /// Format X.2.3 decimal digits. (Major.Minor.Build)
+        /// similar to System.Version
+        /// </summary>
+        /// <param name="versionInt"></param>
+        /// <returns></returns>
         public static string ToVersionStr(int versionInt)
         {
-            // take a version integer (for compare) and make a 3 unit string for display. Like System.Version.
-            // Format X.2.3 decimal digits. (Major.Minor.Build)
-            // similar to System.Version
-
             return $"{versionInt / 100000}.{(versionInt / 1000) % 100}.{versionInt % 1000}";
         }
 

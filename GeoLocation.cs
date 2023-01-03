@@ -5,14 +5,15 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// ISO codes for Countries that we care about. CountryCode. NOT the same as calling/dialing codes.
+    /// from the table geo_country
+    /// https://www.ncbi.nlm.nih.gov/books/NBK7249/
+    /// https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
+    /// </summary>
     [Serializable()]
     public enum CountryId
     {
-        // ISO codes for Countries that we care about. CountryCode. NOT the same as calling/dialing codes.
-        // from the table geo_country
-        // https://www.ncbi.nlm.nih.gov/books/NBK7249/
-        // https://www.worldatlas.com/aatlas/ctycodes.htm A2 (ISO), A3 (UN), NUM (UN), DIALING CODE
-
         ANY = 0,    // Don't care. give me all.
 
         [Description("International")]
@@ -31,13 +32,14 @@ namespace DotStd
         Custom = 1000,  // indicate this is a hybrid table. it can grow.
     }
 
+    /// <summary>
+    /// Custom code for States/Provinces in a country we care about (USA first)
+    /// from the table geo_state
+    /// https://www.50states.com/abbreviations.htm
+    /// </summary>
     [Serializable()]
     public enum GeoStateId
     {
-        // Custom code for States/Provinces in a country we care about (USA first)
-        // from the table geo_state
-        // https://www.50states.com/abbreviations.htm
-
         UNK = 0,        // Invalid default value.
 
         [Description("Alabama")]
@@ -166,13 +168,14 @@ namespace DotStd
         Custom = 10000, // indicate this can grow.
     }
 
+    /// <summary>
+    /// Latitude and longitude.
+    /// Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
+    /// Can be serialized directly from the JSON poco.
+    /// </summary>
     [Serializable]
     public class GeoLocation
     {
-        // Latitude and longitude.
-        // Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
-        // Can be serialized directly from the JSON poco. 
-
         public double Latitude { get; set; }     // AKA latitude. degrees (360).
         public double Longitude { get; set; }    // AKA longitude. degrees (360).
         public float? Altitude { get; set; }     // optional AKA altitude. meters.
@@ -239,28 +242,43 @@ namespace DotStd
             return GetLatLonStr();
         }
 
-        public bool IsEqual2(GeoLocation x)
+        public bool IsEqual2(GeoLocation? x)
         {
             if (x == null)
                 return false;
             return Latitude == x.Latitude && Longitude == x.Longitude;
         }
 
+        /// <summary>
+        /// Get OpenStreet Map URL
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <returns></returns>
         public static string ToGeoUrlOsm(double lat, double lon)
         {
-            // Get OpenStreet Map
             return "http://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon;
         }
+        /// <summary>
+        /// Get Google Map URL
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <returns></returns>
         public static string ToGeoUrlGoo(double lat, double lon)
         {
-            // Get Google Map
             return "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lon;
         }
 
+        /// <summary>
+        /// Get Map URL
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="deviceTypeId">classify device we are displaying on</param>
+        /// <returns></returns>
         public static string ToGeoUrl(double lat, double lon, DeviceTypeId deviceTypeId)
         {
-            // Get Map
-            // deviceTypeId = classify device we are displaying on
             if (deviceTypeId == DeviceTypeId.Unknown || deviceTypeId == DeviceTypeId.Windows10)
             {
                 return ToGeoUrlGoo(lat, lon); // Unknown/Windows

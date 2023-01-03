@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Month of the year. Oddly .NET System doesn't define months.
+    /// like Microsoft.VisualBasic.MonthName
+    /// Use cultural description from DateTime.ToString("MMM", CultureInfo.InvariantCulture)
+    /// </summary>
     public enum MonthId : byte
     {
-        // Month of the year.
-        // Oddly .NET System doesn't define months.
-        // like Microsoft.VisualBasic.MonthName
-        // Use cultural description from DateTime.ToString("MMM", CultureInfo.InvariantCulture)
-
         January = 1,
         February = 2,
         March = 3,
@@ -24,12 +25,13 @@ namespace DotStd
         December = 12
     };
 
+    /// <summary>
+    /// Utility for date and time.
+    /// System.DayOfWeek (same as Javascript) = Sunday is 0, Monday is 1,
+    /// NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
+    /// </summary>
     public static class DateUtil
     {
-        // Utility for date and time.
-        // System.DayOfWeek (same as Javascript) = Sunday is 0, Monday is 1,
-        // NOTE: DayOfWeek is different for MSSQL and MySQL db time functions.
-
         public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
         // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesn't like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
 
@@ -48,13 +50,13 @@ namespace DotStd
             // e.g. Year <= 1
             return dt <= kExtremeMin || dt >= kExtremeMax;
         }
-        public static bool IsExtremeDate(DateTime? dt)
+        public static bool IsExtremeDate([NotNullWhen(false)] DateTime? dt)
         {
             if (dt == null)
                 return true;
             return IsExtremeDate(dt.Value);
         }
-
+   
         public static double ToJavaTime(DateTime dt)
         {
             // JavaScript time stamp is milliseconds past kUnixEpoch
@@ -69,12 +71,16 @@ namespace DotStd
             return kUnixEpoch.AddMilliseconds(javaTimeStamp);
         }
 
-        public static string TimeSpanStr2(TimeSpan ts, out string arg)
+        /// <summary>
+        /// a translatable approximate span.
+        /// get a string for a rough amount of time ago or ahead.
+        /// var ts = (yourDate - TimeNow.Utc);
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="arg"></param>
+        /// <returns></returns>
+        public static string TimeSpanStr2(TimeSpan ts, out string? arg)
         {
-            // a translatable approximate span.
-            // get a string for a rough amount of time ago or ahead.
-            // var ts = (yourDate - TimeNow.Utc);
-
             const int kSECOND = 1;
             const int kMINUTE = 60 * kSECOND;
             const int kHOUR = 60 * kMINUTE;
@@ -177,8 +183,7 @@ namespace DotStd
 
         public static string TimeSpanStr(TimeSpan ts)
         {
-            string arg;
-            string txt = TimeSpanStr2(ts, out arg);
+            string txt = TimeSpanStr2(ts, out string? arg);
             if (arg == null)
                 return txt;
             return string.Format(txt, arg);
@@ -187,8 +192,7 @@ namespace DotStd
         public static async Task<string> TimeSpanStrAsync(TimeSpan ts, ITranslatorProvider1 trans)
         {
             // a translated time span
-            string arg;
-            string txt = await trans.TranslateAsync(TimeSpanStr2(ts, out arg));
+            string txt = await trans.TranslateAsync(TimeSpanStr2(ts, out string? arg));
             if (arg == null)
                 return txt;
             return string.Format(txt, arg);
@@ -301,11 +305,14 @@ namespace DotStd
             return DayOfWeek.Monday;        // no idea. -1 ?
         }
 
+        /// <summary>
+        /// Convert a string in format "10:45" to minutes in the day.
+        /// Assume military time if no AM, PM
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static int GetTimeMinutes(string s)
         {
-            // Convert a string in format "10:45" to minutes in the day.
-            // Assume military time if no AM, PM
-
             string[] parts = s.Split(':');
             if (parts.Length == 0)
                 return -1;
@@ -336,27 +343,32 @@ namespace DotStd
             return hours * 60 + minutes;
         }
 
-        public static string GetTimeStr(int minutes, bool ampm = false, bool space = true)
+        /// <summary>
+        /// Convert (0 based) minutes in the day to a military (or AM/PM) time string.
+        /// if (minutes > DateUtil.kMinutesInDay) then just wrap.
+        /// </summary>
+        /// <param name="minutesInDay">(0 based) minutes in the day</param>
+        /// <param name="ampm"></param>
+        /// <param name="space"></param>
+        /// <returns></returns>
+        public static string GetTimeStr(int minutesInDay, bool ampm = false, bool space = true)
         {
-            // Convert (0 based) minutes in the day to a military (or AM/PM) time string.
-            // if (minutes > DateUtil.kMinutesInDay) then just wrap.
-
-            if (minutes < 0)
-                return null;
-            int hours = (minutes / 60) % 24;
-            minutes %= 60;
+            if (minutesInDay < 0)
+                return string.Empty;    // this should never happen!
+            int hours = (minutesInDay / 60) % 24;
+            minutesInDay %= 60;
             if (ampm)
             {
                 ampm = hours < 12;
                 hours %= 12;
                 if (hours == 0)
                     hours = 12;
-                return string.Format("{0:D2}:{1:D2}{2}{3}", hours, minutes, space ? " " : "", ampm ? "AM" : "PM");
+                return string.Format("{0:D2}:{1:D2}{2}{3}", hours, minutesInDay, space ? " " : "", ampm ? "AM" : "PM");
             }
             else
             {
                 // ignore hours > 24? or hours %= 24;
-                return string.Format("{0:D2}:{1:D2}", hours, minutes);
+                return string.Format("{0:D2}:{1:D2}", hours, minutesInDay);
             }
         }
 

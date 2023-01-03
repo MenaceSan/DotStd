@@ -80,8 +80,8 @@ namespace DotStd
         Microsoft = 10,      // OpenId Auth type. Azure is the same ?
         Google = 11,         // Google email. Auth type name.
         Facebook = 12,
-        Twitter = 13,        // NOT USED YET.
-        LinkedIn = 14,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
+        LinkedIn = 13,    // https://docs.microsoft.com/en-us/aspnet/mvc/overview/security/create-an-aspnet-mvc-5-app-with-facebook-and-google-oauth2-and-openid-sign-on
+        Twitter = 14,        // NOT USED YET.
         Apple = 15,         // NOT USED YET.
 
         // WordPress, GitHub,  etc. https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers/tree/dev/src
@@ -90,7 +90,7 @@ namespace DotStd
 
     public interface IMessageBase
     {
-        // Base class to allow message sending services to be replaced.
+        // Base class to allow message sending services to be replaced/abstracted.
         // Free SMS sending service can be replaced by Twilio etc.
         string Body { get; set; }
     }

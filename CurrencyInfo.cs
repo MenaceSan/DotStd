@@ -2,12 +2,13 @@
 
 namespace DotStd
 {
+    /// <summary>
+    /// Define localized currency type. 
+    /// What currency we want to be paid in?
+    /// ISO 4217 - https://en.wikipedia.org/wiki/ISO_4217
+    /// </summary>
     public enum CurrencyId
     {
-        // Define localized currency type. 
-        // What currency we want to be paid in?
-        // ISO 4217 - https://en.wikipedia.org/wiki/ISO_4217
-
         [Description("U.S Dollar")]
         USD = 840,    // $, US$, U.S. Dollar https://en.wikipedia.org/wiki/United_States_dollar
         [Description("European Euro")]
@@ -52,20 +53,20 @@ namespace DotStd
 
         [Description("Bitcoin (or XBT)")]
         BTC = 1000,        // https://en.wikipedia.org/wiki/Bitcoin
-
+        // 
     }
 
+    /// <summary>
+    /// Helper for different currency types. CurrencyId.
+    /// amount of currency should always be decimal type.
+    /// </summary>
     public class CurrencyInfo
     {
-        // Helper for different currency types.
-        // CurrencyId
-        // amount of currency should always be decimal.
-
         public readonly CurrencyId CurrencyId;
         public readonly string Sign;        // Symbol. e.g. "$"
         public readonly string Sign2;       // more specific sign. (for mixed usage. e.g. "US$")
         public readonly bool SignPostfix;    // prefix or postfix ?
-        public readonly string URL;
+        public readonly string? URL;        // wikipedia .
 
         public string Code => CurrencyId.ToString();
         public string Description => CurrencyId.ToDescription();
@@ -92,12 +93,13 @@ namespace DotStd
 
         public static readonly CurrencyInfo kUNK = new CurrencyInfo(ValidState.kInvalidId, "?", null, false);
 
-        private CurrencyInfo(CurrencyId id, string sign, string sign2 = null, bool signPost = false, string url = null)
+        private CurrencyInfo(CurrencyId id, string sign, string? sign2 = null, bool signPost = false, string? url = null)
         {
             CurrencyId = id;
             Sign = sign;
             Sign2 = sign2 ?? sign;
             SignPostfix = signPost;
+            URL = url;
         }
 
         public static CurrencyInfo Get(CurrencyId currencyId)

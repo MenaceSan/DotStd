@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
@@ -8,27 +9,39 @@ using System.Xml.Linq;
 
 namespace DotStd
 {
+    /// <summary>
+    /// An external host that we use that may be allowed or disallowed. (has fallback)
+    /// we can also add any external services like Google Map APIs that may be enabled or disabled dynamically?
+    /// Manage list of CDN services such that they may be enabled/disabled on the fly.
+    /// </summary>
     public class CdnHost
     {
-        // An external host that we use that may be allowed or disallowed. (has fallback)
-        // we can also add any external services like Google Map APIs that may be enabled or disabled dynamically?
-
-        // TODO Manage list of CDN services such that they may be enabled/disabled on the fly.
-        //   remove CDN hosts known to be bad ? fallback to next alternate.
-
         public readonly string HostName;         // all files from this source.
-        public bool Enabled;        // If we know its not working, we should disable it and take a backup. or fallback to local.
+
+        public DateTime TestLast;   // Last time we manually tested the CDN
+        public bool TestSuccess;
+
+        // remove CDN hosts known to be bad ? fallback to next alternate.
+        public bool Enabled;        // If we know its not working, we should manually disable it and take a backup. or fallback to local.
 
         public CdnHost(string hostname)
         {
             this.HostName = hostname;
-            Enabled = true;
+            this.Enabled = true;
+        }
+
+        public void UpdateTest(bool success)
+        {
+            TestLast = TimeNow.Utc;
+            TestSuccess = success;
         }
     }
 
+    /// <summary>
+    /// Result of trying to sync a CDN resource.
+    /// </summary>
     public enum CdnRet
     {
-        // Result of trying to sync a CDN resource.
         Error = -1,
         Valid = 0,   // already valid. do nothing.
         Updated = 1,
@@ -42,40 +55,48 @@ namespace DotStd
         a,          // <a href="name" /> // Some other resource.
     }
 
+    /// <summary>
+    /// An object that may be included as js, css, font, or image on some CdnHost
+    /// Available locally or via CdnHost.
+    /// Allow listing of LOCAL ONLY resources that might need to be minified.
+    /// </summary>
     public class CdnResource
     {
-        // An object that may be included as js, css, font, or image
-        // Available locally or via CDN.
-        // allow listing of LOCAL ONLY resources that might need to be minified.
-
-
         public const string kDataMinOnlyAttr = "data-minonly";         // The dev/debug version of this file does not exist! ONLY minified.
         public const string kDataLibAttr = "data-lib";         // LibMan destination directory for equivalent file. NOT USED.
 
-        public readonly CdnTagName TagName;     // TagName = element tag name for type. (or ERROR)
+        public CdnTagName TagName;     // TagName = element tag name for type. (or ERROR)
         public string AttrSrc => (this.TagName == CdnTagName.script) ? "src" : "href"; // different attr if JavaScript vs CSS/a ?  e.g. <script> JS file using "src" else <a> or <link> uses "href"
 
         public readonly string name;    // short name or Local path/name for the file. MUST NOT BE null.
         public readonly string fallback_src;   // Local name/path. asp-fallback-src="/cdn/dropzone/min/dropzone.min.js". unique. usually minified. ALL MUST have this!
 
-        public string integrity;    // integrity="sha256-cs4thShDfjkqFGk5s2Lxj35sgSRr4MRcyccmi0WKqCM=". unique for minified version. for CDN access ONLY. 
-        public readonly string map;          // name (NO path info) of a map file. The minified version can use a map file for debug. "data-map", null = no map supplied. 
+        public string? integrity;    // integrity="sha256-cs4thShDfjkqFGk5s2Lxj35sgSRr4MRcyccmi0WKqCM=". unique for minified version. for CDN access ONLY. 
+        public readonly string? map;          // name (NO path info) of a map file. The minified version can use a map file for debug. "data-map", null = no map supplied. 
 
         // NOTE: multiple alternate CDNs ? or is this overkill?
-        public readonly string CdnPath1;      // primary path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js".  
-        public CdnHost CdnHost1;    // host for CdnPath1
-        public bool IsCdnEnabled => CdnHost1?.Enabled ?? false;     // assumes CdnPath1
+        public readonly string? CdnPath1;      // primary full path to the minified CDN file. e.g. href or src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js".  
 
-        public readonly string fallback_test;    // for js <script>(fallback_test||document.write("<script>alternate include </script>"))</script> AKA "asp-fallback-test" or "asp-fallback-test-class"
-        public readonly string fallback_test_prop;   // CSS asp-fallback-test-property="position" 
-        public readonly string fallback_test_val;    // CSS asp-fallback-test-value=""
+        [MemberNotNullWhen(returnValue: false, member: nameof(CdnPath1))]
+        public bool IsLocalOnly => CdnPath1 == null;    // File is not from CDN.
+
+        public CdnHost? CdnHost1;            // parent host for CdnPath1
+
+        [MemberNotNullWhen(returnValue: true, member: nameof(CdnHost1))]
+        public bool IsCdnEnabled => CdnHost1?.Enabled ?? false;     // assumes CdnPath1 != null
+
+        // client side dynamic fallback.
+        public readonly string? fallback_test;    // for js <script>(fallback_test||document.write("<script>alternate include </script>"))</script> AKA "asp-fallback-test" or "asp-fallback-test-class"
+        public readonly string? fallback_test_prop;   // CSS asp-fallback-test-property="position" 
+        public readonly string? fallback_test_val;    // CSS asp-fallback-test-value=""
+
+        public readonly string? lib;             // path to libman local install. 'data-lib'="/lib/dropzone/dist"   // NOT USED.
 
         public readonly bool minonly;      // No non minified version is available for some reason. "data-minonly". only has minified. dont look for non minified version.
-        public readonly string lib;             // path to libman local install. 'data-lib'="/lib/dropzone/dist"   // NOT USED.
-        public readonly string version;      // For local files ONLY. Equiv to "asp-append-version". Arbitrary value that is used to break client side cache. similar to integrity
+        public string? version;      // For local files. (instead of integrity) Equiv to "asp-append-version". Arbitrary value that is used to break client side cache. similar to integrity GetMD5() 
 
         // has pre-requisites? list of dependencies/requires i need to work.  
-        public List<CdnResource> Requires;      // "data-req"
+        public List<CdnResource>? Requires;      // "data-req"
 
         // CdnCssTest must define this function ONLY ONCE in the file before using CDN CSS includes.
         // a = asp-fallback-test-property='position' 
@@ -87,12 +108,15 @@ namespace DotStd
         public const string kCssTestScript = "<script>function CdnCssTest(a,b,c,d){var e,f=document,g=f.getElementsByTagName('SCRIPT'),h=g[g.length-1].previousElementSibling,i=f.defaultView&&f.defaultView.getComputedStyle?f.defaultView.getComputedStyle(h):h.currentStyle;if(i&&i[a]!==b)for(e=0;e<c.length;e++)f.write('<link href=\"'+c[e]+'\" '+d+'/>')}</script> ";
         public const string kCssExtraAttr = "rel='stylesheet'";
 
-
+        /// <summary>
+        /// Include this client side script to test for CDN health.
+        /// if the CDN failed take some alternative action.
+        /// MUST be AFTER the <script src> or <link href css>
+        /// </summary>
+        /// <returns></returns>
         public string GetFallbackScript()
         {
-            // Test if the CDN failed and take some action.
-            // MUST be AFTER the <script src> or <link href css>
-            Debug.Assert( this.fallback_test != null);
+            Debug.Assert(this.fallback_test != null);
 
             string extraAttr = "";
 
@@ -110,33 +134,43 @@ namespace DotStd
             return $"<script>({this.fallback_test}||document.write('\\u003C{TagName} {AttrSrc}=\"{this.fallback_src}\"{extraAttr}\\u003E\\u003C/{TagName}\\u003E'))</script>";
         }
 
+        /// <summary>
+        /// Get link and version (cache breaker) for local file.
+        /// </summary>
+        /// <param name="useDevVersion"></param>
+        /// <returns></returns>
         public string GetLocalSrc(bool useDevVersion)
         {
             string localSrc = (!useDevVersion || this.minonly || !Minifier.IsMinName(this.fallback_src)) ? this.fallback_src : Minifier.GetNonMinName(this.fallback_src);
             if (this.version != null)
             {
-                // version For local files. Equiv to "asp-append-version"
+                // version For local files. Equiv to "asp-append-version". used as cache breaker.
                 localSrc += "?v=" + this.version;
             }
             return localSrc;
         }
 
+        /// <summary>
+        /// Get URL for some CDN resource that is not a typical script or CSS link.
+        /// Should we use a particular CDN server ? else fallback to local or some other server? 
+        /// This may be used to check for enable of external service API. Google Maps, etc.
+        /// </summary>
+        /// <param name="useCdn"></param>
+        /// <param name="useDevVersion"></param>
+        /// <returns></returns>
         public string GetAddr(bool useCdn, bool useDevVersion)
         {
-            // Get Url for some CDN resource that is not a typical script or CSS link.
-            // Should we use a particular CDN server ? else fallback to local or some other server? 
-            // This may be used to check for enable of external service API. Google Maps, etc.
-            if (useCdn && this.IsCdnEnabled)
+            if (useCdn && this.IsCdnEnabled && this.CdnPath1 != null)
                 return this.CdnPath1;
             return GetLocalSrc(useDevVersion);
         }
 
-        public static string ReadAttr(XElement xl, params string[] names)
+        public static string? ReadAttr(XElement xl, params string[] names)
         {
             // attributes can have multiple alternate names.
             foreach (string name in names)
             {
-                XAttribute dst = xl.Attribute(name);
+                XAttribute? dst = xl.Attribute(name);
                 if (dst != null)
                 {
                     return dst.Value;
@@ -145,38 +179,110 @@ namespace DotStd
             return null;
         }
 
-        public static bool IsUsedTagName(string elemTagName)
+        /// <summary>
+        /// is this a tag name i know?
+        /// </summary>
+        /// <param name="elemTagName"></param>
+        /// <returns></returns>
+        public static bool IsUsedTagName(string? elemTagName)
         {
             return EnumUtil.IsMatch<CdnTagName>(elemTagName);
         }
 
-        public static bool IsUsedElement(XElement xl)
+        public static bool IsUsedElement(XElement? xl)
         {
             return IsUsedTagName(xl?.Name?.LocalName);
         }
 
         const string kIntegrityAlgDef = HashUtil.kSha256;        // for integrity
 
+        /// <summary>
+        /// compute a hash and return base64 string. (of hash)
+        /// </summary>
+        /// <param name="dstPath"></param>
+        /// <param name="hasher"></param>
+        /// <returns></returns>
+        private static async Task<string> GetFileHash(string dstPath, HashUtil hasher)
+        {
+            byte[] hashCode2 = await hasher.GetHashFileAsync(dstPath);
+            if (hashCode2 == null)
+                return string.Empty;
+            return Convert.ToBase64String(hashCode2);
+        }
         private static async Task<string> GetFileHash(string dstPath, string alg)
         {
             // compute a hash.
-            var hasher = new HashUtil(HashUtil.FindHasherByName(alg));
-            byte[] hashCode2 = await hasher.GetHashFileAsync(dstPath);
-            Debug.Assert(hashCode2 != null);
-            return Convert.ToBase64String(hashCode2);
+            return await GetFileHash(dstPath, new HashUtil(HashUtil.FindHasherByName(alg)));
+        }
+
+        public static string GetPhysPathFromRel(string outDir, string url)
+        {
+            // Get app relative physical (local) path for file given its URL.
+            // url = site relative URL path.
+            // / = outDir (wwwroot)
+            // ~/ = MVC app root ?
+            // NO / = root of app?
+
+            if (url.StartsWith(UrlUtil.kSep))
+            {
+                return outDir + url;
+            }
+
+            // just leave it?
+            return url;
         }
 
         const char kIntegritySep = '-';
 
-        private async Task UpdateIntegrity(string dstPath)
+        public async Task<CdnRet> UpdateLocalOnly(string outDir)
+        {
+            // local file. this file has no CDN. 
+            // outDir = ConfigManager.kInstRootDir
+
+            ValidState.AssertTrue(this.IsLocalOnly);  // local only file.
+            string pathSrc = GetPhysPathFromRel(outDir, name);
+
+            var fiSrc = new FileInfo(pathSrc);
+            if (!fiSrc.Exists)
+            {
+                // Local file must exist!
+                return CdnRet.Error;
+            }
+
+            string pathMin = GetPhysPathFromRel(outDir, fallback_src);
+            CdnRet ret = CdnRet.Valid;
+            if (!minonly)
+            {
+                // Does this have a minified file ? if not make one.
+                // has the source changed since the minified file was made ? re-minify?
+                var fiMin = new FileInfo(pathMin);
+                if (!fiMin.Exists || (fiSrc.LastWriteTimeUtc > fiMin.LastWriteTimeUtc.AddSeconds(2)))   // add some slop.
+                {
+                    if (!await Minifier.CreateMinified(pathSrc, pathMin))
+                    {
+                        return CdnRet.Error;
+                    }
+                    ret = CdnRet.Updated;
+                }
+            }
+
+            // cache breaking version For local files. Equiv to "asp-append-version" (would use SHA256)
+            if (string.IsNullOrEmpty(version))
+            {
+                version = await GetFileHash(pathMin, new HashUtil(HashUtil.GetMD5()));  // GetSHA256()
+            }
+
+            return ret;
+        }
+
+        private async Task SuggestIntegrity(string dstPath)
         {
             // Generate integrity if its missing. It should NOT be !
             // Calculate and display an integrity value to be added. We should add this to CdnAll
 
-            if (TagName == CdnTagName.a)    // integrity does nothing for this type?
-                return;
-            if (this.CdnPath1 == null)
-                return;
+            ValidState.AssertTrue(!this.IsLocalOnly);  // CDN only. don't bother if its a local only file.
+            if (TagName == CdnTagName.a)    // integrity does nothing for this type? 'a'
+                return;    // 
 
             string hash = await GetFileHash(dstPath, kIntegrityAlgDef);
             integrity = string.Concat(kIntegrityAlgDef, kIntegritySep, hash);
@@ -185,13 +291,17 @@ namespace DotStd
             LoggerUtil.DebugException(dstPath + " integrity='" + integrity + "'", null);
         }
 
-        public async Task<CdnRet> SyncFile(string dstPath)
+        private async Task<CdnRet> SyncFile(string dstPath)
         {
             // Get a file from CDN if i don't already have it and check its integrity (if supplied)
             // can throw.
 
-            byte[] hashCode1 = null;
-            HashUtil hasher = null;
+            ValidState.AssertTrue(!this.IsLocalOnly);  // CDN only. don't bother if its a local only file.
+            ValidState.ThrowIfNull(this.CdnPath1, nameof(this.CdnPath1));
+            ValidState.ThrowIfNull(this.CdnHost1, nameof(this.CdnHost1));
+
+            string? hashCode1 = null;
+            HashUtil? hasher = null;
 
             var fi = new FileInfo(dstPath);
             if (integrity == null)
@@ -199,7 +309,7 @@ namespace DotStd
                 // integrity doesn't exist so just check that the file exists locally.
                 if (fi.Exists && fi.Length > 0)
                 {
-                    await UpdateIntegrity(dstPath);     // suggest that we manually update integrity.
+                    await SuggestIntegrity(dstPath);     // suggest that we manually update integrity.
                     return CdnRet.Valid;    // it exists. good enough since we don't have integrity attribute.
                 }
 
@@ -216,35 +326,18 @@ namespace DotStd
                     return CdnRet.Error;
                 }
 
-                hashCode1 = Convert.FromBase64String(integrity.Substring(i + 1));
-                hasher = new HashUtil(HashUtil.FindHasherByName(integrity));
+                hashCode1 = integrity.Substring(i + 1);
+                hasher = new HashUtil(HashUtil.FindHasherByName(integrity.Substring(0, i)));
                 if (fi.Exists)
                 {
                     // Does current file match integrity?
-                    byte[] hashCode2 = await hasher.GetHashFileAsync(dstPath);
-                    Debug.Assert(hashCode2 != null);
-
-                    // string debugHash2 = Convert.ToBase64String(hashCode2);
-                    if (ByteUtil.CompareBytes(hashCode1, hashCode2) == 0)     // integrity match is good. Skip this.
+                    string hashCode2 = await GetFileHash(dstPath, hasher);
+                    if (hashCode2 == hashCode1)     // integrity match is good. Skip this.
                         return CdnRet.Valid;
 
-                    // local file DOES NOT MATCH integrity!!
                     // This really should never happen! Pull another file from the CDN and hope it matches.
+                    LoggerUtil.DebugException($"Local File ({dstPath}) does not match integrity!? re-fetching.", null);
                 }
-            }
-
-            if (this.CdnPath1 == null)
-            {
-                // this file has no CDN. So i can't do anything!
-
-                if (Minifier.IsMinName(dstPath) && await Minifier.CreateMinified(Minifier.GetNonMinName(dstPath), dstPath))
-                {
-                    // Local only lacked a minified version. so i made one.
-                    return CdnRet.Updated;
-                }
-
-                LoggerUtil.DebugException($"No File ({integrity}) and No CDN path for '{name}'", null);
-                return CdnRet.Error;
             }
 
             // Pull/Get the file from CDN. 
@@ -261,60 +354,56 @@ namespace DotStd
                 if (!fi2.Exists || fi2.Length <= 0)
                 {
                     LoggerUtil.DebugException("CDN file size 0 for " + dstPath, null);
+                    this.CdnHost1.UpdateTest(false);
                     return CdnRet.Error;
                 }
 
-                await UpdateIntegrity(dstPath);
+                await SuggestIntegrity(dstPath);
             }
             else
             {
                 // Now (re)test integrity for the file i just got!
+                ValidState.ThrowIfNull(hasher, nameof(hasher));
                 hasher.Init();
-                byte[] hashCode2 = await hasher.GetHashFileAsync(dstPath);
-                if (ByteUtil.CompareBytes(hashCode1, hashCode2) != 0)     // MUST match.
+                string hashCode2 = await GetFileHash(dstPath, hasher);
+                if (hashCode1 != hashCode2)     // MUST match.
                 {
                     // This is BAD. It should never happen!
-                    string debugHash2 = Convert.ToBase64String(hashCode2);
-                    LoggerUtil.DebugException($"CDN integrity hash does not match for '{dstPath}'. should be integrity='{string.Concat(kIntegrityAlgDef, kIntegritySep, debugHash2)}'", null);
+                    LoggerUtil.DebugException($"CDN integrity hash does not match for '{dstPath}'. Local integrity='{string.Concat(kIntegrityAlgDef, kIntegritySep, hashCode2)}'", null);
+                    this.CdnHost1.UpdateTest(false);
                     return CdnRet.Error;
                 }
             }
 
+            this.CdnHost1.UpdateTest(true);
             return CdnRet.Updated;       // got it.
         }
 
-        public static string GetPhysPathFromWeb(string outDir, string url)
-        {
-            // Get app relative physical (local) path for file given its URL.
-            // url = site relative URL path.
-            // / = outDir (wwwroot)
-            // ~/ = MVC app root ?
-            // NO / = root of app?
-
-            if (url.StartsWith(UrlUtil.kSep))
-            {
-                return outDir + url;
-            }
-
-            // just leave it?
-            return url;
-        }
         public async Task<CdnRet> SyncElement(string outDir)
         {
             // Test a <a>, <link> or <script> element. Pull it from CDN if it doesn't exist locally.
+            // outDir = ConfigManager.kInstRootDir
             // RETURN: CdnRet : 0 = no update required, 1 = pulled file. -1=error
+            // Assume we just called AddResource();
 
             try
             {
-                string dstPath = GetPhysPathFromWeb(outDir, this.fallback_src);     // Make a real (app relative) physical path for destination.
+                if (IsLocalOnly)
+                {
+                    return await UpdateLocalOnly(outDir);
+                }
 
+                ValidState.ThrowIfNull(this.CdnPath1,nameof(this.CdnPath1));
+                ValidState.ThrowIfNull(this.CdnHost1, nameof(this.CdnHost1));
+
+                string dstPath = GetPhysPathFromRel(outDir, this.fallback_src);     // Make a real (app relative) physical path for destination.
                 CdnRet ret = await SyncFile(dstPath);
                 if (ret <= CdnRet.Error)
                 {
                     return ret;
                 }
 
-                // Does it have a .map file?
+                // Does it have an associated .map file?
                 string mapPath;
                 if (this.map != null)
                 {
@@ -323,6 +412,7 @@ namespace DotStd
                     {
                         var dlMap = new HttpDownloader(UrlUtil.ReplaceFile(this.CdnPath1, this.map), mapPath);
                         await dlMap.DownloadFileAsync();
+                        this.CdnHost1.UpdateTest(true);
                     }
                 }
 
@@ -334,6 +424,7 @@ namespace DotStd
                     {
                         var dlDev = new HttpDownloader(Minifier.GetNonMinName(this.CdnPath1), devName);
                         await dlDev.DownloadFileAsync();
+                        this.CdnHost1.UpdateTest(true);
                     }
                 }
 
@@ -342,6 +433,7 @@ namespace DotStd
             catch
             {
                 // This is only run at startup and failure is very bad! Should we allow the server to start at all ?
+                this.CdnHost1?.UpdateTest(false);
                 return CdnRet.Error;
             }
         }
@@ -353,29 +445,32 @@ namespace DotStd
 
             TagName = EnumUtil.ParseEnum<CdnTagName>(xl.Name.LocalName);
 
-            CdnPath1 = xl.Attribute(AttrSrc)?.Value;        // (src or href) MUST be defined.
+            CdnPath1 = xl.Attribute(AttrSrc)?.Value;        // (src or href) MUST be defined. CdnHost1 will be set later.
             ValidState.ThrowIfWhiteSpace(CdnPath1, nameof(CdnPath1));
 
-            fallback_src = xl.Attribute("asp-fallback-" + AttrSrc)?.Value; // my local path (src or href). 
-            name = xl.Attribute(nameof(name))?.Value; // my local name. use fallback_src if not supplied.
+            string? fallback1 = xl.Attribute("asp-fallback-" + AttrSrc)?.Value; // my local path (src or href). 
+            string? name1 = xl.Attribute(nameof(name))?.Value; // my local name. use fallback_src if not supplied.
 
-            if (fallback_src == null && UrlUtil.IsLocalAddr(CdnPath1))
+            if (fallback1 == null && UrlUtil.IsLocalAddr(CdnPath1))
             {
                 // This is really a local only file. no CDN.
-                fallback_src = CdnPath1;
-                CdnPath1 = null;        // NOT a true CDN
+                fallback1 = CdnPath1;
+                CdnPath1 = null;        // NOT a true CDN. IsLocalOnly
             }
-            if (name == null)
-                name = fallback_src;
-            if (fallback_src == null)
-                fallback_src = name;
+            if (name1 == null)
+                name1 = fallback1;
+            if (fallback1 == null)
+                fallback1 = name1;
 
-            ValidState.ThrowIfWhiteSpace(name, "CdnResource name");
-            ValidState.ThrowIfWhiteSpace(fallback_src, nameof(fallback_src));
+            ValidState.ThrowIfWhiteSpace(name1, "CdnResource name");     // MUST have name
+            name = name1;
+            ValidState.ThrowIfWhiteSpace(fallback1, nameof(fallback1));
+            fallback_src = fallback1;
 
             integrity = xl.Attribute(nameof(integrity))?.Value;       // has integrity hash ? All should. 
             minonly = xl.Attribute(kDataMinOnlyAttr) != null;    // Allow null default. some elements have no non-minified version!
             map = xl.Attribute("data-map")?.Value;
+            version = xl.Attribute("data-version")?.Value;
             lib = xl.Attribute(kDataLibAttr)?.Value;        // NOT USED.
 
             fallback_test = ReadAttr(xl, "asp-fallback-test", "asp-fallback-test-class");
@@ -383,18 +478,18 @@ namespace DotStd
             fallback_test_val = xl.Attribute("asp-fallback-test-value")?.Value;
         }
 
-        public CdnResource(string _name, string _tagname, string outDir)
+        public CdnResource(string _name, string _tagname)
         {
-            // create an element on the fly. Assume _name is a local minified file. NOT CDN.
-            // <IncludeRef name="/js/grid_common.min.js" tagname="script" /> // use minified name to indicate it has one.
+            // create an Local element on the fly. Assume _name is a local minified file. NOT CDN.
+            // <IncludeRef name="/js/grid_common.js" tagname="script" /> // use minified name to indicate it has one. can auto swap to debug if configured.
+            // ASSUME UpdateLocalOnly1() will be called next.
 
             ValidState.ThrowIfWhiteSpace(_name, "CdnResource name");
             name = _name;
-            fallback_src = name;
 
             if (_tagname == null)
             {
-                // derive from the file extension.
+                // derive TagName type from the file extension.
                 if (_name.EndsWith(Minifier.kExtJs))
                     TagName = CdnTagName.script;
                 else if (_name.EndsWith(Minifier.kExtCss))
@@ -407,36 +502,18 @@ namespace DotStd
                 TagName = EnumUtil.ParseEnum<CdnTagName>(_tagname);
             }
 
-            // Does it have a minified file? assume _name is the minified version.
-            string path1 = GetPhysPathFromWeb(outDir, name);
-            string name2 = Minifier.GetNonMinName(name);
-            string path2 = GetPhysPathFromWeb(outDir, name2);
-            bool exists1 = File.Exists(path1);
-            bool exists2 = File.Exists(path2);
-            if (exists1)    
+            minonly = Minifier.IsMinName(name) || (TagName != CdnTagName.script && TagName != CdnTagName.link);     // This file is all there is so do nothing more.
+
+            if (minonly)
             {
-                minonly = !exists2; // min exists. but does non-min ?
-            }
-            else if (exists2)
-            {
-                name = name2;   // only non-min version exists.
-                path1 = path2;
-                minonly = true;
+                fallback_src = name;
             }
             else
             {
-                // neither exists. this is bad.
-                TagName = CdnTagName.ERROR;
-                minonly = false;
-                return;
+                // Create the min file name.
+                string ext = Path.GetExtension(name);
+                fallback_src = name.Substring(0, name.Length - ext.Length) + ".min" + ext;  // Add ".min."
             }
-
-            // cache breaking version For local files. Equiv to "asp-append-version" (would use SHA256)
-
-            var hasher = new HashUtil(HashUtil.GetMD5());       // GetSHA256()
-            byte[] hashCode2 = hasher.GetHashFile(path1);
-            Debug.Assert(hashCode2 != null);
-            version = Convert.ToBase64String(hashCode2);
         }
     }
 
@@ -454,59 +531,75 @@ namespace DotStd
         public bool UseCdn { get; set; } = true;    // turn on/off ALL use of CDNs
 
 #if DEBUG
-        public bool UseDev { get; set; } = true;   // use the dev version of files. EnvironMode.DEV 
+        public bool UseDev { get; set; } = true;   // use the dev (non minified) version of files. EnvironMode.DEV 
 #else
-        public bool UseDev { get; set; } = false;   // use the dev version of files. EnvironMode.DEV 
+        public bool UseDev { get; set; } = false;   // use the dev (non minified) version of files. EnvironMode.DEV 
 #endif
 
-        private Dictionary<string, CdnResource> Resources = new Dictionary<string, CdnResource>();       // a list of declared resources.
+        private Dictionary<string, CdnResource> ResourcesByName = new Dictionary<string, CdnResource>();       // a list of declared resources by name
+        private Dictionary<string, CdnResource> ResourcesBySrc = new Dictionary<string, CdnResource>();       // a list of declared resources by name
+
         public Dictionary<string, CdnHost> Hosts = new Dictionary<string, CdnHost>();     // a list of CDN hosts i use in Resources.
 
         public const int kMaxConcurrentUpdates = 1;  // how many concurrent updates do we allow ?
 
-        public CdnResource FindResource(string name, bool wildCard)
+        public CdnResource? FindResource(string name, bool wildCard)
         {
-            CdnResource res;
-            if (Resources.TryGetValue(name, out res))
+            // Find CdnResource by its name (or src?)
+            if (ResourcesByName.TryGetValue(name, out CdnResource? res))
                 return res;
             if (!wildCard)
                 return null;
 
-            // TODO: Allow wild card resources. for things like languages and country flags. (so i dont have to register them all)
+            if (ResourcesBySrc.TryGetValue(name, out res))
+                return res;
 
-            // Create  wildcard that is missing locally ? 
+            // does the file exist? but isnt yet registered?
+            // TODO: Allow wild card resources. for things like languages and country flags. (so i dont have to register them all)
+            // Create wildcard that is missing locally ? 
 
             return res;
         }
 
-        public void AddResource(string name, CdnResource res, string reqs)
+        /// <summary>
+        /// register a resource i might get from some CDN
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="res"></param>
+        /// <param name="reqNames">this resource requires other resources to work.</param>
+        public void AddResource(string name, CdnResource res, string? reqNames)
         {
-            if (!string.IsNullOrWhiteSpace(reqs))   // "data-req"
+            if (!string.IsNullOrWhiteSpace(reqNames))   // "data-req"
             {
                 res.Requires = new List<CdnResource>();
-                foreach (string dep in reqs.Split())
+                foreach (string resName in reqNames.Split())
                 {
-                    var resDep = FindResource(dep, false);
+                    var resDep = FindResource(resName, false);
                     Debug.Assert(resDep != null);
                     res.Requires.Add(resDep);
                 }
             }
 
-            Debug.Assert(!Resources.ContainsKey(name));
-            Resources.Add(name, res);
+            lock (this)
+            {
+                if (ResourcesByName.ContainsKey(name))  // race?
+                    return;
+                ResourcesByName.Add(name, res);
+            }
+
             if (name != res.fallback_src)
             {
-                Debug.Assert(!Resources.ContainsKey(res.fallback_src));
-                Resources.Add(res.fallback_src, res);
+                Debug.Assert(!ResourcesBySrc.ContainsKey(res.fallback_src));
+                ResourcesBySrc.Add(res.fallback_src, res);
             }
 
             // Add the Cdn Hosts to our list.
-            if (res.CdnPath1 != null)
+            if (res.CdnPath1 != null)   // IsLocalOnly
             {
                 // add CDN Host info.
                 string host = UrlUtil.GetHostName(res.CdnPath1);
-                CdnHost host1;
-                if (!Hosts.TryGetValue(host, out host1))
+
+                if (!Hosts.TryGetValue(host, out CdnHost? host1))
                 {
                     host1 = new CdnHost(host);
                     Hosts.Add(host, host1);
@@ -520,7 +613,8 @@ namespace DotStd
 
         public void ClearCdn()
         {
-            Resources = new Dictionary<string, CdnResource>();       // a list of declared resources.
+            ResourcesByName = new Dictionary<string, CdnResource>();
+            ResourcesBySrc = new Dictionary<string, CdnResource>();       // a list of declared resources.
             Hosts = new Dictionary<string, CdnHost>();     // a list of CDN hosts i use in Resources.
         }
 
@@ -547,8 +641,8 @@ namespace DotStd
                 if (node.NodeType != XmlNodeType.Element)
                     continue;
 
-                var xl = node as XElement;
-                if (!CdnResource.IsUsedElement(xl))
+                XElement? xl = node as XElement;
+                if (xl == null || !CdnResource.IsUsedElement(xl))
                     continue;
 
                 var res = new CdnResource(xl);
@@ -559,7 +653,8 @@ namespace DotStd
                 if (tasks.Count < kMaxConcurrentUpdates)
                     continue;
 
-                await Task.WhenAny(tasks.ToArray());        // Do the work.
+                // Throttle to kMaxConcurrentUpdates
+                await Task.WhenAny(tasks.ToArray());        // Do some of the work in parallel.
 
                 for (int i = 0; i < tasks.Count; i++)
                 {
@@ -568,15 +663,16 @@ namespace DotStd
                     {
                         if (task.Result == CdnRet.Updated)
                             downloadCount++;
-                        tasks.RemoveAt(i);  // done.
+                        tasks.RemoveAt(i);  // remove the one that is done.
                         i--;
                     }
                 }
 
-                Debug.Assert(tasks.Count < kMaxConcurrentUpdates);
+                Debug.Assert(tasks.Count < kMaxConcurrentUpdates);  // I MUST have removed/completed at least 1
             }
 
-            await Task.WhenAll(tasks.ToArray());        // do this in parallel.
+            Debug.Assert(tasks.Count < kMaxConcurrentUpdates);
+            await Task.WhenAll(tasks.ToArray());        // do ALL this in parallel.
 
             foreach (var task in tasks)
             {
@@ -590,8 +686,6 @@ namespace DotStd
 
         public string GetAddr(CdnResource res)
         {
-            if (res == null)
-                return null;
             return res.GetAddr(this.UseCdn, this.UseDev);
         }
     }

@@ -9,7 +9,7 @@ namespace DotStd
         // like class System.Tuple<int,string> NOT like struct System.ValueTuple<int,string>
 
         public int Id { get; set; }
-        public string Value { get; set; }
+        public string? Value { get; set; }
 
         public TupleIdValue()
         { }
@@ -29,15 +29,15 @@ namespace DotStd
         // like KeyValuePair<string, string> (but cant init KeyValuePair properly and not useful for JSON or EF)
         // like class System.Tuple<string,string>
 
-        public string Key { get; set; } // a unique string.
-        public string Value { get; set; }
+        public string Key { get; set; } = string.Empty; // a unique string.
+        public string? Value { get; set; }
 
         public TupleKeyValue()
         {
         }
-        public TupleKeyValue(string key, string name)
+        public TupleKeyValue(string key, string nameValue)
         {
-            Key = key; Value = name;
+            Key = key; Value = nameValue;
         }
         public TupleKeyValue(Enum e)
         {

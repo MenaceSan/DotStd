@@ -9,18 +9,19 @@ namespace DotStd
     public class GmailMessage
     {
 #pragma warning disable IDE1006 // Naming Styles
-        public string title { get; set; }
-        public string summary { get; set; }
+        public string? title { get; set; }
+        public string? summary { get; set; }
 #pragma warning restore IDE1006 // Naming Styles
     }
 
+    /// <summary>
+    /// Reading Gmail in-box messages via atom feed interface.
+    /// https://mail.google.com/mail/feed/atom
+    /// https://stackoverflow.com/questions/7056715/reading-emails-from-gmail-in-c-sharp/19570553#19570553
+    /// </summary>
     public class GmailReader
     {
-        // Reading Gmail in-box messages via atom feed interface.
-        // https://mail.google.com/mail/feed/atom
-        // https://stackoverflow.com/questions/7056715/reading-emails-from-gmail-in-c-sharp/19570553#19570553
-
-        public System.Net.NetworkCredential _Credentials;   // more secure to store like this.
+        public System.Net.NetworkCredential? _Credentials;   // more secure to store like this.
 
         public void SetCreds(string email, string password)
         {
@@ -28,10 +29,9 @@ namespace DotStd
             _Credentials = new System.Net.NetworkCredential(email, password);
         }
 
-        public async Task<List<GmailMessage>> ReadMessages()
+        public async Task<List<GmailMessage>?> ReadMessages()
         {
             // get responses back from the free email gateway.
-
             try
             {
                 var httpClientHandler = new HttpClientHandler()
@@ -53,17 +53,21 @@ namespace DotStd
                     doc.LoadXml(response);
 
                     // nr of emails
-                    var nr = doc.SelectSingleNode(@"/feed/fullcount").InnerText;
+                    // string? nr = doc.SelectSingleNode(@"/feed/fullcount")?.InnerText;
 
                     // Reading the title and the summary for every email
                     var msgs = new List<GmailMessage>();
-                    foreach (XmlNode node in doc.SelectNodes(@"/feed/entry"))
+                    var entries = doc.SelectNodes(@"/feed/entry");
+                    if (entries != null)
                     {
-                        msgs.Add(new GmailMessage
+                        foreach (XmlNode node in entries)
                         {
-                            title = node.SelectSingleNode("title").InnerText,
-                            summary = node.SelectSingleNode("summary").InnerText,
-                        });
+                            msgs.Add(new GmailMessage
+                            {
+                                title = node.SelectSingleNode("title")?.InnerText,
+                                summary = node.SelectSingleNode("summary")?.InnerText,
+                            });
+                        }
                     }
 
                     return msgs;

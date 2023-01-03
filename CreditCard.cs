@@ -3,46 +3,53 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// CreditCard Type Id. For use with BluePay, etc.
+    /// http://www.informit.com/articles/article.aspx?p=1223879&seqNum=12
+    /// </summary>
     public enum CreditCardTypeId
     {
-        // CreditCard Type Id
-        // For use with BluePay, etc.
-        // http://www.informit.com/articles/article.aspx?p=1223879&seqNum=12
-
         Unk = 0,
         Visa = 1,       // VISA - start with 4 and are 13 or 16 digits
         MasterCard = 2, // MC - 16 digits. the first digit is always 5, and the second digit is 1 through 5
         Discover = 3,   // DISC - 16 digits and start with digits 6011
         Amex = 4,       // AMEX - 15 digits and start with 34 or 37
         DinersClub = 5,     // Diners Club - 14 digits and begin with 300 through 305, 36, or 38
-
+        // UCB ?
         // MaxValue
     }
 
+    /// <summary>
+    /// Helper class for CC
+    /// derived from https://www.codeproject.com/Articles/20271/Ultimate-NET-Credit-Card-Utility-Class?msg=4819150#xx4819150xx
+    /// </summary>
     public static class CreditCard
     {
-        // Helper class for CC
-        // derived from https://www.codeproject.com/Articles/20271/Ultimate-NET-Credit-Card-Utility-Class?msg=4819150#xx4819150xx
-
         // BEWARE CreditCardTypeId hard coded as string. e.g. "Visa"
         private const string _cardRegex = "^(?:(?<Visa>4\\d{3})|(?<MasterCard>5[1-5]\\d{2})|(?<Discover>6011)|(?<DinersClub>(?:3[68]\\d{2})|(?:30[0-5]\\d))|(?<Amex>3[47]\\d{2}))([ -]?)(?(DinersClub)(?:\\d{6}\\1\\d{4})|(?(Amex)(?:\\d{6}\\1\\d{5})|(?:\\d{4}\\1\\d{4}\\1\\d{4})))$";
-        private static readonly Lazy<Regex> _cardRegex1 = new Lazy<Regex>( () => new Regex(_cardRegex));   
+        private static readonly Lazy<Regex> _cardRegex1 = new Lazy<Regex>( () => new Regex(_cardRegex));
 
+        /// <summary>
+        /// strip all valid spacers out. All the rest MUST be digits !
+        /// </summary>
+        /// <param name="cardNum"></param>
+        /// <returns></returns>
         private static string GetClean(string cardNum)
         {
-            // strip all valid spacers out. All the rest MUST be digits !
             if (string.IsNullOrWhiteSpace(cardNum))
                 return "";
             // Clean the card number- remove dashes and spaces
             return cardNum.Replace("-", "").Replace(" ", "");
         }
- 
 
+        /// <summary>
+        /// Compare the supplied card number with the regex pattern and get reference regex named groups
+        /// NOTE: this does not mean the card is valid format/length, just that it resembles a type.
+        /// </summary>
+        /// <param name="cardNum"></param>
+        /// <returns></returns>
         public static CreditCardTypeId GetCardTypeFromNumber2(string cardNum)
         {
-            // Compare the supplied card number with the regex pattern and get reference regex named groups
-            // NOTE: this does not mean the card is valid format/length, just that it resembles a type.
-
             // Assume clean cardNum.
             GroupCollection gc = _cardRegex1.Value.Match(cardNum).Groups;
 
@@ -180,18 +187,20 @@ namespace DotStd
 
             switch (cardType)
             {
-                case CreditCardTypeId.Amex:
-                    return "3782 822463 10005";
-                case CreditCardTypeId.Discover:
-                    return "6011 1111 1111 1117";
-                case CreditCardTypeId.MasterCard:
-                    return "5105 1051 0510 5100";
+                case CreditCardTypeId.Unk:
+                    return "?";
                 case CreditCardTypeId.Visa:
                     return "4111 1111 1111 1111";
+                case CreditCardTypeId.MasterCard:
+                    return "5105 1051 0510 5100";
+                case CreditCardTypeId.Discover:
+                    return "6011 1111 1111 1117";
+                case CreditCardTypeId.Amex:
+                    return "3782 822463 10005";
                 case CreditCardTypeId.DinersClub:
                     return "30569309025904";
                 default:
-                    return null;
+                    return "!";
             }
         }
     }

@@ -3,14 +3,16 @@ using System.ComponentModel;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Id for Languages-Cultures that we care about. <html lang="en"> <html lang="en-US">
+    /// from Language db table ? CultureInfo Code.
+    /// Description = Native Name and font (English Name)
+    /// similar to the Windows concept of CultureInfo.
+    /// https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes = 2 letter codes.
+    /// </summary>
     [Serializable()]
     public enum LanguageId
     {
-        // Id for Languages-Cultures that we care about. <html lang="en"> <html lang="en-US">
-        // from Language db table ? CultureInfo Code.
-        // Description = Native Name and font (English Name)
-        // https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes = 2 letter codes.
-        // similar to the Windows concept of CultureInfo.
         // https://developers.google.com/admin-sdk/directory/v1/languages
         // https://en.wikipedia.org/wiki/Language_localisation
         // https://en.wikipedia.org/wiki/Languages_used_on_the_Internet  // sort by popularity.
@@ -18,7 +20,7 @@ namespace DotStd
         proper = 0,     // non-translatable proper name.
 
         [Description("Default")]    // default langauge.
-        native = 1,     // The native language of the app, whatever that might be.
+        native = 1,     // The native/neutral language of the app, whatever that might be. probably english.
 
         [Description("English")]    // English 
         en = 3,        // Default American English. .NET LanguageId =  1033 = 0x409 = 'en-US' // deployed with ASP
@@ -93,35 +95,42 @@ namespace DotStd
         test = 100,     // https://en.wikipedia.org/wiki/Constructed_language
     }
 
+    /// <summary>
+    /// Meta/Info for language. similar to CultureInfo
+    /// </summary>
+    [Serializable()]
     public class Language
     {
-        // CultureInfo
-
         public const string kDefault = "en";   // source = from English ISO_639
         public const string kCultureDef = "en-US"; // default English culture
 
         public LanguageId Id;  // int = Popularity rank. name from ISO 639-1 AKA TwoLetterISOLanguageName
 
-        public string Name;     // AKA EnglishName
+        public string? Name;     // AKA EnglishName
 
-        public string NativeName;       // Native speakers term for it.
+        public string? NativeName;       // Native speakers term for it.
 
-        public string URL;     // Wikipedia page.
+        public string? URL;     // Wikipedia page.
 
         public string TwoLetterISOLanguageName => Id.ToString();
 
         public string GetDescription()
         {
+            if (String.IsNullOrWhiteSpace(Name))    // should not happen!
+                return "?";
             if (String.IsNullOrWhiteSpace(NativeName))
                 return Name;
             return string.Concat(NativeName, " (", Name, ")");
         }
 
-        public static LanguageId GetId(string lang, int testLevel = 3)
+        /// <summary>
+        /// get LanguageId from string. forgiving.
+        /// </summary>
+        /// <param name="lang"></param>
+        /// <param name="testLevel">how close does the match need to be ?</param>
+        /// <returns></returns>
+        public static LanguageId GetId(string? lang, int testLevel = 3)
         {
-            // get LanguageId from string. forgiving.
-            // testLevel = how close does the match need to be ?
-
             if (string.IsNullOrWhiteSpace(lang))
                 return LanguageId.native;
 

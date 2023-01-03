@@ -3,35 +3,48 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Direction of sort. like System.Web.UI.WebControls.SortDirectionNullable
+    /// </summary>
     public enum SortDirection
     {
-        // like System.Web.UI.WebControls.SortDirectionNullable
         None = 0,
         Ascending,  // default.
         Descending,
     }
 
+    /// <summary>
+    /// How should a field be sorted ? Comparer.cs
+    /// This can be related to LambdaExpression? GetPropertyExp(string name)
+    /// </summary>
     public class ComparerDef
     {
-        // Comparer.cs
-        // How should a field be sorted ?
-
         public string PropName { get; set; }        // Reflection property name of some object.
 
         public SortDirection SortDir { get; set; }
 
-        public static int CompareType(object ox, object oy, TypeCode typeCode)
+        public ComparerDef(string PropName, SortDirection SortDir = SortDirection.Ascending)
         {
-            // Compare 2 simple typed objects. 
-            // Assume objects are the same type! TypeCode
-            // Allow nulls
-            // RETURN: 0=equal, >0=x is greater (1), <0=x is lesser. (-1)
-            // String is compared case ignored.
-            // oy is not typically null ?
+            this.PropName = PropName;
+            this.SortDir = SortDir;
+        }
 
+        /// <summary>
+        /// Compare 2 simple typed objects. 
+        /// Assume both objects are the same type! TypeCode
+        /// Allow nulls
+        /// String is compared case ignored.
+        /// </summary>
+        /// <param name="ox"></param>
+        /// <param name="oy">oy is not typically null ?</param>
+        /// <param name="typeCode"></param>
+        /// <returns>0=equal, >0=x is greater (1), <0=x is lesser. (-1)</returns>
+        public static int CompareType(object? ox, object? oy, TypeCode typeCode)
+        {
             if (ox == null || oy == null)
             {
                 if (ox == oy)
@@ -75,8 +88,9 @@ namespace DotStd
             }
         }
 
-        public static int CompareType(object ox, object oy, TypeCode eTypeCodeX, TypeCode eTypeCodeY)
+        public static int CompareType(object? ox, object? oy, TypeCode eTypeCodeX, TypeCode eTypeCodeY)
         {
+            // we dont know if they are the same type.
             if (eTypeCodeX == eTypeCodeY || ox == null || oy == null)
             {
                 return CompareType(ox, oy, eTypeCodeX);
@@ -90,15 +104,14 @@ namespace DotStd
     {
         // Compare based on a reflected property (string field name) of some object.
 
-        protected System.Reflection.PropertyInfo _oProp;
+        protected System.Reflection.PropertyInfo? _oProp;   // cache this.
 
         public ComparerSimple(string _PropName, SortDirection _SortDir = SortDirection.Ascending)
+            : base(_PropName, _SortDir)
         {
-            PropName = _PropName;
-            SortDir = _SortDir;
         }
 
-        public virtual int Compare(object x, object y)
+        public virtual int Compare(object? x, object? y)
         {
             // Compare properties of 2 objects.
             // like System.Collections.Generic.Comparer<object>.Default.Compare(col1, col2);
@@ -123,6 +136,7 @@ namespace DotStd
                 {
                     return 0;
                 }
+                ValidState.ThrowIfNull(_oProp, nameof(_oProp));
             }
             int iRet = CompareType(_oProp.GetValue(x, null), _oProp.GetValue(y, null), Type.GetTypeCode(_oProp.PropertyType));
             // Reverse?
@@ -134,24 +148,25 @@ namespace DotStd
 
     public class ComparerGeneric<ItemType> : ComparerSimple, System.Collections.Generic.IComparer<ItemType>
     {
-        // compare using a generic .
-        // ItemType = a complex structure with a m_PropName value to be sorted.
+        // compare using a generic <ItemType> .
+        // ItemType = a complex structure with a PropName value to be sorted.
 
         public ComparerGeneric(string PropName, SortDirection SortDir = SortDirection.Ascending)
           : base(PropName, SortDir)
         {
         }
 
-        public virtual int Compare(ItemType x, ItemType y)
+        public virtual int Compare(ItemType? x, ItemType? y)
         {
             // Compare properties of 2 objects.
             if (this.SortDir == SortDirection.None)
             {
                 return 0;
             }
-            if (_oProp == null)
+            if (_oProp == null) // cache this.
             {
                 _oProp = typeof(ItemType).GetProperty(this.PropName);
+                ValidState.ThrowIfNull(_oProp, nameof(_oProp));
             }
             int iRet = CompareType(_oProp.GetValue(x, null), _oProp.GetValue(y, null), Type.GetTypeCode(_oProp.PropertyType));
             // Reverse?
@@ -161,37 +176,16 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// General helpers for compare.
+    /// </summary>
     public static class ComparerUtil
     {
-        // General helpers for compare.
-
-        public static IEnumerable<DataRow> GetSortedList(IEnumerable<DataRow> DataSource, string sortColumn, SortDirection sortDir)
-        {
-            // Numeric or string sort based on sortColumn type
-            // could use DataTableExtensions.Field<dynamic> ??
-
-            if (DataSource != null && DataSource.Any())
-            {
-#if NET40 // Framework
-                if (sortDir == SortDirection.Ascending)
-                    DataSource = DataSource.OrderBy(x => x.Field<dynamic>(sortColumn));
-                else
-                    DataSource = DataSource.OrderByDescending(x => x.Field<dynamic>(sortColumn));
-
-#else   // NETCOREAPP
-                // TODO Fix ME. use ComparerSimple.CompareType()
-                DataRow row0 = DataSource.First();   // Get the type from the first.
-
-#endif
-            }
-            return DataSource;
-        }
-
         public static IEnumerable<T> GetSortedList<T>(IEnumerable<T> src, string sortColumn, SortDirection sortDir)
         {
             // Sort this list in memory. 
 
-            PropertyInfo prop = typeof(T).GetProperty(sortColumn);
+            PropertyInfo? prop = typeof(T).GetProperty(sortColumn);
             if (prop == null)
                 return src;
             int multiplier = sortDir == SortDirection.Descending ? -1 : 1;
@@ -207,23 +201,30 @@ namespace DotStd
             return list;
         }
 
-        public static Dictionary<string, object> DiffProps<T>(T objNew, T objOld)
+        public static Dictionary<string, object?>? DiffProps<T>(T? objNew, T? objOld)
         {
             // What props changed (is New) in these objects? 
             // NOTE: Does not compare fields JUST props.
             // null values are ok.
             // return dictionary of changes. null = nothing changed.
 
-            Dictionary<string, object> changes = null;
+            Dictionary<string, object?>? changes = null;
             Type typeComp = typeof(T);
+            Type ignoreAttrType = typeof(IgnoreDataMemberAttribute);    // CHECK [IgnoreDataMember] or [Ignore()] ?
+
             foreach (PropertyInfo prop in typeComp.GetProperties()) // enum props via reflection.
             {
-                object valNew = (objNew == null) ? null : prop.GetValue(objNew, null);
-                object valOld = (objOld == null) ? null : prop.GetValue(objOld, null);
+                // Stuff to ignore?
+                object[] attrs2 = prop.GetCustomAttributes(ignoreAttrType, false);  // This was probably not populated correctly so ignore it.
+                if (attrs2.Length > 0)
+                    continue;
+
+                object? valNew = (objNew == null) ? null : prop.GetValue(objNew, null);
+                object? valOld = (objOld == null) ? null : prop.GetValue(objOld, null);
                 if (!object.Equals(valNew, valOld))
                 {
                     if (changes == null)
-                        changes = new Dictionary<string, object>();
+                        changes = new Dictionary<string, object?>();
                     changes.Add(prop.Name, valNew);
                 }
             }

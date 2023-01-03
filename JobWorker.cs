@@ -13,10 +13,8 @@ namespace DotStd
         // [Job("MyJobName")]
 
         public string Name; // primary name
-        public List<string> Aliases;    // Other attribute tags.
+        public List<string>? Aliases;    // Other attribute tags.
 
-        public JobAttribute()
-        { }
         public JobAttribute(string name)
         {
             Name = name;
@@ -46,7 +44,7 @@ namespace DotStd
 
         // NOTE: LastRun can be set into the future to delay start.
         public DateTime? LastRun { get; set; }       // last UTC start time when we tried to run this. or retry this. It might have failed or succeeded. Might not have been the official scheduled time it was supposed to run.
-        public string LastResult { get; set; }      // what happened at/after LastRun? null = never run, "" = success or error description summary.
+        public string? LastResult { get; set; }      // what happened at/after LastRun? null = never run, "" = success or error description summary.
         public DateTime? LastSuccess { get; set; }   // The last UTC start time we ran this and it succeeded. LastResult == ""
 
         public bool IsRunning
@@ -82,7 +80,7 @@ namespace DotStd
 
         JobState State { get; set; }    // Link back to my job state/definition. is it running ? last status etc.
 
-        Task ExecuteAsync(string args); // Run it now.
+        Task ExecuteAsync(string? args); // Run it now.
     }
 
     public abstract class JobWorker : IJobWorker
@@ -92,7 +90,7 @@ namespace DotStd
 
         public JobState State { get; set; }
 
-        public abstract Task ExecuteAsync(string args);
+        public abstract Task ExecuteAsync(string? args);
 
         public JobWorker(JobState state)
         {

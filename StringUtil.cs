@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -86,24 +87,24 @@ namespace DotStd
             return Vowels.IndexOf(ch) >= 0;
         }
 
-        public static bool HasUpperCase(string str)
+        public static bool HasUpperCase([NotNullWhen(true)] string? str)
         {
             // IsUpper for extended ASCII 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsUpper(c));
         }
-        public static bool HasLowerCase(string str)
+        public static bool HasLowerCase([NotNullWhen(true)] string? str)
         {
             // IsLower for extended ASCII 
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsLower(c));
         }
 
-        public static bool HasNumber(string str)
+        public static bool HasNumber([NotNullWhen(true)] string? str)
         {
             // allow extended IsNumber for 1/2 etc
             return !string.IsNullOrEmpty(str) && str.Any(c => char.IsNumber(c));
         }
 
-        public static bool IsNumeric1(string str)
+        public static bool IsNumeric1([NotNullWhen(true)] string? str)
         {
             // Does this string contain a simple/strict integer number? no spaces, -+ or . 
             // NOT extended IsNumber 1/2
@@ -113,7 +114,7 @@ namespace DotStd
         }
 
         static readonly Lazy<Regex> _regexNum2 = new Lazy<Regex>(() => new Regex(@"^\s*\-?\d+(\.\d+)?\s*$"));
-        public static bool IsNumeric2(string str)
+        public static bool IsNumeric2([NotNullWhen(true)] string? str)
         {
             // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
             // NOT extended IsNumber 1/2. No decimal comma for European?
@@ -122,7 +123,7 @@ namespace DotStd
             return _regexNum2.Value.IsMatch(str);
         }
 
-        public static bool IsAlphaNumeric1(string str)
+        public static bool IsAlphaNumeric1([NotNullWhen(true)] string? str)
         {
             // _regexAlNum = new Regex("[^a-zA-Z0-9]");
             // NOT extended ASCII. Latin only.
@@ -132,7 +133,8 @@ namespace DotStd
             return str.All(c => IsAlphaNumeric1(c));
         }
 
-        public static string GetNumericOnly(string sValue, bool bStopOnNonNumeric = false)
+        [return: NotNullIfNotNull("sValue")]
+        public static string? GetNumericOnly(string? sValue, bool bStopOnNonNumeric = false)
         {
             // filter out all non numeric chars. For telephone numbers?
             // NOT extended ASCII. Latin only.
@@ -158,7 +160,7 @@ namespace DotStd
             return sb.ToString();
         }
 
-        public static string GetAlphaNumericOnly(string sValue)
+        public static string GetAlphaNumericOnly(string? sValue)
         {
             // filter out all non alpha numeric chars.
             // NOT extended ASCII. Latin only.
@@ -171,7 +173,7 @@ namespace DotStd
             return System.Text.RegularExpressions.Regex.Replace(sValue, "[^A-Za-z0-9]", "");
         }
 
-        public static bool IsWildcardMatch(string wildcardPattern, string subject)
+        public static bool IsWildcardMatch(string? wildcardPattern, string subject)
         {
             // Simple wildcard match
             // https://www.hiimray.co.uk/2020/04/18/implementing-simple-wildcard-string-matching-using-regular-expressions/474
@@ -209,7 +211,8 @@ namespace DotStd
             }
         }
 
-        public static string TrimN(string s)
+        [return: NotNullIfNotNull("s")]
+        public static string? TrimN(string? s)
         {
             // trim a string for whitespace but ignore null.
             if (s == null)
@@ -247,7 +250,8 @@ namespace DotStd
             return count;
         }
 
-        public static string SubSafe(string s, int i, int lenTake = short.MaxValue)
+        [return: NotNullIfNotNull("s")]
+        public static string? SubSafe(string? s, int i, int lenTake = short.MaxValue)
         {
             // Substring that Will NOT throw.
             if (s == null)
@@ -266,7 +270,8 @@ namespace DotStd
             return s.Substring(i, lenTake);
         }
 
-        public static string Truncate(string s, int size)
+        [return: NotNullIfNotNull("s")]
+        public static string? Truncate(string? s, int size)
         {
             // Left len chars.
             // Take X chars and lose the rest. No padding.
@@ -274,24 +279,26 @@ namespace DotStd
             ValidState.ThrowIfNegative(size, nameof(size));
             if (s == null)
                 return null;
-            else if (s.Length > size)
+            if (s.Length > size)
                 return s.Substring(0, size);
             return s;   // no truncate or padding.
         }
 
-        public static string Ellipsis(this string s, int lenMax = 0x400)
+        [return: NotNullIfNotNull("s")]
+        public static string? Ellipsis(this string? s, int lenMax = 0x400)
         {
             // Truncate string with ellipsis.
 
             ValidState.ThrowIfNegative(lenMax, nameof(lenMax));
             if (s == null)
-                return s;
+                return null;
             if (s.Length > lenMax)
                 return s.Substring(0, lenMax) + "...";
             return s;
         }
 
-        public static string TruncateRight(string s, int size)
+        [return: NotNullIfNotNull("s")]
+        public static string? TruncateRight(this string? s, int size)
         {
             // right len chars.
             // Take X chars and lose the rest. No padding.

@@ -24,15 +24,6 @@ namespace DotStd
                 return t; // + Offset
             }
         }
-        public static DateTimeOffset UtcO  // Get the time adjusted to real time. 
-        {
-            // Allow the system clock (DateTimeOffset.UtcNow) to be adjusted to get more accurate UTC time.
-            get
-            {
-                var t = DateTimeOffset.UtcNow;
-                return t; // + Offset
-            }
-        }
 
         public static async Task<DateTime> GetNistAsync()
         {
@@ -52,7 +43,7 @@ namespace DotStd
             }
         }
 
-        public static async Task<DateTimeOffset?> GetUrlAsync(string url)
+        public static async Task<DateTimeOffset?> GetUrlAsync(string? url)
         {
             // Get the UTC time stamp from a reliable public server.
 
@@ -69,7 +60,7 @@ namespace DotStd
             }
         }
 
-        public static async Task<DateTime> GetUtcAsync(string url = null)
+        public static async Task<DateTime> GetUtcAsync(string? url = null)
         {
             // get external UTC time. 
 

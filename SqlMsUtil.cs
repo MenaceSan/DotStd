@@ -113,12 +113,14 @@ namespace DotStd
             return IsValidSqlDateTime(t.Value);
         }
 
-        public static Type GetDataType(string sSQLDataType)
+        public static Type? GetDataType(string? sSQLDataType)
         {
             // Get the equiv .NET CLR data type for the named SQL data type.
             // http://msdn.microsoft.com/en-us/library/bb386947%28v=vs.110%29.aspx
             switch (sSQLDataType)
             {
+                case null:
+                    break;
                 case "bigint":
                     return typeof(long);
                 case "int": // 56
@@ -167,6 +169,7 @@ namespace DotStd
                 default:
                     break;
             }
+
             // We should do something about this ! What type is this ?
             return null;
         }

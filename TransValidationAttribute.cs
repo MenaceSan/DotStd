@@ -9,9 +9,9 @@ namespace DotStd
         // Try to translate the validation error messages based on some unknown context.
         // e.g. make them appropriate to the HttpContext that is current for the thread.
 
-        public static Func<ITranslatorProvider1> _GetTranslator;     // My application should provide this. singleton.
+        public static Func<ITranslatorProvider1?>? _GetTranslator;     // My application should provide this. singleton.
 
-        public static ITranslatorProvider1 GetTranslatorProvider()
+        public static ITranslatorProvider1? GetTranslatorProvider()
         {
             // Get/Make the ITranslatorProvider for the ASP HttpContext that is appropriate for my thread/session.
             if (_GetTranslator == null)
@@ -27,7 +27,7 @@ namespace DotStd
         public override string FormatErrorMessage(string name)
         {
             // override ValidationAttribute
-            ITranslatorProvider1 trans = TransValidationAttribute.GetTranslatorProvider();
+            ITranslatorProvider1? trans = TransValidationAttribute.GetTranslatorProvider();
             if (trans != null)
             {
                 Task<string> task = trans.TranslateAsync(base.ErrorMessageString ?? "The {0} field is required.");

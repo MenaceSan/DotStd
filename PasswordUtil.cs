@@ -63,7 +63,7 @@ namespace DotStd
             // chars = restrict to this set of chars.
             // lowerCase = force to lower case.
 
-            var crypto = new RNGCryptoServiceProvider();
+            var crypto = RandomNumberGenerator.Create();
 
             byte[] data1 = new byte[1];     // junk first byte.
             crypto.GetNonZeroBytes(data1);
@@ -141,7 +141,7 @@ namespace DotStd
             return false;
         }
 
-        public List<string> GetPasswordErrorMessages(string password, string excludeToken = null)
+        public List<string> GetPasswordErrorMessages(string password, string? excludeToken = null)
         {
             // Match a password against password policy.
             // Second entry of the password to see if it matches the first does not need to come here.
