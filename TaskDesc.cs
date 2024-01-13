@@ -6,11 +6,13 @@ using System.Reflection;
 
 namespace DotStd
 {
+    /// <summary>
+    /// ??? JobTracker ??
+    /// Track the state of some task/process i run.
+    /// Corresponds with the Process.ExitCodes >= 0.
+    /// </summary>
     public enum TaskState
     {
-        // Track the state of some task/process i run.
-        // Corresponds with the Process.ExitCodes >= 0.
-
         Aborting = -3,      // Sent the Kill request.
         Scheduling = -2,    // Waiting to run.
         Running = -1,       // Started and probably running.
@@ -24,10 +26,12 @@ namespace DotStd
         Ghost = 5,          // Task is gone. No idea why.
     };
 
+    /// <summary>
+    /// A Task instance that i might call. Described by TaskDesc.
+    /// Load the task instance dynamically. prepare to call it.
+    /// </summary>
     public class TaskInst
     {
-        // Load the task instance dynamically . prepare to call it.
-
         Assembly _oAsm;
         Type? _oType;               // m_oInstance type.
         MethodInfo? _oMethod;       // The method i want to call.
@@ -81,6 +85,8 @@ namespace DotStd
             ValidState.ThrowIfNull(_oMethod, nameof(_oMethod));
             return _oMethod.Invoke(GetInstance(), aMethodArgs);
         }
+
+        // TODO InvokeAsync()
 
         public static string? GetArgString(object[]? aMethodArgs, int iStart=0)
         {
@@ -168,5 +174,6 @@ namespace DotStd
             // This can throw Exception on failure.
             return MakeInst().Invoke(_aMethodArgs); // calls the method on the object instance.
         }
+        // TODO InvokeAsync()
     }
 }

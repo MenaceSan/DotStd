@@ -21,9 +21,14 @@ namespace DotStd
             _Algo = algo;
         }
 
+        /// <summary>
+        /// Encrypt a string and return the base64 of the crypt.
+        /// pad out to proper size for algorithm?
+        /// </summary>
+        /// <param name="value">base64</param>
+        /// <returns></returns>
         public string EncryptStr(string value)
         {
-            // To Base64 string. pad out to proper size for algorithm?
             // Can throw. "System.Security.Cryptography.CryptographicException: 'Specified key is not a valid size for this algorithm.'"
             // or Specified initialization vector (IV) does not match the block size for this algorithm. (Parameter 'rgbIV')
 
@@ -44,9 +49,13 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// Decrypt From Base64 string
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>        
         public string DecryptStr(string value)
         {
-            // From Base64 string
             if (string.IsNullOrEmpty(value))
                 return "";
             try
@@ -73,11 +82,11 @@ namespace DotStd
     /// 8 bytes randomly selected for both the Key and the Initialization Vector.
     /// the IV is used to encrypt the first block of text so that any repetitive patterns are not apparent
     /// </summary>
-    public class cCryptD : CryptKey
+    public class CryptD : CryptKey
     {
         public const int kLen = 8;
 
-        public cCryptD(byte[] k, byte[] iv) : base(k, iv, DES.Create())
+        public CryptD(byte[] k, byte[] iv) : base(k, iv, DES.Create())
         {
             //Assert.IsTrue(k.Length == kLen);
             //Assert.IsTrue(i.Length == kLen);
@@ -88,11 +97,11 @@ namespace DotStd
     /// TRIPLE DES encryption, decryption.
     /// 24 byte or 192 bit key and IV for TripleDES
     /// </summary>
-    public class cCryptD3 : CryptKey
+    public class CryptD3 : CryptKey
     {
         public const int kLen = 24;
 
-        public cCryptD3(byte[] k, byte[] iv) : base(k, iv, TripleDES.Create())
+        public CryptD3(byte[] k, byte[] iv) : base(k, iv, TripleDES.Create())
         {
             //Assert.IsTrue(k.Length == kLen);
             //Assert.IsTrue(i.Length == kLen);

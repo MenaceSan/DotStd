@@ -14,8 +14,8 @@ namespace DotStd
     /// <typeparam name="T"></typeparam>
     public static class CacheMultiton<T> where T : class
     {
-        public static Dictionary<string, WeakReference> _WeakRefs = new Dictionary<string, WeakReference>();  // use this to tell if the object might still be referenced by someone even though the cache has aged out.
-        public static DateTime _LastFlushTime = DateTime.MinValue;      // Flush dead stuff out of the _WeakRefs cache eventually.
+        static readonly Dictionary<string, WeakReference> _WeakRefs = new();  // use this to tell if the object might still be referenced by someone even though the cache has aged out.
+        static DateTime _LastFlushTime = DateTime.MinValue;      // Flush dead stuff out of the _WeakRefs cache eventually.
 
         /// <summary>
         /// flush the disposed weak refs.
@@ -92,9 +92,7 @@ namespace DotStd
                 if (factory != null)
                 {
                     // NOTE: await Task<T> cant be done inside lock !
-                    T? objLoad = factory.Invoke(id);
-                    ValidState.ThrowIfNull(objLoad, nameof(objLoad));
-
+                    T objLoad = ValidState.GetNotNull(factory.Invoke(id), nameof(objLoad));
                     if (obj == null)
                     {
                         obj = objLoad;  // Fresh load.

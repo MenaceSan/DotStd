@@ -3,11 +3,12 @@ using System.Collections.Generic;
 
 namespace DotStd
 {
+    /// <summary>
+    /// What type of access/change was this ? For the change audits.
+    /// </summary>
     public enum ChangeType
     {
-        // What type of access/change was this ?
-        // For the change audits.
-        Error = 0,
+        Error = 0,      // Failure, dont use this.
         View = 1,       // no changes. Just a view of this data. for HIPAA audit trail.
         Modify = 2,     // Made a change to some field(s) in this record. AKA Change/Edit/Update
         Add = 3,        // new record created. AKA Insert.
@@ -15,11 +16,13 @@ namespace DotStd
         MaxValue = 5,
     };
 
+    /// <summary>
+    /// Presentation Access Level for a single property/field of some object.
+    /// For a given view/context the Props values will have different exposure/access.
+    /// </summary>
     [Serializable()]
     public enum ViewPropertyAccess
     {
-        // Presentation Access Level for a single property/field of some object.
-        // For a given view/context the Props values will have different exposure/access.
         Ignored = 0,        // Pretend this Prop doesn't exist. delete from _aProps ?
         Hidden = 1,         // hidden and left with default value = just omit Prop for this. Assume null or default value. used for internal purposes by the form.
         ShowNoEdit = 2,     // show but not editable. Read Only. Disable Edit.  Allow null or default value.
@@ -27,16 +30,16 @@ namespace DotStd
         Required = 4,       // shown and must contain a valid value. Therefore it must be editable and have a valid value. not null.
     }
 
+    /// <summary>
+    /// The status of properties of a ViewModel object _ObjectInstance shown in the GUI (usually as a dialog). 
+    /// define access level to Props in _ObjectInstance we show,use,etc. for the current user and form.
+    /// Track dirty/changed vs. unchanged status of Props values.
+    /// </summary>
     [Serializable()]
     public class ViewModelState
     {
-        //! The status of properties of a ViewModel object _ObjectInstance shown in the GUI (usually as a dialog). 
-        //! define access level to Props in _ObjectInstance we show,use,etc. for the current user and form.
-        //! Track dirty/changed vs. unchanged status of Props values.
-
         class ViewProperty
         {
-            //! Child of ViewModelState
             public string MemberName { get; set; }    //! Property name (must match reflection name of property in _ObjectInstance)
             public ViewPropertyAccess Level { get; set; }   //! Access for the current user and form.
 
@@ -64,10 +67,13 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// Are we tracking this prop of _ObjectInstance? use nameof(MemberName).
+        /// </summary>
+        /// <param name="memberName"></param>
+        /// <returns>-1 = no</returns>
         public int GetPropIndex(string memberName)
         {
-            //! Are we tracking this prop of _ObjectInstance? use nameof(MemberName).
-            //! @return -1 = no
             int i = 0;
             foreach (ViewProperty p in _aProps)
             {
@@ -78,19 +84,27 @@ namespace DotStd
             return -1; // no such sPropName.
         }
 
+        /// <summary>
+        /// Via reflection get the current value of a sPropName on _ObjectInstance.
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         public string GetPropValue(string propertyName)
         {
-            //! Via reflection get the current value of a sPropName on _ObjectInstance.
             object? o = PropertyUtil.GetPropertyValue(_ObjectInstance, propertyName);
             if (o == null)
                 return string.Empty;
             return o.ToString() ?? string.Empty;
         }
 
+        /// <summary>
+        /// What access level is this sPropName? for current user/form.
+        /// like GetPropIndex
+        /// </summary>
+        /// <param name="memberName"></param>
+        /// <returns></returns>
         public ViewPropertyAccess GetPropAccess(string memberName)
         {
-            //! What access level is this sPropName? for current user/form.
-            //! like GetPropIndex
             foreach (ViewProperty p in _aProps)
             {
                 if (memberName == p.MemberName)
@@ -168,10 +182,13 @@ namespace DotStd
             return false;
         }
 
+        /// <summary>
+        /// Has anything changed?
+        /// NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
+        /// </summary>
+        /// <returns></returns>
         public bool IsChangedAny()
         {
-            // Has anything changed?
-            // NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
             if (_aOrigValues == null)
                 return false;
             int i = 0;
@@ -185,11 +202,13 @@ namespace DotStd
             return false;
         }
 
+        /// <summary>
+        /// List all props that have changed.
+        /// NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
+        /// </summary>
+        /// <returns></returns>
         List<string> GetChangedProps()
         {
-            // List all props that have changed.
-            // NOTE: _aOrigValues = null means UpdateOrigValues was never called. Fail. We are NOT allowed to call this function.
-
             var aChanged = new List<string>();
             if (_aOrigValues == null)
                 return aChanged;

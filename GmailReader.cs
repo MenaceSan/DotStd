@@ -19,19 +19,31 @@ namespace DotStd
     /// https://mail.google.com/mail/feed/atom
     /// https://stackoverflow.com/questions/7056715/reading-emails-from-gmail-in-c-sharp/19570553#19570553
     /// </summary>
-    public class GmailReader
+    public class GmailReader : ExternalService
     {
         public System.Net.NetworkCredential? _Credentials;   // more secure to store like this.
 
+        public override string Name => "GmailReader";
+        public override string BaseURL => "https://mail.google.com/mail/feed/atom";
+        public override string Icon => "<i class='fab fa-google'></i>";
+
+
+        /// <summary>
+        /// Store my credentials. SecureString
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="password"></param>
         public void SetCreds(string email, string password)
         {
-            // Store my credentials. SecureString
             _Credentials = new System.Net.NetworkCredential(email, password);
         }
 
+        /// <summary>
+        /// get responses back from the free email gateway.
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<GmailMessage>?> ReadMessages()
         {
-            // get responses back from the free email gateway.
             try
             {
                 var httpClientHandler = new HttpClientHandler()
@@ -39,11 +51,13 @@ namespace DotStd
                     Credentials = _Credentials,
                 };
 
+                UpdateTry();
+
                 // Logging in Gmail server to get data
                 using (var client = new HttpClient(httpClientHandler))
                 {
                     // reading data and converting to string
-                    byte[] respRaw = await client.GetByteArrayAsync(@"https://mail.google.com/mail/feed/atom");
+                    byte[] respRaw = await client.GetByteArrayAsync(BaseURL);
                     string response = Encoding.UTF8.GetString(respRaw);
                     response = response.Replace(@"<feed version=""0.3"" xmlns=""http://purl.org/atom/ns#"">", @"<feed>");
 

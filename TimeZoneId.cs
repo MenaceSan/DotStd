@@ -28,7 +28,7 @@ namespace DotStd
         [Description("Atlantic Time (UTC-4:00)")]
         AST = -(4 * 60),       // -240 = +1 hour from EST
 
-        UTC = 1,        // No DST.
+        UTC = 1,        // No DST. default?
         GMT = 12,        // uses DST.
         // ChunkSize = 15,     // ASSUME all zones are in 15 minute chunk size.
 
@@ -47,120 +47,61 @@ namespace DotStd
     }
 
     /// <summary>
+    /// IANA timezone (~374) is a super-set of Windows .NET time zones (~138). 
+    /// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones table.
     /// Wrapper for useful info from .NET System.TimeZoneInfo (adds an integer id)
     /// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones table.
     /// ASSUME all zones Offset modulus to 15 minute chunks.
     /// This zone may/should have an equiv JavaScript IANA Name
     /// Similar to JavaScript getTimezoneOffset()
-    public class TimeZoneUtil
+    /// https://stackoverflow.com/questions/17348807/how-to-translate-between-windows-and-iana-time-zones
+    /// </summary>
+    public class TimeZoneEntry
     {
-        public TimeZoneId Id;        // See TimeZoneUtil.GetOffset(), maybe the same as Offset for most common time zones.
-        public int Offset { get; set; }     // offset in minutes from UTC. Not including DST offset. May be same as Id and/or BaseUtcOffset
-        public bool UsesDst { get; set; } // AKA SupportsDaylightSavingTime. Does this zone use Daylight Savings Time (DST) rules for part of the year? e.g. EST are EDT are the same time zone.
+        /// <summary>
+        /// PK for TZ. See TimeZoneEntry.GetOffset(), maybe the same as Offset for most common time zones.
+        /// </summary>
+        public readonly TimeZoneId Id;
+        /// <summary>
+        /// offset in minutes from UTC. Not including DST offset. May be same as Id and/or BaseUtcOffset
+        /// </summary>
+        public readonly int Offset;
+        /// <summary>
+        /// AKA SupportsDaylightSavingTime. Does this zone use Daylight Savings Time (DST) rules for part of the year? e.g. EST are EDT are the same time zone.
+        /// </summary>
+        public byte UsesDst { get; set; }
+        /// <summary>
+        /// equiv JavaScript / IANA Name. System.TimeZoneInfo.HasIanaId
+        /// </summary>
+        public string? IanaId { get; set; }
 
-        protected System.TimeZoneInfo? _tzi;  // best match for .NET TimeZoneInfo and TimeZoneId . fallback to TimeZoneInfo.Utc.
-
-        public bool IsEquiv(System.TimeZoneInfo tzi)
-        {
-            if (this.Offset != tzi.BaseUtcOffset.TotalMinutes)
-                return false;
-            if (this.UsesDst != tzi.SupportsDaylightSavingTime)
-                return false;
-            return true;
-        }
-
-        public bool IsEquiv(TimeZoneUtil tz)
-        {
-            // Maybe diff countries (or IANA id) but really the same?
-            if (this.Offset != tz.Offset)
-                return false;
-            if (this.UsesDst != tz.UsesDst)
-                return false;
-            return true;
-        }
+        /// <summary>
+        /// best match for .NET TimeZoneInfo and TimeZoneId . fallback to TimeZoneInfo.Utc. WindowsId
+        /// </summary>
+        System.TimeZoneInfo? _tzi;
 
         /// <summary>
         /// Find best Match to a .NET TimeZoneInfo
         /// MUST resolve to a TZ! TimeZoneInfo.GetSystemTimeZones(). 
         /// </summary>
-        /// <param name="lstTzi">NOT null</param>
         [MemberNotNull(member: nameof(_tzi))]
-        protected void UpdateTimeZoneInfo(ReadOnlyCollection<TimeZoneInfo> lstTzi)
+        public System.TimeZoneInfo TZI
         {
-            _tzi = FindTimeZoneInfoBest(lstTzi, Offset, UsesDst, null, null);
-            if (_tzi != null)
-                return;
-            // Bad! fall back to UTC! 
-            _tzi = TimeZoneInfo.Utc;
-        }
-
-        [MemberNotNull(member: nameof(_tzi))]
-        public virtual TimeZoneInfo GetTimeZoneInfo()
-        {
-            // Get matching TimeZoneInfo
-            if (_tzi == null)
+            get
             {
-                UpdateTimeZoneInfo(TimeZoneInfo.GetSystemTimeZones());
+                if (_tzi != null)
+                    return _tzi;
+                _tzi = FindTimeZoneInfoBest(Offset, UsesDst, null, null);
+                return _tzi;
             }
-            return _tzi;    // Never null.
         }
 
         /// <summary>
-        /// convert (this) local time zone to UTC
+        /// Get raw/estimated offset from UTC in minutes given TimeZoneId
         /// </summary>
-        /// <param name="dt">DateTime</param>
-        /// <returns>DateTime</returns>
-        public DateTime ToUtc(DateTime dt)
-        {
-            if (dt.Kind == DateTimeKind.Utc)
-                return dt;
-            return TimeZoneInfo.ConvertTimeToUtc(TimeNow.Utc, GetTimeZoneInfo());
-        }
-
-        /// <summary>
-        /// convert UTC dt to (this) local time zone
-        /// </summary>
-        /// <param name="dt">DateTime</param>
-        /// <returns>DateTime</returns>
-        public DateTime ToLocal(DateTime dt)
-        {
-            if (dt.Kind != DateTimeKind.Utc)    // ASSUME already converted to local. Though we don't know that for sure. we just know its not UTC.
-                return dt;
-            return TimeZoneInfo.ConvertTimeFromUtc(dt, GetTimeZoneInfo());
-        }
-
-        /// <summary>
-        /// Get TZ offset from ISO string format.
-        /// Get "+10:00" and convert to 10*60 minutes.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <returns></returns>
-        public static int GetOffsetMinutes(string s)
-        {
-            string s2 = s.Substring(1); // skip +-
-            int offset = DateUtil.GetTimeMinutes(s2);
-            if (s[0] == '-')
-            {
-                return -offset;
-            }
-            return offset;
-        }
-
-        public static string GetOffsetStr(int offset)
-        {
-            // offset = minutes.
-            if (offset < 0)
-                return string.Concat("(-", DateUtil.GetTimeStr(-offset), ")");
-            return string.Concat("(+", DateUtil.GetTimeStr(offset), ")");
-        }
-
-        public string GetOffsetStr()
-        {
-            // offset = minutes.
-            return TimeZoneUtil.GetOffsetStr(Offset);
-        }
-
-        public static int GetOffset(TimeZoneId id)
+        /// <param name="id">TimeZoneId</param>
+        /// <returns>minutes</returns>
+        public static int GetOffsetEst(TimeZoneId id)
         {
             // -599 -> -600, 601 -> 600
             // 'Order by' should have lowest as best match.
@@ -171,8 +112,108 @@ namespace DotStd
             return i - mod; // Chop 15 minute chunk.
         }
 
+        public TimeZoneEntry(TimeZoneId id)
+        {
+            Id = id;
+            Offset = GetOffsetEst(id);
+        }
+
         /// <summary>
-        /// find the BEST match(s) for TimeZoneInfo.
+        /// Make equiv System.TimeZoneInfo (WindowsId) for this TimeZoneEntry. Find best match for name.
+        /// NOTE: this throws if the id is invalid.
+        /// When hosted on Linux see TZDIR : /usr/share/zoneinfo/
+        /// https://stackoverflow.com/questions/41566395/timezoneinfo-in-net-core-when-hosting-on-unix-nginx
+        /// </summary>
+        /// <returns></returns>
+        public TimeZoneEntry(TimeZoneId id, int offset, string? windowsId)
+        {
+            Id = id;
+            Offset = offset;
+            if (!string.IsNullOrWhiteSpace(windowsId))
+            {
+                try
+                {
+                    _tzi = TimeZoneInfo.FindSystemTimeZoneById(windowsId);
+                }
+                catch // (System.TimeZoneNotFoundException ex)
+                {
+                    // WindowsId (Id) doesn't match this system anymore . What should we do ?
+                    // Call UpdateTimeZoneInfo() again ??
+                }
+            }
+         }
+
+        public string WindowsId => TZI.Id;    // .NET Id for Windows registry
+
+        /// <summary>
+        /// like: TimeZoneInfo.HasSameRules()
+        /// </summary>
+        /// <param name="tzi"></param>
+        /// <returns></returns>
+        public bool IsEquiv(System.TimeZoneInfo tzi)
+        {
+            if (this.Offset != tzi.BaseUtcOffset.TotalMinutes)
+                return false;
+            if (Converter.ToBool(this.UsesDst) != tzi.SupportsDaylightSavingTime)
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Are these time zones functionally equivalent? like: TimeZoneInfo.HasSameRules()
+        /// Maybe diff countries (or IANA id) but really the same?
+        /// </summary>
+        /// <param name="tz"></param>
+        /// <returns></returns>        
+        public bool IsEquiv(TimeZoneEntry tz)
+        {
+            if (this.Offset != tz.Offset)
+                return false;
+            if (this.UsesDst != tz.UsesDst)
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// convert (this) local time zone DateTime to UTC DateTime
+        /// </summary>
+        /// <param name="dt">DateTime</param>
+        /// <returns>DateTime</returns>
+        public DateTime ToUtc(DateTime dt)
+        {
+            if (dt.Kind == DateTimeKind.Utc)    // no change.
+                return dt;
+            return TimeZoneInfo.ConvertTimeToUtc(TimeNow.Utc, TZI);
+        }
+
+        /// <summary>
+        /// convert UTC DateTime to (this) local time zone DateTime
+        /// </summary>
+        /// <param name="dt">DateTime</param>
+        /// <returns>DateTime</returns>
+        public DateTime ToLocal(DateTime dt)
+        {
+            if (dt.Kind != DateTimeKind.Utc)    // ASSUME already converted to local. Though we don't know that for sure. we just know its not UTC.
+                return dt;
+            return TimeZoneInfo.ConvertTimeFromUtc(dt, TZI);
+        }
+
+        /// <summary>
+        /// offset in minutes for a timezone.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static string GetOffsetStr(int offset)
+        {
+            if (offset < 0)
+                return string.Concat("(-", DateUtil.GetTimeStr(-offset), ")");
+            return string.Concat("(+", DateUtil.GetTimeStr(offset), ")");
+        }
+
+        public string OffsetStr => TimeZoneEntry.GetOffsetStr(Offset);
+
+        /// <summary>
+        /// find the BEST match(s) for TimeZoneInfo. TryConvertWindowsIdToIanaId ?
         /// </summary>
         /// <param name="lstTzi"></param>
         /// <param name="offsetMin">MUST match this.</param>
@@ -180,14 +221,17 @@ namespace DotStd
         /// <param name="nameIANA">JavaScript name. NOT Windows name.</param>
         /// <param name="name2"></param>
         /// <returns></returns>
-        public static TimeZoneInfo? FindTimeZoneInfoBest(ReadOnlyCollection<TimeZoneInfo> lstTzi, int offsetMin, bool usesDst, string? nameIANA, string? name2)
+        public static TimeZoneInfo FindTimeZoneInfoBest(int offsetMin, byte usesDst, string? nameIANA, string? name2)
         {
+            var sysTZs = TimeZoneInfo.GetSystemTimeZones();
+
             // TZ MUST be IsEquiv().
-            var lstTziEquiv = lstTzi.Where(tzi => offsetMin == tzi.BaseUtcOffset.TotalMinutes && usesDst == tzi.SupportsDaylightSavingTime);
+            bool supportsDST = Converter.ToBool(usesDst);
+            var lstTziEquiv = sysTZs.Where(tzi => offsetMin == tzi.BaseUtcOffset.TotalMinutes && supportsDST == tzi.SupportsDaylightSavingTime);
             if (!lstTziEquiv.Any())
             {
                 // no possible matches! odd.
-                return null;
+                return TimeZoneInfo.Utc;
             }
 
             TimeZoneInfo? tziBest = null;
@@ -245,27 +289,12 @@ namespace DotStd
 
             if (tziBest == null)
             {
-                // just take the first match.
-                // null countries get picked first in no other matches. 
+                // just take the first IsEquiv() match.
+                // null countries get picked first if no other matches. 
                 tziBest = lstTziEquiv.First(); // just take the first.
             }
 
             return tziBest;
-        }
-
-        public static string ToLocalStr(TimeZoneUtil tz, DateTime dtUtc, IFormatProvider culture, string? format = null)
-        {
-            // Localize the time string for user display.
-            // if tz == null then just label as (UTC) clearly.
-
-            var tzi = tz?.GetTimeZoneInfo();
-            if (tzi == null)
-            {
-                // Just label as UTC or (LOCAL)
-                return dtUtc.ToDtString(format, culture) + "(UTC)";
-            }
-
-            return TimeZoneInfo.ConvertTimeFromUtc(dtUtc, tzi).ToDtString(format, culture);
         }
     }
 }

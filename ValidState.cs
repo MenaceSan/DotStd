@@ -2,23 +2,28 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// This class is used to validate some other class type. AKA Validator
+    /// Should we just use Func<T, bool> ??
+    /// Filter for valid strings/objects?
+    /// like System.Web.UI.IValidator
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IValidatorT<T>
     {
-        // This class is used to validate some other class type. AKA Validator
-        // Should we just use Func<T, bool> ??
-        // Filter for valid strings/objects?
-        // like System.Web.UI.IValidator
-
         bool IsValid(T s);
     }
 
+    /// <summary>
+    /// What sort of validation do i have for some object or property.
+    /// </summary>
     public enum ValidLevel
     {
-        // What sort of validation do i have for some object or property.
         OK = 0,
         Warning,        // We may still save this object but it looks odd.
         WarningManager, // This needs a managers approval.
@@ -26,10 +31,12 @@ namespace DotStd
         Fail,        // This object is not valid because this property is not valid. Can not proceed.
     }
 
+    /// <summary>
+    /// Similar to System.ComponentModel.DataAnnotations.ValidationResult
+    /// MemberName = "" for global form error.
+    /// </summary>
     public class ValidField
     {
-        // Similar to System.ComponentModel.DataAnnotations.ValidationResult
-        // MemberName = "" for global form error.
         public string MemberName;       // reflection name of some property/field.
         public string Description;      // Why did we validate it this way ? null or "" = OK.
         public ValidLevel Level;    // fail or warn ?
@@ -42,15 +49,16 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Hold the validation state for some object. untranslated.
+    /// helper class for general validation of some object.
+    /// A View model may have SUGGESTIONS for validation. We may optionally ignore them. (Postal code looks weird, etc)
+    /// Similar to System.ComponentModel.DataAnnotations.Validator
+    /// Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
+    /// </summary>
     public class ValidState : System.ComponentModel.IDataErrorInfo
     {
-        // Hold the validation state for some object. untranslated.
-        // helper class for general validation of some object.
-        // A View model may have SUGGESTIONS for validation. We may optionally ignore them. (Postal code looks weird, etc)
-        // Similar to System.ComponentModel.DataAnnotations.Validator
-        // Used with Microsoft.AspNetCore.Mvc.ModelStateDictionary
-
-        public const int kInvalidId = default;    // 0 This is never a valid id/PK in the db. ValidState.IsValidId() default(int)
+        public const int kInvalidId = default;    // 0 This is NEVER a valid id/PK in the db. ValidState.IsValidId() default(int)
         public static readonly string kInvalidName = "??";   // This data is broken but display something. 
 
         public const string kSeeBelowFor = "See below for problem description.";    // default top level error.
@@ -61,7 +69,7 @@ namespace DotStd
 
         public bool IsValid { get { return this.ValidLevel == ValidLevel.OK; } }
 
-        public Dictionary<string, ValidField> Fields = new Dictionary<string, ValidField>();    // details
+        public Dictionary<string, ValidField> Fields = new();    // details
 
         // implement IDataErrorInfo
         public string this[string columnName]
@@ -93,19 +101,26 @@ namespace DotStd
 
         //**********************
 
+        /// <summary>
+        /// is a null ref type or a nullable value type that is null.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static bool IsNull([NotNullWhen(false)] object? obj)
         {
-            // is a null ref type or a nullable value type that is null.
             return obj == null || obj == DBNull.Value;
         }
 
+        /// <summary>
+        /// is object equiv to null or empty string. string.IsNullOrEmpty() but NOT whitespace.
+        /// DateTime.MinValue might qualify ?
+        /// NOTE: If this is an array, is the array empty ?
+        /// NOTE: 0 value is not the same as empty.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static bool IsEmpty([NotNullWhen(false)] object? obj)
         {
-            // is object equiv to null or empty string. string.IsNullOrEmpty() but NOT whitespace.
-            // DateTime.MinValue might qualify ?
-            // NOTE: If this is an array, is the array empty ?
-            // NOTE: 0 value is not the same as empty.
-
             if (IsNull(obj) || string.IsNullOrEmpty(obj.ToString()))
                 return true;
             return false;
@@ -149,29 +164,38 @@ namespace DotStd
             return false;
         }
 
-        public static bool IsValidId(int? id)
+        /// <summary>
+        /// is this a valid db id ? db convention says all id must be > 0
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool IsValidId([NotNullWhen(true)] int? id)
         {
-            // is this a valid db id ? db convention says all id must be > 0
             if (!id.HasValue)
                 return false;
             return id.Value != kInvalidId;      // default(int)
         }
-        public static bool IsValidId(Enum id)
+        public static bool IsValidId([NotNullWhen(true)] Enum? id)
         {
+            if (id == null)
+                return false;
             return id.ToInt() != kInvalidId;
         }
 
         public const string kUniqueAllowX = "_@.-+"; // special allowed chars for unique ids.
 
-        public static bool IsValidUnique(string? s)
+        /// <summary>
+        /// Is string valid as a unique id ? might be email ?
+        /// This should be a proper unique string for Uid. 
+        /// Can be used to detect proper property/field names from untrusted sources. e.g. Grid column sort.
+        /// AlphNumeric + "_@.-+" ONLY NOT "," 
+        /// MUST NOT CONTAIN WHITESPACE 
+        /// Use Converter.ToUnique(s)
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static bool IsValidUnique([NotNullWhen(true)] string? s)
         {
-            // Is string valid as a unique id ? might be email ?
-            // This should be a proper unique string for Uid. 
-            // Can be used to detect proper property/field names from untrusted sources. e.g. Grid column sort.
-            // AlphNumeric + "_@.-+" ONLY NOT "," 
-            // MUST NOT CONTAIN WHITESPACE 
-            // Use Converter.ToUnique(s)
-
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             string sl = s.ToLower();
@@ -184,7 +208,7 @@ namespace DotStd
                     continue;
                 if (StringUtil.IsDigit1(ch))
                     continue;
-                if (kUniqueAllowX.IndexOf(ch) >= 0)      // allowed special chars.
+                if (kUniqueAllowX.Contains(ch))      // allowed special chars.
                     continue;
                 return false;   // bad char.
             }
@@ -193,12 +217,13 @@ namespace DotStd
 
         //*********************
 
+        /// <summary>
+        /// Record some error for a field.
+        /// </summary>
+        /// <param name="nameField">nameof(x). "" = global error</param>
+        /// <param name="errorMsg">untranslated error description.</param>
         public void AddError(string nameField, string? errorMsg)
         {
-            // Record some error. nameField = nameof(x);
-            // nameField = "" = global error.
-            // error = untranslated error description.
-
             if (string.IsNullOrWhiteSpace(errorMsg))    // not a real error.
                 return;
             this.ValidLevel = ValidLevel.Fail;
@@ -229,38 +254,57 @@ namespace DotStd
             // Internal check. No throw. record for debug purposes.
             if (isTrue)
                 return;
-
             Debug.WriteLine("AssertTrue FAIL " + msg);
         }
 
+        /// <summary>
+        /// Assert that this is true. throw if not.
+        /// like Trace.Assert()
+        /// like Debug.Assert() but also works for release code. 
+        /// The Assert methods are not available for Windows Store apps.
+        /// </summary>
+        /// <param name="isBad"></param>
+        /// <param name="msg"></param>
+        /// <exception cref="ArgumentException"></exception>
         public static void ThrowIf(bool isBad, string? msg = null)
         {
-            // Assert that this is true. throe if not.
-            // like Trace.Assert()
-            // like Debug.Assert() but also works for release code. 
-            // The Assert methods are not available for Windows Store apps.
-
             if (isBad) // ok?
             {
-                if (msg == null)
-                    msg = "Internal Check Failed";
-                throw new ArgumentException(msg);
+                throw new ArgumentException(msg ?? "Internal Check Failed");
             }
         }
 
         /// <summary>
         /// verify that the argument is not null. use nameof(Property).
         /// </summary>
-        /// <param name="argument">The object that will be validated.</param>
+        /// <param name="obj">The object that will be validated.</param>
         /// <param name="name">The name of the <i>argument</i> that will be used to identify it should an exception be thrown. use nameof(Property)</param>
         /// <exception cref="ArgumentNullException">Thrown when <i>argument</i> is null.</exception>
-        public static void ThrowIfNull([NotNull] object? argument, string name)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void ThrowIfNull([NotNull] object? obj, string? name = null)
         {
             // ala AssertTrue().IsNotNull()
-            if (null == argument)
+            if (null == obj)
             {
-                throw new ArgumentNullException(name);
+                throw new ArgumentNullException(name ?? (new StackFrame(1, true).GetMethod()?.Name));
             }
+        }
+
+        /// <summary>
+        /// The result will not be null.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static T GetNotNull<T>([NotNull] T? obj, string? name = null)
+        {
+            if (null == obj)
+            {
+                throw new ArgumentNullException(name ?? (new StackFrame(1, true).GetMethod()?.Name));
+            }
+            return obj;
         }
 
         /// <summary>

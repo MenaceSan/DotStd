@@ -52,10 +52,10 @@ namespace DotStd
             foreach (DirectoryInfo subdir in dirs)
             {
                 // Create the subdirectory.
-                string temppath = Path.Combine(destDirName, subdir.Name);
+                string tempPath = Path.Combine(destDirName, subdir.Name);
 
                 // Copy the sub-directories.
-                DirCopy(subdir.FullName, temppath, false);
+                DirCopy(subdir.FullName, tempPath, false);
             }
         }
 
@@ -83,15 +83,19 @@ namespace DotStd
             return DirUtil.DirCreate(Path.GetDirectoryName(filePath));
         }
 
-        public static int DirEmpty(string sDir, bool bRecursive = false)
+        /// <summary>
+        /// Delete all files in a directory. Possibly recursive.
+        /// remove ReadOnly bits.
+        /// </summary>
+        /// <param name="dirPath"></param>
+        /// <param name="bRecursive"></param>
+        /// <returns></returns>
+        public static int DirEmpty(string dirPath, bool bRecursive = false)
         {
-            // Delete all files in a directory. Possibly recursive.
-            // remove ReadOnly bits.
-
-            if (!System.IO.Directory.Exists(sDir))   // avoid DirectoryNotFoundException
+            if (!System.IO.Directory.Exists(dirPath))   // avoid DirectoryNotFoundException
                 return -1;
             int iCount = 0;
-            string[] files = Directory.GetFiles(sDir);
+            string[] files = Directory.GetFiles(dirPath);
             foreach (string file in files)
             {
                 File.SetAttributes(file, FileAttributes.Normal);    // remove ReadOnly bit
@@ -100,7 +104,7 @@ namespace DotStd
             }
             if (bRecursive)
             {
-                string[] dirs = Directory.GetDirectories(sDir);
+                string[] dirs = Directory.GetDirectories(dirPath);
                 foreach (string sDir2 in dirs)
                 {
                     iCount += DirDelete(sDir2);

@@ -2,20 +2,22 @@
 
 namespace DotStd
 {
+    /// <summary>
+    /// //TODO Does this conflict with TaskDesc ???????????
+    /// Track some long process/job/task that is running async on the server.
+    /// Web browser can periodically request updates to its progress.
+    /// HangFire might do this better? use SignalR for status ?  
+    /// </summary>    
     public class JobTracker
     {
-        // Track some long process/job/task that is running async on the server.
-        // Web browser can periodically request updates to its progress.
-        // HangFire might do this better? use SignalR for status ?  
- 
         // TODO Push updates to UI ? So we dont have the UI polling for this?
 
-        private int UserId { get; set; }             // What user is this for ? 0 = doesnt matter (all users share).
+        private int UserId { get; set; }             // id for job = userid. Const.UserId.System = 1 = shared with other users ? 0 = not allowed.
 
         public bool IsComplete { get; private set; }    // code exited. fail or success.
         public string? FailureMsg { get; private set; }  // null = ok, else i failed and returned prematurely.
 
-        private Progress2 Progress = new Progress2();
+        private Progress2 Progress = new();
 
         private CancellationTokenSource? Cancellation { get; set; }   // we can try to cancel this?
 
@@ -64,7 +66,7 @@ namespace DotStd
         {
             // Find some async job in the namespace and get its status.
             // Called by watcher.
-            JobTracker? job = cache.Get(userId);
+            JobTracker? job = cache.Get(userId);    // current job for the user.
             if (job == null)
                 return "";  // never started.
             if (job.IsCancelled)

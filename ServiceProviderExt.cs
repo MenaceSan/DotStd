@@ -7,7 +7,7 @@ namespace DotStd.ServiceExt
     public static class ServiceProviderExt
     {
         /// <summary>
-        /// Get a service by its interface
+        /// Get a service by its interface as generic extension.
         /// e.g. ServiceProvider.Instance().GetService<ILogger>()
         /// NOTE: This conflicts with Microsoft.Extensions.DependencyInjection 
         /// </summary>
@@ -17,10 +17,10 @@ namespace DotStd.ServiceExt
         public static T? GetService<T>(this IServiceProvider provider)
         {
             if (provider == null)
-                return default(T);
+                return default;
             object? serviceO = provider.GetService(typeof(T));
             if (serviceO == null)
-                return default(T);
+                return default;
             return (T)serviceO;
         }
     }

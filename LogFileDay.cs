@@ -9,7 +9,7 @@ namespace DotStd
         // NOTE: Log files are in server local time zone!
 
         protected string _FilePath;   // Current logging filename . Opened when needed.
-        protected bool _Created = true;
+        protected bool _Creating = true;
 
         public LogFileBase(string name)
         {
@@ -40,21 +40,21 @@ namespace DotStd
             if (string.IsNullOrEmpty(_FilePath))
                 return null;
 
-            if (_Created)
+            if (_Creating)
             {
                 DirUtil.DirCreateForFile(_FilePath);
 
                 // Trim old log files from this directory?
                 // TODO FileUtil.DirEmptyOld()
-                _Created = !File.Exists(_FilePath);
+                _Creating = !File.Exists(_FilePath);
             }
 
             StreamWriter w = File.AppendText(_FilePath);
 
-            if (_Created)
+            if (_Creating)
             {
                 // All log files should have this header.
-                var app = ConfigApp.Instance();
+                var app = AppRoot.Instance();
                 w.WriteLine($"Log File Created '{dtLocal}' ({TimeZoneInfo.Local.DisplayName}) for '{app.AppName}' v{app.AppVersionStr}");
                 w.Flush();
             }
@@ -114,12 +114,15 @@ namespace DotStd
             _FilePathPrefix = GetPathPrefix();
         }
 
+        /// <summary>
+        /// Get directory and name of the log file
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
         public static string GetPathPrefix(ConfigInfoBase? config = null)
         {
-            // Get directory and name of the log file
-
             string prefix = kDefaultPrefix;
-            var app = ConfigApp.Instance();
+            var app = AppRoot.Instance();
 
             if (config == null)
             {
@@ -133,10 +136,7 @@ namespace DotStd
                 {
                     prefix = logDir;
                 }
-                if (!string.IsNullOrWhiteSpace(config.EnvironMode))
-                {
-                    prefix += config.EnvironMode;
-                }
+                prefix += config.EnvironMode;
             }
 
             return Path.Combine(prefix, app.AppName);
@@ -164,7 +164,7 @@ namespace DotStd
             {
                 _Day = tDay;
                 _FilePath = GetName(_Day);
-                _Created = true;
+                _Creating = true;
             }
 
             return base.OpenLogFile(dtLocal);

@@ -5,10 +5,11 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Util/Helper for host names.
+    /// </summary>
     public class HostNameUtil
     {
-        // Util/Helper for host names.
-
         public static bool IsValidHostName([NotNullWhen(true)] string? hostName)
         {
             if (string.IsNullOrWhiteSpace(hostName))
@@ -17,15 +18,16 @@ namespace DotStd
             return true;
         }
 
-        public static string? GetSubDomain(string reqHost)
+        /// <summary>
+        /// Get Subdomain from hostname if it has one.
+        /// ASSUME no protocol prefix "http://" etc. ASSUME not /Path\'' 
+        /// </summary>
+        /// <param name="reqHost">context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:443" or special "test.localhost:80"</param>
+        /// <returns>null for "test.com" or "localhost:44322" (has no subdomain)</returns>
+        public static string? GetSubDomain(string? reqHost)
         {
-            // reqHost = context.Request.Host.ToString().ToLower(). e.g. "subdom.test.com:443" or special "test.localhost:80"
-            // RETURN null for "test.com" or "localhost:44322" (has no subdomain)
-            // ASSUME no protocol prefix "http://" etc. ASSUME not /Path\'' 
-
             if (string.IsNullOrWhiteSpace(reqHost))
                 return null;
-
             int i = reqHost.IndexOf(':');  // chop off port.
             if (i >= 0)
             {

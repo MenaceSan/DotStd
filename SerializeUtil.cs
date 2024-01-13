@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
@@ -7,32 +8,33 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helpers for Generic object serialization.
+    /// </summary>
     public static class SerializeUtil
     {
-        // Helper for Generic object serialization.
-
         public const string kHexAlphabet = "0123456789ABCDEF";
 
-        public static void ToHexChar(StringBuilder sb, byte b)
+        public static void ToHexChars(StringBuilder sb, byte b)
         {
             sb.Append(kHexAlphabet[(int)(b >> 4)]);
             sb.Append(kHexAlphabet[(int)(b & 0xF)]);
         }
 
+        /// <summary>
+        /// Loop through each byte[] and format each one as a hexadecimal string.
+        /// Similar to Convert.ToBase64String(). Consider using Base64 instead ?
+        /// can use the MySQL UNHEX() function. in stored procs etc.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>the hexadecimal string.</returns>
         public static string ToHexStr(byte[] data)
         {
-            // Loop through each byte[] and format each one as a hexadecimal string.
-            // Similar to Convert.ToBase64String(). Consider using Base64 instead ?
-            // can use the MySQL UNHEX() function. in stored procs etc.
-
-            // Create a new StringBuilder to collect the bytes and create a string.
             var sb = new StringBuilder();
             for (int i = 0; i < data.Length; i++)
             {
-                ToHexChar(sb, data[i]);
+                ToHexChars(sb, data[i]);
             }
-
-            // Return the hexadecimal string.
             return sb.ToString();
         }
 
@@ -97,43 +99,87 @@ namespace DotStd
             return data;
         }
 
+        /// <summary>
+        /// is this byte array really just plain text? no need to encode it base64.
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static bool IsPlainText([NotNullWhen(true)] byte[]? bytes)
+        {
+            if (bytes == null)
+                return false;
+            foreach (byte ch in bytes)
+            {
+                if (ch == 0)
+                    return false;
+                if (ch < 32 && !Char.IsWhiteSpace((char)ch))
+                    return false;
+                if (ch > 127)
+                    return false;
+            }
+            return true;
+        }
+
         // Base64 *******************
         // NOT the same as Base64Url.
 
-        static readonly Lazy<Regex> _regexBase64 = new Lazy<Regex>(() => new Regex(@"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None));      
-        public static bool IsValidBase64(string s)
-        {
-            // Is the format of the string valid for base64?
-            // Should not throw on Convert.FromBase64(). e.g. "1" is exception.
-            // from Convert.ToBase64String()
+        static readonly Lazy<Regex> _regexBase64 = new(() => new Regex(@"^[a-zA-Z0-9\+/]*={0,3}$", RegexOptions.None));
 
+        /// <summary>
+        /// Does this string contain ONLY chars that are valid base64 ? 
+        /// Is the format of the string valid for base64?
+        /// Should not throw on Convert.FromBase64(). e.g. "1" is exception.
+        /// from Convert.ToBase64String()
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static bool IsValidBase64([NotNullWhen(true)] string? s)
+        {
             if (string.IsNullOrWhiteSpace(s))
                 return false;
             s = s.Trim();   // ignore spaces.
-
             return (s.Length % 4 == 0) && _regexBase64.Value.IsMatch(s);
         }
 
+        /// <summary>
+        /// get base64 string len from binary len.
+        /// </summary>
+        /// <param name="lenBin"></param>
+        /// <returns></returns>
         public static int ToBase64Len(int lenBin)
         {
-            // get base64 string len from binary len.
             return (((lenBin + 2) / 3) * 4); // round up to allow padding it out with ='s
-
         }
+
+        /// <summary>
+        /// get binary len from base64 len.
+        /// </summary>
+        /// <param name="lenBase64"></param>
+        /// <returns></returns>
         public static int FromBase64Len(int lenBase64)
         {
-            // get binary len from base64 len.
             return ((lenBase64 * 3) / 4);
         }
 
+        /// <summary>
+        /// convert byte[] to base64 string. 
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static string ToBase64String(byte[] b)
         {
-            // convert to base64 string.             
             return System.Convert.ToBase64String(b, 0, b.Length);
         }
+
+        /// <summary>
+        /// convert Stream to base64 string.
+        /// might be from HttpPostedFileBase
+        /// </summary>
+        /// <param name="InputStream"></param>
+        /// <param name="ContentLength"></param>
+        /// <returns></returns>
         public static string ToBase64String(Stream InputStream, int ContentLength)
         {
-            // might be from HttpPostedFileBase
             Byte[] b = new byte[ContentLength];
             InputStream.Read(b, 0, b.Length);
             return ToBase64String(b);
@@ -147,7 +193,12 @@ namespace DotStd
         public const string kFalse = "false";   // JSON bool. Not the same as .NET bool values. e.g. "False"
         public const string kTrue = "true";     // JSON bool    
 
-        public static bool IsJSON(string sValue)
+        /// <summary>
+        /// Does this string seem to be JSON?
+        /// </summary>
+        /// <param name="sValue"></param>
+        /// <returns></returns>
+        public static bool IsJSON([NotNullWhen(true)] string? sValue)
         {
             if (string.IsNullOrWhiteSpace(sValue))
                 return false;
@@ -156,19 +207,26 @@ namespace DotStd
             return sValue.StartsWith("[") || sValue.StartsWith("{");
         }
 
+        /// <summary>
+        /// Get JSON bool string.
+        /// .NET bool is "True" but JSON is "true"
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static string ToJSON(bool b)
         {
-            // Get JSON bool string.
-            // .NET bool is "True" not "true"
             return b ? kTrue : kFalse;
         }
 
+        /// <summary>
+        /// Create a JSON string object from a list of fields and values.
+        /// value strings are JSON encoded ! for quotes use \"
+        /// A JSON string must be double-quoted, according to the specs, so you don't need to escape single ' . 
+        /// </summary>
+        /// <param name="tuples"></param>
+        /// <returns></returns>
         public static string ToJSONObj(params string[] tuples)
         {
-            // Create a JSON string object from a list of fields and values.
-            // value strings are JSON encoded ! for quotes use \"
-            // A JSON string must be double-quoted, according to the specs, so you don't need to escape single ' . 
-
             if (tuples.Length == 0)
                 return "";
             var sb = new StringBuilder();
@@ -188,12 +246,15 @@ namespace DotStd
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Parse JSON to a dictionary. like Newtonsoft?
+        /// like JSON.NET JsonConvert.DeserializeObject<Dictionary<string, string>>
+        /// ? System.Web.Script.Serialization.JavaScriptSerializer is buggy?
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
         public static Dictionary<string, object> FromJSONToDictionary(string json)
         {
-            // Parse JSON to a dictionary. like Newtonsoft?
-            // like JSON.NET JsonConvert.DeserializeObject<Dictionary<string, string>>
-            // ? System.Web.Script.Serialization.JavaScriptSerializer is buggy?
-
             // TODO Does this deal with encoded " ??
 
             var d = new Dictionary<string, object>();
@@ -204,7 +265,7 @@ namespace DotStd
                 if (json.EndsWith("}"))
                     json = json.Substring(0, json.Length - 1);
             }
-            json.Trim();
+            json = json.Trim();
 
             // Parse out Object Properties from JSON
             while (json.Length > 0)
@@ -245,7 +306,7 @@ namespace DotStd
                 json = json.Trim();
                 if (json.StartsWith(","))
                     json = json.Remove(0, 1);
-                json.Trim();
+                json = json.Trim();
 
 
                 // Individual Property (Name/Value Pair) Is Isolated
@@ -260,7 +321,6 @@ namespace DotStd
                     name = name.Substring(1, name.Length - 2);
                 }
 
-                double valueNumberCheck;
                 if (value.StartsWith("\"") && value.StartsWith("\""))
                 {
                     // String Value
@@ -268,15 +328,15 @@ namespace DotStd
                 }
                 else if (value.StartsWith("{") && value.EndsWith("}"))
                 {
-                    // JSON Value
+                    // JSON Value. Recursive.
                     d.Add(name, FromJSONToDictionary(value));
                 }
-                else if (double.TryParse(value, out valueNumberCheck))
+                else if (double.TryParse(value, out double valueNumberCheck))
                 {
                     // Numeric Value
                     d.Add(name, valueNumberCheck);
                 }
-                else
+                else // String i guess ?
                     d.Add(name, value);
             }
 
@@ -285,36 +345,45 @@ namespace DotStd
 
         // XML *******************
 
-        public static bool IsXML(string sValue)
+        /// <summary>
+        /// Does this string seem to be XML?
+        /// What about XML file which has UTF-8 BOM marker(EF BB BF) at the beginning ??
+        /// </summary>
+        /// <param name="sValue"></param>
+        /// <returns></returns>
+        public static bool IsXML([NotNullWhen(true)] string? sValue)
         {
-            // What about XML file which has UTF-8 BOM marker(EF BB BF) at the beginning ??
             if (string.IsNullOrWhiteSpace(sValue))
                 return false;
             return sValue.StartsWith("<");
         }
 
+        /// <summary>
+        /// Create XML string for some object.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static string ToXML(object obj)
         {
-            // Create XML string for some object.
-
-            using (var memoryStream = new MemoryStream())
-            using (var reader = new StreamReader(memoryStream))
-            {
-                var serializer = new DataContractSerializer(obj.GetType());
-                serializer.WriteObject(memoryStream, obj);
-                memoryStream.Position = 0;
-                return reader.ReadToEnd();
-            }
+            using var memoryStream = new MemoryStream();
+            using var reader = new StreamReader(memoryStream);
+            var serializer = new DataContractSerializer(obj.GetType());
+            serializer.WriteObject(memoryStream, obj);
+            memoryStream.Position = 0;
+            return reader.ReadToEnd();
         }
 
+        /// <summary>
+        /// Create object from XML string.
+        /// </summary>
+        /// <param name="xml"></param>
+        /// <param name="toType"></param>
+        /// <returns></returns>
         public static object? FromXML(string xml, Type toType)
         {
-            // Create object from XML string.
-            using (var stream = xml.ToMemoryStream())
-            {
-                var deserializer = new DataContractSerializer(toType);
-                return deserializer.ReadObject(stream);
-            }
+            using var stream = xml.ToMemoryStream();
+            var deserializer = new DataContractSerializer(toType);
+            return deserializer.ReadObject(stream);
         }
     }
 }

@@ -5,11 +5,13 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Password policy for types of passwords.
+    /// like Microsoft.AspNetCore.Identity.PasswordOptions
+    /// </summary>
     [Flags]
     public enum PasswordReq
     {
-        // Password policy for types of passwords.
-        // like Microsoft.AspNetCore.Identity.PasswordOptions
         None = 0,
         Lowercase = 1,  // must have lowercase.
         Uppercase = 2,
@@ -19,13 +21,14 @@ namespace DotStd
         Def = Lowercase | Uppercase | Digit,
     }
 
+    /// <summary>
+    /// PasswordPolicy or estimation of 'strength' of password.
+    /// NOTE: Use [AllowHTML] for ASP passwords to prevent screening <>
+    /// TODO: USE SecureString ??
+    /// </summary>
     public class PasswordUtil
     {
-        // PasswordPolicy
-        // NOTE: Use [AllowHTML] for ASP passwords to prevent screening <>
-        // TODO: USE SecureString ??
-
-        public static readonly PasswordUtil Def = new PasswordUtil(8, 16, PasswordReq.Def);
+        public static readonly PasswordUtil Def = new(8, 16, PasswordReq.Def);  // default.
 
         public const int kMinLength = 8;
 
@@ -57,12 +60,15 @@ namespace DotStd
             ReqFlags = flags;
         }
 
+        /// <summary>
+        /// Generate a random password using chars supplied.
+        /// </summary>
+        /// <param name="maxSize"></param>
+        /// <param name="chars">restrict to this set of chars.</param>
+        /// <param name="lowerCase">force to lower case.</param>
+        /// <returns></returns>
         public static string CreatePassword(int maxSize, char[] chars, bool lowerCase = false)
         {
-            // Generate a random password using chars supplied.
-            // chars = restrict to this set of chars.
-            // lowerCase = force to lower case.
-
             var crypto = RandomNumberGenerator.Create();
 
             byte[] data1 = new byte[1];     // junk first byte.
@@ -96,21 +102,22 @@ namespace DotStd
             return CreatePassword(maxSize, _BasicAlnumChars);
         }
 
+        /// <summary>
+        /// Is this in general a valid password/ bearer token ? Complexity Level? Strong/Weak ?
+        /// When the client sends us a token. This makes sure its at least moderately likely to be safe.
+        /// https://stats.stackexchange.com/questions/371150/check-if-a-character-string-is-not-random
+        /// https://en.wikipedia.org/wiki/Diehard_tests
+        /// https://en.wikipedia.org/wiki/Randomness_tests
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static bool IsRandomish(string s)
         {
-            // Is this in general a valid password/ bearer token ? 
-            // When the client sends us a token. This makes sure its at least moderately likely to be safe.
-            // https://stats.stackexchange.com/questions/371150/check-if-a-character-string-is-not-random
-            // https://en.wikipedia.org/wiki/Diehard_tests
-            // https://en.wikipedia.org/wiki/Randomness_tests
-
             if (s == null)
                 return false;
             if (s.Length < kMinLength)
                 return false;
-
             // TODO
-
             return true;
         }
 
@@ -141,11 +148,15 @@ namespace DotStd
             return false;
         }
 
+        /// <summary>
+        /// Match a password against password policy.
+        /// Second entry of the password to see if it matches the first does not need to come here.
+        /// </summary>
+        /// <param name="password"></param>
+        /// <param name="excludeToken"></param>
+        /// <returns></returns>
         public List<string> GetPasswordErrorMessages(string password, string? excludeToken = null)
         {
-            // Match a password against password policy.
-            // Second entry of the password to see if it matches the first does not need to come here.
-
             var errors = new List<string>();
 
             if (password == null)

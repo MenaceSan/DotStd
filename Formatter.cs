@@ -18,8 +18,8 @@ namespace DotStd
         public const string kCrLf = "\r\n";     // Windows style. like VB vbCrLf or Environment.NewLine
 
         // handlebars for email templates.
-        public const string kBlockStart = "{{"; // Start of template block. For boiler plate fields in PDF or emails HTML.
-        public const string kBlockEnd = "}}";   // End of template field.
+        public const string kBlockStart = "{{"; // Start of template block. For boiler plate fields in PDF or emails HTML. ReplaceTokenX
+        public const string kBlockEnd = "}}";   // End of template field. ReplaceTokenX
 
         public static string ToOrdinal(int number)
         {
@@ -80,7 +80,7 @@ namespace DotStd
         }
 
         /// <summary>
-        /// Capitalize word. CultureInfo cultureInfo
+        /// Capitalize first letter of word. CultureInfo cultureInfo
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
@@ -247,12 +247,15 @@ namespace DotStd
             return "N";
         }
 
+        /// <summary>
+        /// convert all newlines to proper Environment.NewLine
+        /// May be similar to String.Normalize(). not sure. TODO find out.
+        /// http://www.codinghorror.com/blog/2010/01/the-great-newline-schism.html
+        /// </summary>
+        /// <param name="sValue"></param>
+        /// <returns></returns>
         public static string GetNormalized(string sValue)
         {
-            // convert all newlines to proper Environment.NewLine
-            // May be similar to String.Normalize(). not sure. TODO find out.
-            // http://www.codinghorror.com/blog/2010/01/the-great-newline-schism.html
-
             var sb = new System.Text.StringBuilder();
             int nLen = sValue.Length;
             for (int i = 0; i < nLen; i++)
@@ -277,11 +280,14 @@ namespace DotStd
             return sb.ToString();
         }
 
+        /// <summary>
+        /// get the first line of a multi line string. use any Environment.NewLine (\n,\r, \r\n)
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="lenLine">(OUT) len of first line including NL.</param>
+        /// <returns></returns>
         public static string GetFirstLine(string s, out int lenLine)
         {
-            // get the first line of a multi line string. use any Environment.NewLine (\n,\r, \r\n)
-            // out lenLine = len of first line including NL.
-
             int len = s.IndexOf("\n");
             if (len < 0)
             {

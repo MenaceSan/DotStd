@@ -169,7 +169,7 @@ namespace DotStd
     }
 
     /// <summary>
-    /// Latitude and longitude.
+    /// Latitude, longitude, altitude.
     /// Same format as JavaScript navigator.geolocation.getCurrentPosition() coords
     /// Can be serialized directly from the JSON poco.
     /// </summary>
@@ -182,14 +182,19 @@ namespace DotStd
 
         public const int kLonMax = 180;
 
-        // https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c
-        // The circumference of the Earth is approx. 40.000 km or 24900 miles. You need one-meter accuracy(3ft) to be able to out-resolve gps precision by an order of magnitude. Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
-        // NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. That is only capable of distinguishing 16 million unique values, of the 40 million required. 
+        /// <summary>
+        /// https://stackoverflow.com/questions/1220377/latitude-longitude-storage-and-compression-in-c 
+        /// The circumference of the Earth is approx. 40.000 km or 24900 miles. 
+        /// You need one-meter accuracy(3ft) to be able to out-resolve GPS precision by an order of magnitude. 
+        /// Therefore you need precision to store 40.000.000 different values. That's at minimum 26 bits of information.
+        /// NOT float storage => a 32-bit IEEE float has 23 explicit bits of fraction (and an assumed 1) for 24 effective bits of significand. 
+        /// That is only capable of distinguishing 16 million unique values, of the 40 million required. 
+        /// </summary>
         public const int kIntMult = 10000000;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
         public const double kIntDiv = 0.0000001;    // Convert back and forth to 32 bit int. (~.1m res, i.e. more than needed)
 
         public const double kEarthRadiusMeters = 6371000.0;    // Approximate. or 6378137 ?
-        public const int kEarthDistMax = 50000000;    // Max reasonable distance on Earth. Any distance greater is not on earth. (40,075 km circumference)
+        public const int kEarthDistMax = 50000000;    // Max reasonable distance on Earth. Any distance greater is not on Earth. (40,075 km circumference)
 
         public const double kDeg2Rad = Math.PI / 180.0;    // multiply for degrees to Radians 
 
@@ -203,37 +208,45 @@ namespace DotStd
         }
         public static bool IsValidLon(double x)
         {
-            return x >= -180 && x <= kLonMax;
+            return x >= -kLonMax && x <= kLonMax;
         }
-        public bool IsValid
-        {
-            get
-            {
-                // if (Latitude == 0 && Longitude == 0) return false; // TZ UTC ?
-                return IsValidLat(Latitude) && IsValidLon(Longitude);
-            }
-        }
+
+
+        /// <summary>
+        /// 0,0 = Extreme point in the Atlantic. Probably not valid. // TZ UTC ?
+        /// </summary>
+        public bool IsZero => Latitude == 0 && Longitude == 0;
+
+        /// <summary>
+        /// a technically valid location?
+        /// </summary>
+        public bool IsValid => IsValidLat(Latitude) && IsValidLon(Longitude);
+
+        /// <summary>
+        /// This geo location is probably not valid?
+        /// !IsValid or May be Valid but not normal value. Might be bad value.
+        /// NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
+        /// </summary>
         public bool IsExtreme
         {
-            // !IsValid or May be Valid but not normal value. Might be bad value.
-            // NOTE: 0,0 can be considered invalid. It is in the Gulf of Guinea in the Atlantic Ocean, about 380 miles (611 kilometers) south of Ghana 
             get
             {
                 if (Latitude <= -90 || Latitude >= 90) // Poles are extreme.
                     return true;
                 if (!IsValidLon(Longitude))
                     return true;
-                return Latitude == 0 && Longitude == 0;  // Extreme point in the Atlantic.
+                return IsZero;
             }
         }
 
+        /// <summary>
+        /// Get Composite string.  e.g. "15.0N+30.0E"
+        /// https://maps.google.com/maps?q=24.197611,120.780512
+        /// https://maps.google.com/maps?q=24.197611,120.780512&z=18
+        /// </summary>
+        /// <returns></returns>
         public string GetLatLonStr()
         {
-            // Composite string.
-            // e.g. "15.0N+30.0E"
-            // https://maps.google.com/maps?q=24.197611,120.780512
-            // https://maps.google.com/maps?q=24.197611,120.780512&z=18
-
             return String.Concat(Latitude.ToString(), ",", Longitude.ToString());
         }
 
@@ -290,26 +303,34 @@ namespace DotStd
             return "geo:" + lat + "," + lon;
         }
 
+        /// <summary>
+        /// Convert degrees (360) to encoded int.
+        /// </summary>
         public static int ToInt(double value)
         {
-            // Convert degrees (360) to int.
             return (int)(value * kIntMult);
         }
+        /// <summary>
+        /// Convert degrees (360) to encoded int.
+        /// </summary>
         public static int? ToInt(double? value)
         {
-            // Convert degrees (360) to int.
             if (value == null)
                 return null;
             return ToInt(value.Value);
         }
+        /// <summary>
+        /// Convert encoded int to degrees (360).
+        /// </summary>
         public static double ToDouble(int value)
         {
-            // Convert int to degrees (360).
             return value * kIntDiv;
         }
+        /// <summary>
+        /// Convert encoded int to degrees (360).
+        /// </summary>
         public static double? ToDouble(int? value)
         {
-            // Convert int to degrees (360).
             if (value == null)
                 return null;
             return ToDouble(value.Value);
@@ -329,33 +350,40 @@ namespace DotStd
             return Math.Abs(value1 - value2) < range;
         }
 
+        /// <summary>
+        /// Calculate the Haversine distance between this and that.
+        /// Haversine. // http://en.wikipedia.org/wiki/Haversine_formula
+        /// </summary>
+        /// <param name="latitude"></param>
+        /// <param name="longitude"></param>
+        /// <returns></returns>
         public double GetDistance(double latitude, double longitude)
         {
-            // Calculate the Haversine distance between this and that.
-            // Haversine. // http://en.wikipedia.org/wiki/Haversine_formula
-
             var su = Math.Sin((this.Latitude - latitude) * 0.5 * kDeg2Rad);
             var sv = Math.Sin((this.Longitude - longitude) * 0.5 * kDeg2Rad);
-
             return 2.0 * kEarthRadiusMeters * Math.Asin(Math.Sqrt((su * su) + (Math.Cos(latitude * kDeg2Rad) * Math.Cos(this.Latitude * kDeg2Rad) * sv * sv)));
         }
 
+        /// <summary>
+        /// TODO: Implementation of the reverse of Haversine formula.  https://gist.github.com/shayanjm/451a3242685225aa934b
+        /// Takes one set of latitude/longitude as a start point, a bearing, and a distance, and returns the resultant lat/long pair.
+        /// </summary>
+        /// <param name="bearing">bearing in radians.</param>
+        /// <param name="distance">distance in meters.</param>
+        /// <returns></returns>
         public GeoLocation GetMove(double bearing, double distance)
         {
-            // Implementation of the reverse of Haversine formula.  https://gist.github.com/shayanjm/451a3242685225aa934b
-            // Takes one set of latitude/longitude as a start point, a bearing, and a distance, and returns the resultant lat/long pair.
-            // bearing in radians.
-            // distance in meters.
-
-            // TODO
-
-            return new GeoLocation { };
+            return new GeoLocation { }; // TODO
         }
 
+        /// <summary>
+        /// Parse a single dimension value string to a double.
+        /// </summary>
+        /// <param name="v"></param>
+        /// <param name="point"></param>
+        /// <returns></returns>
         public static double ParseValue(string v, int point)
         {
-            // Parse a single dimension value string to a double.
-
             if (point <= 0) // no decimal place.
             {
                 int i = ((v.Length & 1) == 1) ? 3 : 2;  // DDDMM vs DDDMM
@@ -387,12 +415,15 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// get code as string in format "+515248−1763929"
+        /// https://en.wikipedia.org/wiki/ISO_6709
+        /// https://github.com/jaime-olivares/coordinate/blob/master/Coordinate.cs
+        /// </summary>
+        /// <param name="isoStr"></param>
+        /// <returns></returns>
         public bool ParseIso(string isoStr)
         {
-            // get code as string in format "+515248−1763929"
-            // https://en.wikipedia.org/wiki/ISO_6709
-            // https://github.com/jaime-olivares/coordinate/blob/master/Coordinate.cs
-
             // Parse coordinate in the following ISO 6709 formats:
             // Latitude and Longitude in Degrees:
             // �DD.DDDD�DDD.DDDD/         (eg +12.345-098.765/)
@@ -470,13 +501,14 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// All the optional extra JSON (GEO) stuff.
+    /// Same format as JavaScript navigator.geolocation.getCurrentPosition().coords
+    /// Can be serialized directly from the JSON POCO. 
+    /// </summary>
     [Serializable]
     public class GeoLocation5 : GeoLocation
     {
-        // All the optional extra JSON stuff.
-        // Same format as JavaScript navigator.geolocation.getCurrentPosition().coords
-        // Can be serialized directly from the JSON poco. 
-
         public float accuracy;
         public float? altitudeAccuracy;
 

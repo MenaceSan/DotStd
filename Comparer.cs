@@ -19,7 +19,7 @@ namespace DotStd
 
     /// <summary>
     /// How should a field be sorted ? Comparer.cs
-    /// This can be related to LambdaExpression? GetPropertyExp(string name)
+    /// This can be related to LambdaExpression? GetOrderByExp(string name)
     /// </summary>
     public class ComparerDef
     {
@@ -165,8 +165,7 @@ namespace DotStd
             }
             if (_oProp == null) // cache this.
             {
-                _oProp = typeof(ItemType).GetProperty(this.PropName);
-                ValidState.ThrowIfNull(_oProp, nameof(_oProp));
+                _oProp = ValidState.GetNotNull(typeof(ItemType).GetProperty(this.PropName), nameof(_oProp));
             }
             int iRet = CompareType(_oProp.GetValue(x, null), _oProp.GetValue(y, null), Type.GetTypeCode(_oProp.PropertyType));
             // Reverse?

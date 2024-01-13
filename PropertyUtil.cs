@@ -8,20 +8,20 @@ using System.Runtime.Serialization;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Get a property that may be stored in many different ways.
+    /// e.g. Properties can be stored via object reflection, Dictionary, DataTable
+    /// children names can be expressed via "parent:child" syntax
+    /// Similar to C# dynamic objects.
+    /// </summary>
     public interface IPropertyGetter
     {
-        // Get a property that may be stored in many different ways.
-        // e.g. Properties can be stored via object reflection, Dictionary, DataTable
-        // children names can be expressed via "parent:child" syntax
-        // Similar to C# dynamic objects.
-
         object? GetPropertyValue(string name);
     }
 
     public interface IPropertySetter
     {
         // like IDynamicMetaObjectProvider, DynamicObject, ExpandoObject, etc.
-
         void SetPropertyValue(string name, object val);
     }
 
@@ -35,33 +35,40 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// use reflection to get a properties value from an object. IPropertyGetter
+    /// Assume i CANNOT just add new props on the fly.
+    /// </summary>
     public class PropertyBagObj : PropertyBagBase, IPropertySetter
     {
-        // Just use reflection to get a properties value from an object. IPropertyGetter
-        // Assume i CANNOT just add new props on the fly.
-
-        object? _Obj; // just use Type reflection on this.
-        public Type? Type { get; set; }  // Maybe not the same as Obj.GetType(). // type may be resolved later.
+        public readonly object? Obj; // just use Type reflection on this.
+        public Type? Type { get; set; }  // Type for Obj. Maybe not the same as Obj.GetType(). // type may be resolved later.
         public bool IsCaseSensitive { get; set; } = true;
 
         public PropertyBagObj()
         {
         }
-        public PropertyBagObj(object obj, Type? typeSrc = null, bool isCaseSensitive = true)
+        public PropertyBagObj(object? obj, Type? typeSrc = null, bool isCaseSensitive = true)
         {
-            _Obj = obj;
+            Obj = obj;
             Type = typeSrc; // type may be resolved later.
             IsCaseSensitive = isCaseSensitive;
         }
 
+        /// <summary>
+        /// Get object property by name.
+        /// Allow complex names.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public override object? GetPropertyValue(string name)
         {
-            if (_Obj == null)
+            if (Obj == null)
                 return null;
 
             if (Type == null)
             {
-                Type = _Obj.GetType();   // use default type.
+                Type = Obj.GetType();   // use default type.
             }
 
             // Parse out a sub property after the . (or [ ?)
@@ -78,7 +85,7 @@ namespace DotStd
             if (prop == null || !prop.CanRead)
                 return null;
 
-            object? obj = prop.GetValue(_Obj, null);
+            object? obj = prop.GetValue(Obj, null);
             if (nameChild != null && obj != null)
             {
                 // Assume obj has properties of its own.
@@ -88,15 +95,18 @@ namespace DotStd
             return obj;
         }
 
+        /// <summary>
+        /// Set Obj Property
+        /// Throw if Obj is null or name prop does not exist
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="val"></param>
         public virtual void SetPropertyValue(string name, object val)
         {
-            // MUST set Obj first!
-            // Throw if Obj is null or name prop does not exist
-
-            ValidState.ThrowIfNull(_Obj, nameof(_Obj));
+            ValidState.ThrowIfNull(Obj, nameof(Obj));
             if (Type == null)
             {
-                Type = _Obj.GetType();
+                Type = Obj.GetType();
                 ValidState.ThrowIfNull(Type, nameof(Type));
             }
 
@@ -104,16 +114,17 @@ namespace DotStd
             ValidState.ThrowIfNull(prop, nameof(prop));
 
             // !prop.CanWrite // test ?
-            prop.SetValue(_Obj, val);
+            prop.SetValue(Obj, val);
         }
     }
 
+    /// <summary>
+    /// a IPropertyGetter implemented as a Dictionary
+    /// Assume i CAN add new props on the fly.
+    /// </summary>
     public class PropertyBagDic : PropertyBagBase, IPropertySetter
     {
-        // a IPropertyGetter implemented as a Dictionary
-        // Assume i CAN add new props on the fly.
-
-        Dictionary<string, object> _Props;
+        readonly Dictionary<string, object> _Props;
 
         public static bool HasProp([NotNullWhen(true)] dynamic obj, string name)
         {
@@ -145,9 +156,12 @@ namespace DotStd
             _Props[name] = val; // overwrite if existing.
         }
 
+        /// <summary>
+        /// add all CanRead properties from object to the bag.
+        /// </summary>
+        /// <param name="obj"></param>
         public void AddProperties(object obj)
         {
-            // add all CanRead properties from object to the bag.
             Type fromType = obj.GetType();
             foreach (PropertyInfo propFrom in fromType.GetProperties())
             {
@@ -161,10 +175,11 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// use with this.Request.Form, IFormCollection
+    /// </summary>
     public class PropertyBagKeyValue : PropertyBagBase
     {
-        // use with this.Request.Form, IFormCollection
-
         readonly IEnumerable<KeyValuePair<string, StringValues>> Row;
 
         public PropertyBagKeyValue(IEnumerable<KeyValuePair<string, StringValues>> row)
@@ -182,11 +197,12 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// a IPropertyGetter implemented as a DataRow
+    /// </summary>
     public class PropertyBagRow : PropertyBagBase
     {
-        // a IPropertyGetter implemented as a DataRow
-
-        DataRow? Row;
+        public DataRow? Row;
 
         public PropertyBagRow()
         {
@@ -211,10 +227,11 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// util class for abstracting a property bag.
+    /// </summary>
     public class PropertyUtil
     {
-        // util class for abstracting a property bag.
-
         public static object? GetPropertyValue(object fromObj, string propertyName)
         {
             // Get 1 single prop value via reflection.
@@ -229,9 +246,14 @@ namespace DotStd
             return prop.GetValue(fromObj, null);
         }
 
+        /// <summary>
+        /// Set 1 single prop value via reflection.
+        /// </summary>
+        /// <param name="toObj"></param>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
         public static void SetPropertyValue(object toObj, string name, object value)
         {
-            // Set 1 single prop value via reflection.
             if (toObj == null)
                 return;
             Type toType = toObj.GetType();
@@ -242,13 +264,17 @@ namespace DotStd
             prop.SetValue(toObj, value);
         }
 
+        /// <summary>
+        /// Inject all properties that match. (not fields or events) like IPropertySetter
+        /// NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="toObj"></param>
+        /// <param name="fromObj">is some type derived from T. may have many more props but we will ignore them. Only use T Props</param>
+        /// <param name="ignored"></param>
+        /// <returns>propsCopied . Caller should throw if this is not the correct number !</returns>
         public static int InjectProperties<T>(T toObj, object? fromObj, List<string>? ignored = null)
         {
-            // Inject all properties that match. (not fields or events) like IPropertySetter
-            // fromObj is some type derived from T. may have many more props but we will ignore them. Only use T Props
-            // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
-            // RETURN: propsCopied . Caller should throw if this is not the correct number !
-
             if (fromObj == null)
                 return 0;
 
@@ -264,7 +290,7 @@ namespace DotStd
                 if (!propTo.CanWrite)
                     continue;
 
-                // Find eqiv prop by name.
+                // Find equiv prop by name.
                 PropertyInfo? propFrom = sameType ? propTo : fromType.GetProperty(propTo.Name);
                 if (propFrom == null || !propFrom.CanRead)
                     continue;
@@ -285,13 +311,19 @@ namespace DotStd
             return propsCopied;
         }
 
+        /// <summary>
+        /// inject all the properties from 'from' into an object toObj that match.
+        /// NOTE: This does not know how to handle child objects with props. e.g. Dtr[Start]
+        /// Just skip those that don't match
+        /// NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="toObj"></param>
+        /// <param name="from"></param>
+        /// <param name="from_prefix"></param>
+        /// <returns></returns>
         public static int InjectProperties<T>(T toObj, IPropertyGetter? from, string? from_prefix = null)
         {
-            // inject all the properties from 'from' into an object toObj that match.
-            // NOTE: This does not know how to handle child objects with props. e.g. Dtr[Start]
-            // Just skip those that don't match
-            // NOTE: We intentionally DON'T use toObj.GetType() here because we want explicit caller control of the type. (could just be a child type)
-
             if (from == null)
                 return 0;
             int propsCopied = 0;
@@ -317,10 +349,15 @@ namespace DotStd
             return InjectProperties(toObj, new PropertyBagKeyValue(src));
         }
 
+        /// <summary>
+        /// Create a clone of some object as a target type. Maybe a child type of fromObj.
+        /// Use reflection to clone props.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="fromObj"></param>
+        /// <returns></returns>
         public static T CreateCloneT<T>(object fromObj)
         {
-            // Create a clone of some object as a target type. Maybe a child type of fromObj.
-            // Use reflection to clone props.
             T? toObj = (T?)Activator.CreateInstance(typeof(T));
             ValidState.ThrowIfNull(toObj, nameof(T));   // should never happen!
             InjectProperties<T>(toObj, fromObj);

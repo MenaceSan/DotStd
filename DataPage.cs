@@ -13,12 +13,19 @@ namespace DotStd
     /// </summary>
     public static class DataPage
     {
+        /// <summary>
+        /// Order by some LambdaExpression.
+        /// This works for EF 3.1 for MySQL with properly formed Expression.
+        /// e.g. Expression<Func<AgencySystemBiz, int>> orderByExp = (x => x.IdInt); q.OrderingHelper1X(typeof(int), orderByExp);
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="orderByExp"></param>
+        /// <param name="isSortAscending">reverse?</param>
+        /// <param name="thenByLevel">not first level</param>
+        /// <returns></returns>
         public static IOrderedQueryable<T> OrderingHelperX<T>(this IQueryable<T> source, LambdaExpression orderByExp, bool isSortAscending = false, bool thenByLevel = false)
         {
-            // Order by some named property.
-            // This does work for EF 3.1 for MySQL with properly formed Expression.
-            // e.g. Expression<Func<AgencySystemBiz, int>> orderByExp = (x => x.IdInt); q.OrderingHelper1X(typeof(int), orderByExp);
-
             MethodCallExpression call = Expression.Call(
                  typeof(Queryable),
                  thenByLevel ? (isSortAscending ? nameof(Queryable.ThenBy) : nameof(Queryable.ThenByDescending)) : (isSortAscending ? nameof(Queryable.OrderBy) : nameof(Queryable.OrderByDescending)),
@@ -31,14 +38,21 @@ namespace DotStd
 
         //***********************************//
 
-        private static IOrderedQueryable<T> OrderingHelper1<T>(IQueryable<T> source, string propertyName, bool isSortAscending, bool thenByLevel)
+        /// <summary>
+        /// Order by some named (via string) property.
+        /// NOTE: This will throw if the column/propertyName doesn't exist !
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="propertyName"></param>
+        /// <param name="isSortAscending"></param>
+        /// <param name="thenByLevel"></param>
+        /// <returns></returns>
+        private static IOrderedQueryable<T> OrderingHelper_BROKEN<T>(IQueryable<T> source, string propertyName, bool isSortAscending, bool thenByLevel)
         {
-            // Order by some named (via string) property.
-            // NOTE: This will throw if the column/propertyName doesn't exist !
-
             Type entityType = typeof(T);
-            PropertyInfo? prop1 = entityType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
-            ValidState.ThrowIfNull(prop1, nameof(prop1));
+            // JavaScript can kill case.
+            PropertyInfo prop1 = ValidState.GetNotNull(entityType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy), nameof(prop1));
 
 #if false
             // NOTE: This doesn't work for EF 3.1 for MySQL!!!!!!!!!!!!
@@ -55,19 +69,19 @@ namespace DotStd
             return OrderingHelperX(source, orderByExp, isSortAscending, thenByLevel);
         }
 
-        public static IOrderedQueryable<T> OrderByX<T>(this IQueryable<T> source, string propertyName, bool isSortAscending = true)
+        public static IOrderedQueryable<T> OrderByX_BROKEN<T>(this IQueryable<T> source, string propertyName, bool isSortAscending = true)
         {
             // return OrderingHelper3_TEST(source, propertyName);
-            return OrderingHelper1(source, propertyName, isSortAscending, false);
+            return OrderingHelper_BROKEN(source, propertyName, isSortAscending, false);
         }
 
-        public static IOrderedQueryable<T> ThenByX<T>(this IOrderedQueryable<T> source, string propertyName, bool isSortAscending = true)
+        public static IOrderedQueryable<T> ThenByX_BROKEN<T>(this IOrderedQueryable<T> source, string propertyName, bool isSortAscending = true)
         {
             // return OrderingHelper3_TEST(source, propertyName);
-            return OrderingHelper1(source, propertyName, isSortAscending, true);
+            return OrderingHelper_BROKEN(source, propertyName, isSortAscending, true);
         }
 
-        public static IOrderedQueryable<T>? OrderByList1<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
+        public static IOrderedQueryable<T>? OrderByList1_BROKEN<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts)
         {
             // Order by some named property(s). use reflection to get property type.
             // NOTE: This will throw if the column/propertyName doesn't exist !
@@ -75,7 +89,7 @@ namespace DotStd
             IOrderedQueryable<T>? ret2 = null;
             foreach (var sort in sorts)
             {
-                ret2 = OrderingHelper1(ret2 ?? source, sort.PropName, sort.SortDir == SortDirection.Ascending, ret2 != null);
+                ret2 = OrderingHelper_BROKEN(ret2 ?? source, sort.PropName, sort.SortDir == SortDirection.Ascending, ret2 != null);
             }
 
             return ret2;
@@ -90,20 +104,21 @@ namespace DotStd
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <param name="sorts"></param>
-        /// <param name="propExp">GetPropertyExp</param>
+        /// <param name="getOrderBy">GetOrderByExp</param>
         /// <returns></returns>
-        public static IOrderedQueryable<T>? OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, LambdaExpression?> propExp)
+        public static IOrderedQueryable<T>? OrderByList2<T>(this IQueryable<T> source, IEnumerable<ComparerDef> sorts, Func<string, LambdaExpression?> getOrderBy)
         {
             Type entityType = typeof(T);
 
             IOrderedQueryable<T>? ret2 = null;
             foreach (var sort in sorts)
             {
-                PropertyInfo? prop1 = entityType.GetProperty(sort.PropName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy); // JavaScript can kill case.
-                ValidState.ThrowIfNull(prop1, nameof(prop1));
+                // JavaScript can kill case.
+                PropertyInfo prop1 = ValidState.GetNotNull(entityType.GetProperty(sort.PropName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy), 
+                    nameof(prop1));
                 ValidState.ThrowIf(!prop1.Name.Equals(sort.PropName, StringComparison.InvariantCultureIgnoreCase));    // NOTE: ISNT prop1.Name THE SAME AS sort.PropName ??? remove entityType.GetProperty??
 
-                LambdaExpression? orderByExp = propExp(prop1.Name);    // call GetPropertyExp()
+                LambdaExpression? orderByExp = getOrderBy(prop1.Name);    // call GetOrderByExp()
                 if (orderByExp == null)
                 {
                     // this should not happen! don't allow sort by this prop ?
@@ -117,12 +132,13 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Response set for a data page.
+    /// Some Service returns the set of data i want. from DataPageReq
+    /// </summary>
     [Serializable]
     public class DataPageRsp
     {
-        // Response set for a data page.
-        // Some Service returns the set of data i want. from DataPageReq
-
         public System.Collections.IList Rows { get; set; }     // The data rows requested for CurrentPage. un-typed.
         public int RowsOnPage => this.Rows.Count;
         public int RowsTotal { get; set; }          // Total rows in the request. All pages. ASSUME RowsTotal >= RowsOnPage, Rows.Length

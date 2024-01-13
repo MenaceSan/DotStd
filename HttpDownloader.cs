@@ -13,12 +13,18 @@ namespace DotStd
 
     }
 
-    public class HttpDownloader
+    /// <summary>
+    /// pull URL file to a local file system. Use HttpClient instead of WebClient
+    /// </summary>
+    public class HttpDownloader : ExternalService
     {
-        // Use HttpClient to pull URL to a local file. instead of WebClient
-
         public string SrcURL { get; set; }
-        public string DestPath { get; set; }    // local dest file path.
+        public string DestPath { get; set; }    // local dest physical file path.
+
+        public override string Name => SrcURL;
+        public override string BaseURL => SrcURL;
+        public override string Icon => "<i class='fas fa-sync-alt'></i>";
+
 
         public event Progress2.EventHandler? ProgressEvent;        // Called as the download progresses. Report
 
@@ -28,11 +34,14 @@ namespace DotStd
             DestPath = dstPath;
         }
 
+        /// <summary>
+        /// Get some HTTP/HTTPS URL and put in local file.
+        /// can throw.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns></returns>
         public async Task DownloadFileAsync(HttpClient client)
         {
-            // Get some HTTP/HTTPS URL and put in local file.
-            // can throw.
-
             DirUtil.DirCreateForFile(DestPath);
 
             HttpResponseMessage response = await client.GetAsync(SrcURL);

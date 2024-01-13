@@ -24,7 +24,7 @@ namespace DotStd
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static bool IsNullOrWhiteSpace([NotNullWhen(false)] this object obj)
+        public static bool IsNullOrWhiteSpace([NotNullWhen(false)] this object? obj)
         {
             return obj == null || string.IsNullOrWhiteSpace(obj.ToString());
         }
@@ -50,7 +50,7 @@ namespace DotStd
         /// <returns></returns>
         public static int RoundTo(this int value, int roundTo)
         {
-            return Converter.ToIntRound(value, roundTo);
+            return Converter.RoundTo(value, roundTo);
         }
 
         // string
@@ -107,8 +107,7 @@ namespace DotStd
         /// <returns>A formatted string</returns>
         public static string FormatCurrent(this string format, params object[] parameters)
         {
-            ValidState.ThrowIfNull(format, nameof(format));
-            return string.Format(CultureInfo.CurrentCulture, format, parameters);
+            return string.Format(CultureInfo.CurrentCulture, ValidState.GetNotNull(format, nameof(format)), parameters);
         }
 
         /// <summary>
@@ -119,15 +118,14 @@ namespace DotStd
         /// <returns>A formatter string</returns>
         public static string FormatInvariant(this string format, params object[] parameters)
         {
-            ValidState.ThrowIfNull(format, nameof(format));
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, format, parameters);
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, ValidState.GetNotNull(format, nameof(format)), parameters);
         }
 
         // DateTime
 
         public static bool IsExtremeDate(this DateTime obj)
         {
-            // Is this a basically useless date? NOTE: DateTime is not nullable.
+            // Is this a basically useless/null date? NOTE: DateTime is sometimes not nullable.
             return DateUtil.IsExtremeDate(obj);
         }
 
@@ -138,6 +136,12 @@ namespace DotStd
             return DateUtil.IsExtremeDate(obj.Value);
         }
 
+        /// <summary>
+        /// Round down to time unit.
+        /// </summary>
+        /// <param name="date"></param>
+        /// <param name="roundTicks"></param>
+        /// <returns></returns>
         public static DateTime Trim(this DateTime date, long roundTicks)
         {
             // roundTicks = TimeSpan.TicksPerDay, TimeSpan.TicksPerHour, TimeSpan.TicksPerMinute, etc.
@@ -148,83 +152,80 @@ namespace DotStd
         {
             if (from == null)
                 return TimeSpan.MaxValue;
-
             return TimeNow.Utc - from.Value;
         }
 
         //********************
 
-        public static string ToDtString(this DateTime dt, string? format = null, IFormatProvider? culture = null, string? def = null)
+        /// <summary>
+        /// format DateTime as a string.
+        /// ASSUME timeZone is already accounted for ???
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="format">"M/d/yyyy" or default = 'yyyy-MM-dd' (for ISO 8601)</param>
+        /// <param name="culture">Use format from culture for fancy string formatting.</param>
+        /// <param name="def">use this if its a bad DateTime.</param>
+        /// <returns></returns>
+        public static string ToDtString(this DateTime dt, string? format, IFormatProvider? culture = null, string? def = null)
         {
-            // format DateTime output string as a string.
-            // ASSUME timeZone is already accounted for ???
-            // If this is a bad date just display nothing. 
-            // def = use this if its a bad string.
-            // e.g format = "M/d/yyyy" or default = 'yyyy-MM-dd' (for ISO)
-            // culture = Use format from culture for fancy string formatting.
-
-            if (def == null)
-                def = string.Empty;
-            if (dt.IsExtremeDate())    // Const.dateExtremeMin
-                return def;     // null or "" ??
-            if (format == null)
-                format = DateUtil.kShortDate;       // "yyyy-MM-dd" = ISO
-            if (culture != null)
-                return dt.ToString(format, culture);
-            return dt.ToString(format);
+            return DateUtil.GetDtStr(dt, format, culture, def);
         }
-
-        public static string ToDtTmString(this DateTime dt, IFormatProvider? culture = null)
-        {
-            // Make a long detailed string with date and time. 
-            // culture = fancy and localized. null = ISO
-            // ASSUME timeZone is already accounted for ???
-            if (culture != null)
-                return dt.ToString(culture);
-            return dt.ToString();
-        }
-        public static string ToDtTmString(this DateTime? obj, IFormatProvider? culture = null)
-        {
-            // Make a long detailed string with date and time. 
-            // culture = fancy and localized. null = ISO
-            // ASSUME timeZone is already accounted for ???
-            if (obj == null)
-                return "";
-            return ToDtTmString(obj.Value, culture);
-        }
-
+        /// <summary>
+        /// get Date (DateOnly) as ISO date string. not time. assume timezone is irrelevant.
+        /// like ToShortDateString()/ToString("d") BUT NOT cultural.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         public static string ToDateString(this DateTime dt)
         {
-            // get Date as ISO date string. not time. assume timezone is irrelevant.
-            // like ToShortDateString()/ToString("d") BUT NOT cultural.
-            return ToDtString(dt, DateUtil.kShortDate);
+            return DateUtil.GetDtStr(dt, DateUtil.kISODate);
         }
 
+        /// <summary>
+        /// Make a long detailed string with date and time. 
+        /// ASSUME timeZone is already accounted for ???
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+        public static string ToUTCString(this DateTime dt)
+        {
+            return dt.ToString();
+        }
+
+        /// <summary>
+        /// Encode to a format that JavaScript can deal with.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         public static string ToDateJS(this DateTime dt)
         {
-            // Encode to a format that JavaScript can deal with.
-
-            return $"new Date({dt.Year},{dt.Month-1},{dt.Day})";
-        }
-
-        public static string? ToDateString(this DateTime? obj)
-        {
-            // get Date as ISO date string. not time. assume timezone is irrelevant.
-            if (obj == null)
-                return null;
-            return ToDateString(obj.Value);
+            return $"new Date({dt.Year},{dt.Month - 1},{dt.Day})";
         }
 
         // Extend Nullable<> types
 
+        /// <summary>
+        /// Format some nullable type as a string.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="nullable"></param>
+        /// <param name="format"></param>
+        /// <returns></returns>
         public static string ToStringForm<T>(this Nullable<T> nullable, string format) where T : struct
         {
-            // Format some nullable type as a string.
             return String.Format("{0:" + format + "}", nullable.GetValueOrDefault());
         }
+
+        /// <summary>
+        /// Format some nullable type as a string.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="nullable"></param>
+        /// <param name="format"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
         public static string ToStringForm<T>(this Nullable<T> nullable, string format, string defaultValue) where T : struct
         {
-            // Format some nullable type as a string.
             if (nullable.HasValue)
             {
                 return String.Format("{0:" + format + "}", nullable.Value);
@@ -259,14 +260,20 @@ namespace DotStd
                 .ToList();
         }
 
+        /// <summary>
+        /// Used for dynamic filtering. Case independent string matching.
+        /// LIKE Where(s => s.Field<string>(LookupColumn).ToUpper().StartsWith(filter))
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="propertyName"></param>
+        /// <param name="filterStart"></param>
+        /// <returns></returns>
         public static IEnumerable<T> WhereXStartsWith<T>(this IEnumerable<T> source, string propertyName, string filterStart)
         {
-            // Used for dynamic filtering. Case independant string matching.
-            // LIKE Where(s => s.Field<string>(LookupColumn).ToUpper().StartsWith(filter))
             if (!source.Any() || string.IsNullOrEmpty(propertyName))
                 return source;
-            PropertyInfo? propertyInfo = typeof(T).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-            ValidState.ThrowIfNull(propertyInfo, nameof(propertyInfo));
+            PropertyInfo propertyInfo = ValidState.GetNotNull(typeof(T).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance), nameof(propertyInfo));
             return source.Where(e => propertyInfo.GetValue(e, null)!.ToString()!.ToUpper().StartsWith(filterStart));
         }
 

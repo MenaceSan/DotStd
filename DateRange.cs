@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -61,73 +62,38 @@ namespace DotStd
         /// </summary>
         public DateTime End { get; set; }
 
-        public bool IsValidRange
-        {
-            // Is date range valid? Not extreme or backwards.
-            // NOTE: Empty range is valid.
-            get
-            {
-                return !this.Start.IsExtremeDate() && !this.End.IsExtremeDate() && this.Start <= this.End;
-            }
-        }
+        /// <summary>
+        /// Is date range valid? Not extreme or backwards.
+        /// NOTE: Empty range is valid.
+        /// </summary>
+        public bool IsValidRange => !this.Start.IsExtremeDate() && !this.End.IsExtremeDate() && this.Start <= this.End;
 
         /// <summary>
         /// Gets the number of ticks in the range.
         /// </summary>
-        public long Ticks
-        {
-            get
-            {
-                return this.End.Ticks - this.Start.Ticks;
-            }
-        }
+        public long Ticks => this.End.Ticks - this.Start.Ticks;
 
         /// <summary>
         /// Gets TimeSpan for the range.
         /// NOTE: Does not check IsExtremeDate().
         /// </summary>
-        public TimeSpan TimeSpan
-        {
-            get
-            {
-                return this.End - this.Start;
-            }
-        }
+        public TimeSpan TimeSpan => this.End - this.Start;
 
         /// <summary>
         /// Gets the range of time only if the range is valid (e.g. Start less than End) else return 0.
         /// </summary>
         /// <returns>Integer minutes of time span. If span is not valid return 0.</returns>
-        public int TotalMinutesValid
-        {
-            get
-            {
-                if (!IsValidRange)
-                    return 0;   // NOT valid range.
-                return (int)this.TimeSpan.TotalMinutes;
-            }
-        }
+        public int TotalMinutesValid => IsValidRange ? ((int)this.TimeSpan.TotalMinutes) : 0;  // NOT valid range.
 
-        public bool IsEmptyTime
-        {
-            // Is this time range empty?
-            get
-            {
-                if (!IsValidRange)
-                    return true;
-                return this.Start >= this.End;
-            }
-        }
-        public bool IsEmptyDates
-        {
-            // Is empty day range? e.g. end on same day = 1 day.
-            get
-            {
-                if (!IsValidRange)
-                    return true;
-                return this.Start.Date > this.End.Date;
-            }
-        }
+        /// <summary>
+        /// Is this time range empty?
+        /// </summary>
+        public bool IsEmptyTime => IsValidRange ? (this.Start >= this.End) : true;
+
+        /// <summary>
+        /// Is empty day range? e.g. end on same day = 1 day.
+        /// </summary>
+        public bool IsEmptyDates => IsValidRange ? (this.Start.Date > this.End.Date) : true;
 
         /// <summary>
         /// Expand / union the range of time to include this date time.
@@ -244,11 +210,7 @@ namespace DotStd
         /// </returns>
         public override bool Equals(object? obj)
         {
-            if (obj is DateRange)
-            {
-                return Equals((DateRange)obj);
-            }
-            return false;
+            return obj is DateRange range && Equals(range);
         }
 
         /// <summary>
@@ -288,19 +250,25 @@ namespace DotStd
             return Start.GetHashCode() ^ End.GetHashCode();
         }
 
+        /// <summary>
+        /// Create range aligned to week weekend. Inclusive.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="weekend"></param>
         public void SetDatesForWeekEnd(DateTime dt, DayOfWeek weekend)
         {
-            // Create range aligned to week weekend. Inclusive.
             DateTime d2 = DateUtil.GetDateOfWeekDayNext(dt, weekend);
             Start = d2.AddDays(-6).Date;
             End = d2.Date;
         }
 
+        /// <summary>
+        /// Create a week of inclusive dates.
+        /// </summary>
+        /// <param name="dt">start or end of week</param>
+        /// <param name="isStartDate_"></param>
         public void SetDatesForWeek(DateTime dt, bool isStartDate_)
         {
-            // Create a week of inclusive dates.
-            /// <param name="dt">start or end of week</param>
-
             dt = dt.Date;
             if (isStartDate_)
             {
@@ -383,9 +351,12 @@ namespace DotStd
 
         //****************
 
+        /// <summary>
+        /// create empty range
+        /// </summary>
+        /// <param name="dt"></param>
         public DateRange(DateTime dt)
         {
-            // create empty range
             Start = dt;
             End = dt;
         }

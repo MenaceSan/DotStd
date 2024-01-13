@@ -17,7 +17,7 @@ namespace DotStd
 
         // free US email gateways (to SMS) we know about.
         [Description("AT&T")]
-        ATT,             
+        ATT,
         Boost,
         Cricket,
         Sprint,
@@ -26,14 +26,18 @@ namespace DotStd
         [Description("US-Cellular")]
         USCellular,
         Verizon,
+
+        // "vmobl.com"
         [Description("Virgin Mobile")]
         VirginMobile,
+
+        // "tmomail.net"
+        Mint,   
 
         // H2O 
         // Metro
         // Ting
         // TracPhone
-        // Mint
 
     }
 
@@ -46,43 +50,33 @@ namespace DotStd
 
     /// <summary>
     /// Send messages to a phone number.
+    /// Use this for 2 factor auth (2fa). (can also use email)
     /// </summary>
-    public class SmsGateway : IMessageSender<SmsMessage>
+    public class SmsGateway : IMessageSender<SmsMessage>    // : ExternalService
     {
-        // 
-        // Use this for 2 factor auth (2fa). (can also use email)
-
-        public static readonly Dictionary<SmsCarrierId, string> _dicTo = new Dictionary<SmsCarrierId, string>
+        /// <summary>
+        /// Carrier SMS email gateways. https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
+        /// </summary>
+        public static readonly Dictionary<SmsCarrierId, string> _dicEmail = new()
         {
-            { SmsCarrierId.ATT,  "{0}@txt.att.net"},
-            { SmsCarrierId.Boost,  "{0}@smsmyboostmobile.com"},
-            { SmsCarrierId.Cricket,  "{0}@sms.cricketwireless.net"},
-            { SmsCarrierId.Sprint,  "{0}@messaging.sprintpcs.com"},
-            { SmsCarrierId.TMobile,  "{0}@tmomail.net"},
-            { SmsCarrierId.USCellular,  "{0}@email.uscc.net"},
-            { SmsCarrierId.Verizon,  "{0}@vtext.com"},
-            { SmsCarrierId.VirginMobile,  "{0}@vmobl.com"},
+            { SmsCarrierId.ATT,  "txt.att.net"},
+            { SmsCarrierId.Boost,  "smsmyboostmobile.com"},
+            { SmsCarrierId.Cricket,  "sms.cricketwireless.net"},
+            { SmsCarrierId.Sprint,  "messaging.sprintpcs.com"},
+            { SmsCarrierId.TMobile,  "tmomail.net"},
+            { SmsCarrierId.USCellular,  "email.uscc.net"},
+            { SmsCarrierId.Verizon,  "vtext.com"},
+            { SmsCarrierId.VirginMobile,  "vmobl.com"},
+            { SmsCarrierId.Mint, "tmomail.net"},
         };
 
-        private EmailGateway _mailGateway;
-        private string _mailFrom;       // "noreply@menasoft.com"
+        private readonly EmailSender _mailGateway;
+        private readonly string _mailFrom;       // "noreply@menasoft.com"
 
-        public SmsGateway(EmailGateway mailGateway, string mailFrom)
+        public SmsGateway(EmailSender mailGateway, string mailFrom)
         {
             _mailGateway = mailGateway;
             _mailFrom = mailFrom;
-        }
-
-        public static string? GetEmailForm(SmsCarrierId carrierId)
-        {
-            // Get email gateway for SMS by provider. for Format("{0}",number).
-            // https://www.lifewire.com/sms-gateway-from-email-to-sms-text-message-2495456
-
-            if (_dicTo.TryGetValue(carrierId, out string? formTo))
-            {
-                return formTo;
-            }
-            return null;
         }
 
         /// <summary>
@@ -102,7 +96,7 @@ namespace DotStd
             // MSG: stuff in body. (optional)
             // Any responses will be back to the sender email.
 
-            if (!_dicTo.TryGetValue(carrierId, out string? formTo))
+            if (!_dicEmail.TryGetValue(carrierId, out string? carrierEmail))
             {
                 return Task.FromResult("Unknown carrier for free SMS sending.");
             }
@@ -112,7 +106,7 @@ namespace DotStd
                 Subject = subject,
                 Body = body ?? string.Empty,
             };
-            msg.AddMailTo(string.Format(formTo, toNumber));
+            msg.AddMailTo(toNumber + "@" + carrierEmail);
 
             return _mailGateway.SendAsync(msg);
         }

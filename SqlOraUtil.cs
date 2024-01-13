@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// SQL features specific to Oracle.
+    /// </summary>
     public static class SqlOraUtil
     {
-        // SQL features specific to Oracle.
-
         public enum DbType
         {
             // Stub for Oracle support.

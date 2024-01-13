@@ -60,24 +60,22 @@ namespace DotStd
             var fi = new FileInfo(assembly.Location);
             var buffer = new byte[2048];
 
-            using (FileStream stream = fi.OpenRead())
+            using FileStream stream = fi.OpenRead();
+            await stream.ReadAsync(buffer, 0, 2048);   // Read first block.
+
+            int offset = BitConverter.ToInt32(buffer, kPeHeaderOffset);    // start of PE
+            int peSig = BitConverter.ToInt32(buffer, offset);   // Signature 0x50450000
+
+            int secondsSince1970 = BitConverter.ToInt32(buffer, offset + kLinkerTimestampOffset);
+            if (secondsSince1970 <= 0) // .NET CORE has junk value. secondsSince1970 == -1551948072
             {
-                await stream.ReadAsync(buffer, 0, 2048);   // Read first block.
-
-                int offset = BitConverter.ToInt32(buffer, kPeHeaderOffset);    // start of PE
-                int peSig = BitConverter.ToInt32(buffer, offset);   // Signature 0x50450000
-
-                int secondsSince1970 = BitConverter.ToInt32(buffer, offset + kLinkerTimestampOffset);
-                if (secondsSince1970 <= 0) // .NET CORE has junk value. secondsSince1970 == -1551948072
-                {
-                    // Just get the date on the file.
-                    return fi.CreationTime;
-                }
-
-                DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
-                DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, target ?? TimeZoneInfo.Local);
-                return localTime;
+                // Just get the date on the file.
+                return fi.CreationTime;
             }
+
+            DateTime linkTimeUtc = DateUtil.kUnixEpoch.AddSeconds(secondsSince1970);
+            DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(linkTimeUtc, target ?? TimeZoneInfo.Local);
+            return localTime;
         }
     }
 }

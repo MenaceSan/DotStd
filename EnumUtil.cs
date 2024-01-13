@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DotStd
@@ -122,12 +123,7 @@ namespace DotStd
         {
             // similar to Html.GetEnumSelectList<Type>()
 
-            ValidState.ThrowIfNull(enumType, enumType.Name);
-
-            if (!enumType.IsEnum)
-            {
-                throw new ArgumentException(enumType.Name);
-            }
+            ValidState.ThrowIf(!enumType.IsEnum, enumType.Name);
 
             var list = new List<TupleIdValue>();
             Array enumValues = Enum.GetValues(enumType);
@@ -140,18 +136,16 @@ namespace DotStd
             return list;
         }
 
-        public static bool IsMatch<T>(string? value) where T : struct  // where T : System.Enum
+        public static bool IsMatch<T>([NotNullWhen(true)] string? value) where T : struct  // where T : System.Enum
         {
-            T result;
-            return Enum.TryParse<T>(value, true, out result);
+            return Enum.TryParse<T>(value, true, out T result);
         }
 
         public static T ParseEnum<T>(string value) where T : struct  // where T : System.Enum
         {
             // convert a string to enum T if possible.
             // look up a string and compare it to the declared enum values.
-            T result;
-            if (Enum.TryParse<T>(value, true, out result))  // ignore case.
+            if (Enum.TryParse<T>(value, true, out T result))  // ignore case.
                 return result;
             return default(T);  // always 0
         }
@@ -168,7 +162,7 @@ namespace DotStd
             try
             {
                 // is numeric ?
-                // Try desc?
+                // TODO Try desc?
                 return (T)Enum.Parse(typeof(T), value, true);   // ignore case.
             }
             catch

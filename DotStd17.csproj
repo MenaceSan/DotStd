@@ -3,7 +3,7 @@
   <Import Project="$(ProjectDir)..\Version.targets" Condition="exists('$(ProjectDir)..\Version.targets')" />
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>DotStd</RootNamespace>
     <AssemblyName>DotStd</AssemblyName>
     <Version>1.1.6</Version>
@@ -21,10 +21,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
@@ -41,7 +39,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="SubWCRev.exe &quot;$(SolutionDir).&quot; &quot;$(SolutionDir)Version.targets.template&quot; &quot;$(SolutionDir)Version.targets&quot;" />
+    <Exec Command="SubWCRev.exe &quot;$(ProjectDir)..&quot; &quot;$(ProjectDir)../Version.targets.template&quot; &quot;$(ProjectDir)../Version.targets&quot;" />
   </Target>
   
 </Project>

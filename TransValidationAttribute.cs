@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Try to translate the validation error messages based on some unknown context.
+    /// e.g. make them appropriate to the HttpContext that is current for the thread.
+    /// </summary>
     public static class TransValidationAttribute
     {
-        // Try to translate the validation error messages based on some unknown context.
-        // e.g. make them appropriate to the HttpContext that is current for the thread.
-
         public static Func<ITranslatorProvider1?>? _GetTranslator;     // My application should provide this. singleton.
 
         public static ITranslatorProvider1? GetTranslatorProvider()

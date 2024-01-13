@@ -6,12 +6,14 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// String and char util functions.
+    /// </summary>
     public static class StringUtil
     {
-        // String and char util functions.
-        // ToByteArray = byte[] = System.Text.Encoding.Default.GetBytes(sIn);
-
         public const string _NoErrorMsg = "";  // "" = Success = no error. null = did nothing.
+
+        // ToByteArray = byte[] = System.Text.Encoding.Default.GetBytes(sIn);
 
         public static int CompareNoCase(this string s1, string s2)
         {
@@ -19,38 +21,58 @@ namespace DotStd
             return string.Compare(s1, s2, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// return one string or the other. https://en.wikipedia.org/wiki/IIf
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <param name="ifTrue"></param>
+        /// <param name="ifFalse"></param>
+        /// <returns></returns>
         public static string IIf(bool expr, string ifTrue, string ifFalse = "")
         {
-            // https://en.wikipedia.org/wiki/IIf
             if (expr)
                 return ifTrue;
             return ifFalse;
         }
 
+        /// <summary>
+        /// is this char a basic number? like Regex regexDigit = new Regex("[^0-9]");
+        /// NOT extended ASCII, 1/2 etc.
+        /// </summary>
+        /// <param name="ch"></param>
+        /// <returns></returns>
         public static bool IsDigit1(char ch)
         {
-            // is this char a basic number? like Regex regexDigit = new Regex("[^0-9]");
-            // NOT extended ASCII, 1/2 etc.
 #if false   // false true 
             return ch >= '0' && ch <= '9';
 #else
             return char.IsDigit(ch);   // NOT char.IsNumber
 #endif
         }
+
+        /// <summary>
+        /// is this char basic upper case? like new Regex("[^A-Z]");
+        /// NOT extended ASCII. Latin only.
+        /// </summary>
+        /// <param name="ch"></param>
+        /// <returns></returns>
         public static bool IsUpper1(char ch)
         {
-            // is this char basic upper case? like new Regex("[^A-Z]");
-            // NOT extended ASCII. Latin only.
 #if true   // false true 
             return (ch >= 'A' && ch <= 'Z');
 #else
             return char.IsUpper(ch);
 #endif
         }
+
+        /// <summary>
+        /// is this char basic lower case? like new Regex("[^a-z]");
+        /// NOT extended ASCII. Latin only.
+        /// </summary>
+        /// <param name="ch"></param>
+        /// <returns></returns>
         public static bool IsLower1(char ch)
         {
-            // is this char basic lower case? like new Regex("[^a-z]");
-            // NOT extended ASCII. Latin only.
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z');
 #else
@@ -58,10 +80,15 @@ namespace DotStd
 #endif
         }
 
+        /// <summary>
+        /// Is Alpha?
+        /// NOT extended ASCII. Latin only.
+        /// new Regex("[^a-zA-Z]");
+        /// </summary>
+        /// <param name="ch"></param>
+        /// <returns></returns>
         public static bool IsAlpha1(char ch)
         {
-            // NOT extended ASCII. Latin only.
-            // new Regex("[^a-zA-Z]");
 #if true   // false true 
             return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 #else
@@ -80,11 +107,11 @@ namespace DotStd
 #endif
         }
 
-        public const string Vowels = "aeiouAEIOU";
+        public const string kVowels = "aeiouAEIOU";
 
         public static bool IsVowel(char ch)
         {
-            return Vowels.IndexOf(ch) >= 0;
+            return kVowels.Contains(ch);
         }
 
         public static bool HasUpperCase([NotNullWhen(true)] string? str)
@@ -113,7 +140,7 @@ namespace DotStd
             return str.All(c => IsDigit1(c));
         }
 
-        static readonly Lazy<Regex> _regexNum2 = new Lazy<Regex>(() => new Regex(@"^\s*\-?\d+(\.\d+)?\s*$"));
+        static readonly Lazy<Regex> _regexNum2 = new(() => new Regex(@"^\s*\-?\d+(\.\d+)?\s*$"));
         public static bool IsNumeric2([NotNullWhen(true)] string? str)
         {
             // Far more forgiving IsNumeric(). allow leading spaces. points. signs.
@@ -173,7 +200,7 @@ namespace DotStd
             return System.Text.RegularExpressions.Regex.Replace(sValue, "[^A-Za-z0-9]", "");
         }
 
-        public static bool IsWildcardMatch(string? wildcardPattern, string subject)
+        public static bool IsWildcardMatch([NotNullWhen(true)] string? wildcardPattern, string subject)
         {
             // Simple wildcard match
             // https://www.hiimray.co.uk/2020/04/18/implementing-simple-wildcard-string-matching-using-regular-expressions/474
@@ -211,10 +238,14 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// trim a string for whitespace but ignore null.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         [return: NotNullIfNotNull("s")]
         public static string? TrimN(string? s)
         {
-            // trim a string for whitespace but ignore null.
             if (s == null)
                 return s;
             return s.Trim();
@@ -250,10 +281,10 @@ namespace DotStd
             return count;
         }
 
+        /// Get a substring but never throw.
         [return: NotNullIfNotNull("s")]
         public static string? SubSafe(string? s, int i, int lenTake = short.MaxValue)
         {
-            // Substring that Will NOT throw.
             if (s == null)
                 return null;
             if (i < 0)
@@ -338,6 +369,5 @@ namespace DotStd
             // Right aligned. Add leading zeros
             return FieldRight(s, size, '0');
         }
-
     }
 }

@@ -1,68 +1,85 @@
-﻿using Newtonsoft.Json;
+﻿// using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Translate from some application NATIVE language text for a specific user/consumer who wants LangId.
+    /// Assume it ignores and preserves punctuation, spaces and place holders like {0} (proper nouns are not translated)
+    /// ASSUME this does not throw an exception. We can safely call this in non-async code.
+    /// related to selected CultureInfo.  // Sort of related to TimeZone ? Not really.
+    /// </summary>
     public interface ITranslatorProvider1
     {
-        // Translate from some system NATIVE language text for a specific user/consumer who wants LangId.
-        // Assume it ignores and preserves punctuation, spaces and place holders like {0}
-        // ASSUME this does not throw an exception. We can safely call this in non-async code.
-        // related to selected CultureInfo.  // Sort of related to TimeZone ? Not really.
-
-        LanguageId LangId { get; }      // Destination language.
-
+        LanguageId LangId { get; }      // Destination language. Related to CultureInfo
         Task<string> TranslateAsync(string fromText);
-
-        // TODO CultureInfo GetCulture();
     }
 
     /// <summary>
-    /// Translate from some source language to some/multiple target language.
+    /// Translate from some source language to some target language.
     /// May use underlying cache.
     /// Ignored/filtered stuff : <XML> may be filtered out, {0} MUST NOT be filtered/altered. 
     /// Similar to ASP Core IStringLocalizer
     /// </summary>
     public interface ITranslatorProvider
     {
-        LanguageId FromLangId { get; }
+        LanguageId FromLangId { get; }  // Source Language for text.
 
-        // Select FromLangId
+        /// Select FromLangId
         bool SetFromLanguage(LanguageId fromLang);
 
-        // What languages are available to translate to? LanguageId as string, Name of language in fromLang.
+        /// <summary>
+        /// What languages are available to translate to (given FromLangId)? LanguageId as string, Name of language in fromLang.
+        /// </summary>
+        /// <returns></returns>
         List<TupleKeyValue> GetToLanguages();
 
-        // Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
+        /// <summary>
+        /// Translate some text. Assume it ignores and preserves punctuation, spaces and place holders like {0}
+        /// </summary>
+        /// <param name="fromText"></param>
+        /// <param name="toLang"></param>
+        /// <returns></returns>
         Task<string> TranslateTextAsync(string fromText, LanguageId toLang = LanguageId.native);
 
-        // Translate a batch of texts.
+        /// <summary>
+        /// Translate a batch of texts.
+        /// </summary>
+        /// <param name="fromTexts"></param>
+        /// <param name="toLang"></param>
+        /// <returns></returns>
         Task<List<string>> TranslateBatchAsync(List<string> fromTexts, LanguageId toLang = LanguageId.native);
     }
 
+    /// <summary>
+    /// Base implementation of a translation engine. provider
+    /// Similar to ASP IStringLocalizer<AboutController> _localizer;
+    /// https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.2
+    /// Use the IHtmlLocalizer<T> implementation for resources that contain HTML.
+    /// NOTE: check the "Accept-Language" header on HTTP messages ?
+    /// </summary>
     public abstract class TranslatorBase : ITranslatorProvider
     {
-        // Base implementation of a translation engine. provider
-        // Similar to ASP IStringLocalizer<AboutController> _localizer;
-        // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.2
-        // Use the IHtmlLocalizer<T> implementation for resources that contain HTML.
-        // NOTE: we might want to check the "Accept-Language" header on HTTP messages ?
-
         public const int kHashCode0 = 0;    // placeholder for hash not yet calculated.
 
         protected LanguageId _fromLang = LanguageId.en;           // English is default source language.
 
+        /// <summary>
+        /// create a hash code for the source string. 
+        /// Try to make this as fast as possible on longer strings.
+        /// use 64 bits for lower hash collisions. 
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static ulong GetHashCode(string s)
         {
-            // create a hash code for the source string. 
-            // Try to make this as fast as possible on longer strings.
-            // use 64 bits for lower hash collisions. 
             return HashUtil.GetKnuthHash(s);
         }
 
@@ -167,7 +184,7 @@ namespace DotStd
             return new List<TupleKeyValue> { new TupleKeyValue(LanguageId.test) };
         }
 
-        private char TranslateLetter(char ch)
+        private static char TranslateLetter(char ch)
         {
             for (int i = 0; i < _pairs.Length; i++)
             {
@@ -234,38 +251,40 @@ namespace DotStd
         }
     }
 
-    public class TranslatorGoogleRest : TranslatorBase
+    /// <summary>
+    /// Alternative Wrapper for the Google translate service. 
+    /// NOTE: You will only be allowed to translate about 100 words per hour using the free API. If you abuse this, Google API will return a 429 (Too many requests) error.
+    /// NOTE: Too expensive to use for real!
+    /// Assume any caching happens at a higher level.
+    /// Rest = Bypass Google API  "Google.Cloud.Translation.V2" NuGet library.
+    /// Translator Will ignore embedded HTML tags and {0}?
+    /// </summary>
+    public class TranslatorGoogleRest : TranslatorBase  // ExternalService
     {
-        // Wrap the Google translate service.
-        // Assume any caching happens at a higher level.
-        // Rest = Bypass Google  "Google.Cloud.Translation.V2" NuGet library.
-        // Translator Will ignore embedded HTML tags?
-
         // https://codelabs.developers.google.com/codelabs/cloud-translation-csharp/index.html?index=..%2F..index#5
         // https://stackoverflow.com/questions/2246017/using-google-translate-in-c-sharp
         // https://cloud.google.com/translate/
         // https://cloud.google.com/translate/docs/translating-text
 
-        // You will only be allowed to translate about 100 words per hour using the free API. If you abuse this, Google API will return a 429 (Too many requests) error.
-
         public string? ApiKey; // send this to Google for commercial usage.
+
+        static readonly List<TupleKeyValue> _Langs = new()
+        {
+            new TupleKeyValue(LanguageId.ru),
+            new TupleKeyValue(LanguageId.de),
+            new TupleKeyValue(LanguageId.es),
+            new TupleKeyValue(LanguageId.fr),
+            new TupleKeyValue(LanguageId.ja),
+            new TupleKeyValue(LanguageId.pt),
+            new TupleKeyValue(LanguageId.it),
+            new TupleKeyValue(LanguageId.fa),
+        };
 
         public override List<TupleKeyValue> GetToLanguages()
         {
             // What languages does this provider support ?
             // TODO support this properly ?? ask Google for the list.
-            var langs = new List<TupleKeyValue>
-            {
-                new TupleKeyValue(LanguageId.ru),
-                new TupleKeyValue(LanguageId.de),
-                new TupleKeyValue(LanguageId.es),
-                new TupleKeyValue(LanguageId.fr),
-                new TupleKeyValue(LanguageId.ja),
-                new TupleKeyValue(LanguageId.pt),
-                new TupleKeyValue(LanguageId.it),
-                new TupleKeyValue(LanguageId.fa),
-            };
-            return langs;
+            return _Langs;
         }
 
         public async Task<string> TranslateSingleAsync(string fromText, LanguageId toLang = LanguageId.native)
@@ -280,23 +299,21 @@ namespace DotStd
             string fromTextEnc = WebUtility.UrlEncode(fromText);
             string url = $"{baseUrl}?client=gtx&sl={_fromLang}&tl={toLang}&dt=t&q={fromTextEnc}";
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            if (!string.IsNullOrWhiteSpace(ApiKey))
             {
-                if (!string.IsNullOrWhiteSpace(ApiKey))
-                {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
-                    url += "&key=" + ApiKey;
-                }
-
-                byte[] bytesResp = await client.GetByteArrayAsync(url);
-                string jsonResp = Encoding.UTF8.GetString(bytesResp, 0, bytesResp.Length);  // read System.Text.Encoding.UTF8
-
-                // e.g. jsonResp = [[["Hallo","Hello",null,null,1]],null,"en"]
-                const int kOffset = 4;
-
-                string toText = jsonResp.Substring(kOffset, jsonResp.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
-                return toText;
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                url += "&key=" + ApiKey;
             }
+
+            byte[] bytesResp = await client.GetByteArrayAsync(url);
+            string jsonResp = Encoding.UTF8.GetString(bytesResp, 0, bytesResp.Length);  // read System.Text.Encoding.UTF8
+
+            // e.g. jsonResp = [[["Hallo","Hello",null,null,1]],null,"en"]
+            const int kOffset = 4;
+
+            string toText = jsonResp.Substring(kOffset, jsonResp.IndexOf("\"", kOffset, StringComparison.Ordinal) - kOffset);
+            return toText;
         }
 
         const string kUrlGoogTrans = "https://translation.googleapis.com/language/translate/v2";
@@ -314,31 +331,34 @@ namespace DotStd
                 return fromEnc;
 
             string url = kUrlGoogTrans;
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            if (!string.IsNullOrWhiteSpace(ApiKey))
             {
-                if (!string.IsNullOrWhiteSpace(ApiKey))
-                {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
-                    url += "?key=" + ApiKey;
-                }
-
-                string json = JsonConvert.SerializeObject(new { q = fromEnc, source = LanguageId.en.ToString(), target = toLang.ToString() });        // format = "text"
-                var content = new StringContent(json, Encoding.UTF8, MimeId.json.ToDescription());
-
-                HttpResponseMessage resp = await client.PostAsync(url, content);
-                resp.EnsureSuccessStatusCode();
-
-                string respStr = await resp.Content.ReadAsStringAsync();
-                dynamic? respObj = JsonConvert.DeserializeObject(respStr);
-                if (respObj==null)
-                {
-                    return "?";
-                }
-
-                // detectedSourceLanguage
-                string toText = respObj.data.translations[0].translatedText;    // this will throw if malformed?!
-                return toText;
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HttpUtil.kAuthBearer, ApiKey);
+                url += "?key=" + ApiKey;
             }
+
+            var req = new { q = fromEnc, source = LanguageId.en.ToString(), target = toLang.ToString() }; // format = "text"
+            string json = JsonSerializer.Serialize(req);
+            // string json = JsonConvert.SerializeObject(req);        // NewtonSoft
+
+            var content = new StringContent(json, Encoding.UTF8, MimeId.json.ToDescription());
+
+            HttpResponseMessage resp = await client.PostAsync(url, content);
+            resp.EnsureSuccessStatusCode();
+
+            string respStr = await resp.Content.ReadAsStringAsync();
+            // dynamic? respObj = JsonConvert.DeserializeObject(respStr); // NewtonSoft
+            JsonElement respObj = JsonSerializer.Deserialize<JsonElement>(respStr);
+            if (respObj.ValueKind == JsonValueKind.Null || respObj.ValueKind == JsonValueKind.Undefined)
+            {
+                return ValidState.kInvalidName;
+            }
+
+            // detectedSourceLanguage
+            var trans = respObj.GetProperty("data").GetProperty("translations").EnumerateArray();
+            string toText = trans.Current.GetProperty("translatedText").ToString();    // this will throw if malformed?!
+            return toText;
         }
 
         /// <summary>
@@ -359,12 +379,12 @@ namespace DotStd
             }
             catch
             {
-                return fromText;    // just leave untransalted
+                return fromText;    // just leave untranslated
             }
         }
 
         /// <summary>
-        /// translate a batch of texts.
+        /// translate a batch of texts. No Cache.
         /// </summary>
         /// <param name="fromTexts"></param>
         /// <param name="toLang"></param>
@@ -386,21 +406,24 @@ namespace DotStd
                 }
 
                 object req = new { q = fromTexts, target = toLang.ToString() };
-                string json = JsonConvert.SerializeObject(req);
+                // string json = JsonConvert.SerializeObject(req);   // NewtonSoft
+                string json = JsonSerializer.Serialize(req);
                 var content = new StringContent(json, Encoding.UTF8, MimeId.json.ToDescription());
 
                 HttpResponseMessage resp = await client.PostAsync(url, content);
                 resp.EnsureSuccessStatusCode();
 
                 string respStr = await resp.Content.ReadAsStringAsync();
-                dynamic? respObj = JsonConvert.DeserializeObject(respStr);
+                // dynamic? respObj = JsonConvert.DeserializeObject(respStr);  // NewtonSoft
+                JsonElement respObj = JsonSerializer.Deserialize<JsonElement>(respStr);
 
                 // detectedSourceLanguage
-                if (respObj != null)
+                if (respObj.ValueKind != JsonValueKind.Null && respObj.ValueKind != JsonValueKind.Undefined)
                 {
-                    foreach (dynamic tran in respObj.data.translations)
+                    var trans = respObj.GetProperty("data").GetProperty("translations").EnumerateArray();
+                    foreach (JsonElement tran in trans)
                     {
-                        lstResp.Add(tran.translatedText);
+                        lstResp.Add(tran.GetProperty("translatedText").ToString());
                     }
                 }
             }

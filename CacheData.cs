@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
@@ -11,13 +10,13 @@ namespace DotStd
     /// Manage a process shared (Singleton) cache, prefix keys by type.
     /// needs NuGet for Caching Support.
     /// based on IMemoryCache for ASP .NET Core.
-    /// like the OLD .NET MemoryCache.Default. 
+    /// like the OLD .NET MemoryCache.Default.
+    /// Cache for many types of objects.
     /// M$ discourages using multiple Caches for typed caches. but regions are not supported so delete by type is not supported natively.
     /// https://stackoverflow.com/questions/49176244/asp-net-core-clear-cache-from-imemorycache-set-by-set-method-of-cacheextensions/49425102#49425102
     /// Similar to https://github.com/alastairtree/LazyCache?WT.mc_id=-blog-scottha
     /// </summary>
-
-    public static class CacheData
+    public static class CacheData   // Singleton
     {
         public const string kSep = "."; // name separator for grouping. similar to unsupported MemoryCache 'regions'
         public const char kSepChar = '.'; // name separator for grouping. similar to unsupported MemoryCache 'regions'
@@ -25,13 +24,15 @@ namespace DotStd
         public const int kSecond = 1;       // multiplier for seconds. for debug.
 
         private static IMemoryCache? _memoryCache;       // my global/shared singleton instance of the Cache.
-        private static SortedSet<string> _cacheKeys = new SortedSet<string>();   // dupe list of keys in _memoryCache. manual make thread safe.
+        private static SortedSet<string> _cacheKeys = new();   // dupe list of keys in _memoryCache. manual make thread safe.
 
+        /// <summary>
+        /// Set implementation of the cache.
+        /// maybe Microsoft.Extensions.Caching.Memory.IMemoryCache else default.
+        /// </summary>
+        /// <param name="memoryCache">my global instance of the Cache.</param>
         public static void Init(IMemoryCache? memoryCache)
         {
-            // set memoryCache = my global instance of the Cache.
-            //  maybe Microsoft.Extensions.Caching.Memory.IMemoryCache else default.
-
             if (_memoryCache != null)
             {
                 if (memoryCache == null)
@@ -64,26 +65,30 @@ namespace DotStd
             return hashCode;
         }
 
+        /// <summary>
+        /// Make a hashcode from args.
+        /// </summary>
+        /// <param name="argsList"></param>
+        /// <returns></returns>
         public static string MakeKeyArgsHash(params object[] argsList)
         {
-            // Make hashcode from args.
             return MakeHashCode(argsList).ToString();
         }
 
         /// <summary>
         /// Memory cache uses this callback PostEvictionDelegate => its gone.
         /// </summary>
-        /// <param name="cacheKey">might be string or int ?</param>
+        /// <param name="key">cacheKey might be string or int ?</param>
         /// <param name="value"></param>
         /// <param name="reason"></param>
         /// <param name="state"></param>
-        private static void PostEvictionCallback(object cacheKey, object value, EvictionReason reason, object state)
+        private static void PostEvictionCallback(object key, object? value, EvictionReason reason, object? state)
         {
             if (reason != EvictionReason.Replaced)
             {
                 lock (_cacheKeys)
                 {
-                    _cacheKeys.Remove(cacheKey.ToString() ?? string.Empty);
+                    _cacheKeys.Remove(key.ToString() ?? string.Empty);
                 }
             }
         }
@@ -216,13 +221,15 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// Force clear the cache for some objects of a type. (e.g. prefixed with key type name)
+        /// https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
+        /// BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
+        /// Not to be used with MakeHashCode()/MakeKeyArgsHash()
+        /// </summary>
+        /// <param name="cacheKeyPrefix"></param>
         public static void ClearKeyPrefix(string cacheKeyPrefix)
         {
-            // Force clear the cache for some objects of a type. (e.g. prefixed with key type name)
-            // https://stackoverflow.com/questions/9003656/memorycache-with-regions-support
-            // BETTER ? https://stackoverflow.com/questions/4183270/how-to-clear-memorycache/22388943#22388943
-            // Not to be used with MakeHashCode()/MakeKeyArgsHash()
-
             if (string.IsNullOrWhiteSpace(cacheKeyPrefix))
             {
                 // all. like cache.Trim(100);
@@ -243,7 +250,7 @@ namespace DotStd
     }
 
     /// <summary>
-    /// A cache with a unique type prefix name.
+    /// A cache with a unique type prefix name. uses global cache (CacheData)
     /// </summary>
     /// <typeparam name="T"></typeparam>    
     public class CacheNameT<T> where T : class // : CacheData
@@ -254,22 +261,27 @@ namespace DotStd
         {
             _TypePrefix = typePrefix;
         }
+
+        /// <summary>
+        /// default = just use the type name as prefix.
+        /// </summary>
         public CacheNameT()
         {
-            // just use the type name.
             _TypePrefix = typeof(T).Name;
         }
     }
 
     /// <summary>
-    /// Cache a singleton based on type. _TN = typeof(T).Name
+    /// Cache a singleton based on type. _TypePrefix = typeof(T).Name
     /// </summar>
     public class CacheSingleT<T> : CacheNameT<T> where T : class
     {
+        /// <summary>
+        /// Get singleton for type T. Instance().
+        /// </summary>
+        /// <returns>null = may need to lazy load it.</returns>
         public T? Get()
         {
-            // Get singleton for type T. Instance().
-            // null = may need to lazy load it.
             return (T?)CacheData.Get(_TypePrefix);
         }
         public void Set(T obj, int decaySec = 60 * CacheData.kSecond)
@@ -289,7 +301,7 @@ namespace DotStd
     }
 
     /// <summary>
-    /// Cache objects of type T where the key is an int.
+    /// Cache objects of type T where the key is an int. uses global cache (CacheData)
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class CacheIntT<T> : CacheNameT<T> where T : class // : CacheData
@@ -328,7 +340,7 @@ namespace DotStd
     }
 
     /// <summary>
-    /// A Type specific variation of the global cache. 
+    /// A Type specific variation of the global cache (CacheData). 
     /// Build on CacheData with Type Id as complex string
     /// </summary>
     /// <typeparam name="T">object being cached</typeparam>
@@ -337,6 +349,7 @@ namespace DotStd
         private string MakeKey(string keyArg)
         {
             // CacheData::MakeKey
+            ValidState.ThrowIfWhiteSpace(keyArg, nameof(keyArg));       // must have id. else use CacheSingleT
             return string.Concat(_TypePrefix, CacheData.kSep, keyArg);
         }
 
@@ -345,7 +358,6 @@ namespace DotStd
             // Find the object in the cache if possible. id is a unique string.
             if (keyArg == null)       // shortcut null check.
                 return null;
-            ValidState.ThrowIfWhiteSpace(keyArg, nameof(keyArg));       // must have id. else use CacheSingleT
             string cacheKey = MakeKey(keyArg);
             object? o = CacheData.Get(cacheKey);
             return (T?)o;

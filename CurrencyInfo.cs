@@ -91,7 +91,7 @@ namespace DotStd
 
         public static readonly CurrencyInfo kBTC = new CurrencyInfo(CurrencyId.BTC, "₿", null, false, "https://en.wikipedia.org/wiki/Bitcoin");
 
-        public static readonly CurrencyInfo kUNK = new CurrencyInfo(ValidState.kInvalidId, "?", null, false);
+        public static readonly CurrencyInfo kUNK = new CurrencyInfo(ValidState.kInvalidId, ValidState.kInvalidName, null, false);
 
         private CurrencyInfo(CurrencyId id, string sign, string? sign2 = null, bool signPost = false, string? url = null)
         {

@@ -9,43 +9,38 @@ namespace DotStd
     /// </summary>
     public enum LogLevel
     {
-        //
-        // Summary:
-        //     Logs that contain the most detailed messages. These messages may contain sensitive
-        //     application data. These messages are disabled by default and should never be
-        //     enabled in a production environment.
+        /// <summary>
+        /// Logs that contain the most detailed messages. These messages may contain sensitive application data. 
+        /// These messages are disabled by default and should never be enabled in a production environment.
+        /// </summary>
         Trace = 0,
-        //
-        // Summary:
-        //     Logs that are used for interactive investigation during development. These logs
-        //     should primarily contain information useful for debugging and have no long-term
-        //     value.
+        /// <summary>
+        /// Logs that are used for interactive investigation during development.
+        /// These logs should primarily contain information useful for debugging and have no long-term value.
+        /// </summary>
         Debug = 1,
-        //
-        // Summary:
-        //     Logs that track the general flow of the application. These logs should have long-term
-        //     value.
+        /// <summary>
+        /// Logs that track the general flow of the application. These logs should have long-term value.
+        /// </summary>
         Information = 2,
-        //
-        // Summary:
-        //     Logs that highlight an abnormal or unexpected event in the application flow,
-        //     but do not otherwise cause the application execution to stop.
+        /// <summary>
+        /// Logs that highlight an abnormal or unexpected event in the application flow, 
+        /// but do not otherwise cause the application execution to stop.
+        /// </summary>
         Warning = 3,
-        //
-        // Summary:
-        //     Logs that highlight when the current flow of execution is stopped due to a failure.
-        //     These should indicate a failure in the current activity, not an application-wide
-        //     failure.
+        /// <summary>
+        /// Logs that highlight when the current flow of execution is stopped due to a failure.
+        /// These should indicate a failure in the current activity, not an application-wide failure.
+        /// </summary>
         Error = 4,
-        //
-        // Summary:
-        //     Logs that describe an unrecoverable application or system crash, or a catastrophic
-        //     failure that requires immediate attention.
+        /// <summary>
+        /// Logs that describe an unrecoverable application or system crash,
+        /// or a catastrophic failure that requires immediate attention.
+        /// </summary>
         Critical = 5,
-        //
-        // Summary:
-        //     Not used for writing log messages. Specifies that a logging category should not
-        //     write any messages.
+        /// <summary>
+        /// Not used for writing log messages. Specifies that a logging category should not write any messages.
+        /// </summary>
         None = 6,
     }
 
@@ -70,7 +65,7 @@ namespace DotStd
             UserId = userId;    // ValidState.IsValidId(userId) GetCurrentThreadId()
             Detail = detail;
         }
-        
+
         public override string ToString()
         {
             return Message;
@@ -79,7 +74,7 @@ namespace DotStd
 
     /// <summary>
     /// Emulate System.Diagnostics.WriteEntry
-    /// This can possibly be forwarded to NLog or Log4Net ? AKA Appender.
+    /// This can possibly be forwarded to NLog or Log4Net ? AKA Sink.
     /// similar to Microsoft.Extensions.Logging.ILogger
     /// NOTE: This is not async! Do any async stuff on another thread such that we don't really effect the caller.
     /// </summary>
@@ -123,9 +118,13 @@ namespace DotStd
             return levelId >= _FilterLevel; // Log this?
         }
 
+        /// <summary>
+        /// Separator after time prefix.
+        /// </summary>
+        /// <param name="levelId"></param>
+        /// <returns></returns>
         public static string GetSeparator(LogLevel levelId)
         {
-            // Separator after time prefix.
             switch (levelId)
             {
                 case LogLevel.Warning: return ":?:";
@@ -136,11 +135,12 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// ILogger Override this. default behavior = debug.
+        /// </summary>
+        /// <param name="entry"></param>
         public virtual void LogEntry(LogEntryBase entry)    // ILogger
         {
-            // ILogger Override this
-            // default behavior = debug.
-
             if (!IsEnabled(entry.LevelId))   // ignore this?
                 return;
 
@@ -190,22 +190,27 @@ namespace DotStd
             LogEntry(message, LogLevel.Critical, userId, detail);
         }
 
+        /// <summary>
+        /// Do i want to log full detail for an Exception?
+        /// </summary>
+        /// <param name="levelId"></param>
+        /// <returns></returns>
         public static bool IsExceptionDetailLogged(LogLevel levelId)
         {
-            // Do i want to log full detail for an Exception?
-
             if (levelId >= LogLevel.Error)    // Always keep stack trace etc for error.
                 return true;
-
             // Is debug mode ?
-
             return false;
         }
 
+        /// <summary>
+        /// Helper for Special logging for exceptions.
+        /// </summary>
+        /// <param name="ex"></param>
+        /// <param name="levelId"></param>
+        /// <param name="userId"></param>
         public virtual void LogException(Exception ex, LogLevel levelId = LogLevel.Error, int userId = ValidState.kInvalidId)
         {
-            // Helper for Special logging for exceptions.
-
             object? detail = null;
             if (IsExceptionDetailLogged(levelId))
                 detail = ex;
@@ -214,31 +219,38 @@ namespace DotStd
         }
     }
 
+    /// <summary>
+    /// Global static logging helper. Uses LogStart.
+    /// </summary>
     public static class LoggerUtil
     {
-        // Global static logging helper.
-
         public static LoggerBase? LogStart;     // always log fine detail at startup.
 
+        /// <summary>
+        /// Not officially logged. Just debug console. Like LogLevel.Debug.. Compile this out?
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="userId"></param>
         public static void DebugEntry(string message, int userId = ValidState.kInvalidId)
         {
-            // Not officially logged. Just debug console.
             // startup ?
-
             System.Diagnostics.Debug.WriteLine("Debug: " + message);
             // System.Diagnostics.Trace.WriteLine();
-
             if (LogStart != null)
             {
                 LogStart.LogEntry(message, LogLevel.Debug, userId);
             }
         }
 
-        public static void DebugException(string subject, Exception? ex, int userId = ValidState.kInvalidId)
+        /// <summary>
+        /// an exception that I don't do anything about! NOT going to call LogException
+        /// set a break point here if we want.
+        /// </summary>
+        /// <param name="subject"></param>
+        /// <param name="ex">some Exception</param>
+        /// <param name="userId"></param>
+        public static void DebugError(string subject, Exception? ex = null, int userId = ValidState.kInvalidId)
         {
-            // an exception that I don't do anything about! NOT going to call LogException
-            // set a break point here if we want.
-
             System.Diagnostics.Debug.WriteLine("DebugException " + subject + ":" + ex?.Message);
 
             // Console.WriteLine();
@@ -250,15 +262,25 @@ namespace DotStd
             }
         }
 
+        /// <summary>
+        /// this should never happen. Break point this!
+        /// </summary>
+        public static void DebugNEVER(string subject)
+        {
+
+        }
+
+        /// <summary>
+        /// Create a high detail log for startup.
+        /// For startup also check:
+        /// System Event Logger for Applications.
+        /// IIS web.config stdoutLogFile. <aspNetCore processPath=".\FourTeAdminWeb.exe" stdoutLogEnabled="true" stdoutLogFile="C:\FourTe\stdout" hostingModel="InProcess">
+        /// IIS wwwroot/logs/
+        /// https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/aspnet-core-module?view=aspnetcore-3.1
+        /// </summary>
+        /// <param name="filePath"></param>
         public static void CreateStartupLog(string filePath)
         {
-            // Create a high detail log for startup.
-            // For startup also check:
-            // System Event Logger for Applications.
-            // IIS web.config stdoutLogFile.       <aspNetCore processPath=".\FourTeAdminWeb.exe" stdoutLogEnabled="true" stdoutLogFile="C:\FourTe\stdout" hostingModel="InProcess">
-            // IIS wwwroot/logs/
-            // https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/aspnet-core-module?view=aspnetcore-3.1
-
             LogStart = new LogFileBase(filePath);
         }
     }

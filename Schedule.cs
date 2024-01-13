@@ -5,14 +5,14 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Time unit type. 
+    /// Schedule can recur every Nth recurring (Interval) time unit.
+    /// used by schedule.RecurUnitId
+    /// used by app_job.RecurUnitId
+    /// </summary>
     public enum TimeUnitId // : byte // NOTE: EF Pomelo will throw 'Specified cast is not valid' exception if we use this directly with byte backed type !!!
     {
-        // Time unit type. 
-        // Schedule can recur every Nth recurring (Interval) time unit.
-        // used by schedule.RecurUnitId
-        // used by app_job.RecurUnitId
-        
-
         None = 0,       // just once. never again
 
         MilliSec = 1,   // fractional seconds.
@@ -20,7 +20,7 @@ namespace DotStd
         Minutes = 3,
         Hours = 4,
 
-        Days = 5,      // Every day or every other day for time period.
+        Days = 5,      // Every day or every other day for time period. DOY ?
         Weeks = 6,     // can use bitmask of days of the week.
 
         // Approximate unit times.
@@ -29,11 +29,12 @@ namespace DotStd
         Years,         // do this once per year. on same day of year.
     }
 
+    /// <summary>
+    /// Bitmask of days of week. 0 = none. 
+    /// </summary>
     [Flags]
     public enum DaysOfWeek // : byte // NOTE: EF Pomelo will throw "Specified cast is not valid' exception if we use this directly with byte backed type !!!
     {
-        // Bitmask of days of week.
-        // 0 = none. 
         Sunday = (1 << (int)System.DayOfWeek.Sunday),   // =1, Sunday = 0
         Monday = (1 << (int)System.DayOfWeek.Monday),
         Tuesday = (1 << (int)System.DayOfWeek.Tuesday),
@@ -44,12 +45,14 @@ namespace DotStd
         Any = 127,  // all days.
     }
 
+
+    /// <summary>
+    /// A time in the future that may recur.
+    /// Ignore end of recur sequence here. Out of scope.
+    /// Similar to quartz chron expression. https://www.freeformatter.com/cron-expression-generator-quartz.html
+    /// </summary>    
     public class Schedule
     {
-        // A time in the future that may recur.
-        // Ignore end of recur sequence here.
-        // Similar to quartz chron expression. https://www.freeformatter.com/cron-expression-generator-quartz.html
-
         public DateTime StartTime;          // When does this happen or happen first in recurring pattern?
         public TimeUnitId RecurUnitId;       // Does it recur ? on what time unit ?
         public int RecurInterval = 1;    // TimeUnitId interval skips. e.g. 2 with unit day = every 2 days.
@@ -69,10 +72,16 @@ namespace DotStd
             "years", "yearly",
         };
 
+        /// <summary>
+        /// Describe the recurrence pattern. scheduled recurrence rules.
+        /// </summary>
+        /// <param name="start">start DT may be in the future</param>
+        /// <param name="unitId"></param>
+        /// <param name="interval"></param>
+        /// <param name="dowBits"></param>
+        /// <returns></returns>
         public static string GetRecurStr(DateTime start, TimeUnitId unitId, int interval = 1, DaysOfWeek dowBits = DaysOfWeek.Any)
         {
-            // Describe the recurrence pattern. scheduled recurrence rules.
-            // Ignore that start may be in the future.
             // TODO ITranslatorProvider1
 
             if (DateUtil.IsExtremeDate(start))
@@ -81,7 +90,7 @@ namespace DotStd
             if (unitId <= TimeUnitId.None || unitId > TimeUnitId.Years)    // does not repeat.
             {
                 // "Once at " + date time
-                return start.ToDtTmString();
+                return start.ToUTCString();
             }
 
             if (interval <= 0)
@@ -125,7 +134,7 @@ namespace DotStd
                             if ((((int)dowBits) & dowBit) != 0)
                             {
                                 if (hasBit)
-                                    sb.Append(",");
+                                    sb.Append(',');
                                 sb.Append(((System.DayOfWeek)i).ToString());
                                 hasBit = true;
                             }
@@ -164,16 +173,19 @@ namespace DotStd
                     break;
 
                 default:
-                    return "?"; // not valid for TimeUnitId
+                    return ValidState.kInvalidName; // not valid for TimeUnitId
             }
 
             sb.Append($" at {start.Hour:D2}:{start.Minute:D2}");    // at hr:minutes into the day.
             return sb.ToString();
         }
 
+        /// <summary>
+        /// describe this pattern. like ToString();
+        /// </summary>
+        /// <returns></returns>
         public string GetRecurStr()
         {
-            // like ToString();
             return GetRecurStr(this.StartTime, this.RecurUnitId, this.RecurInterval, this.DowBits);
         }
 
@@ -190,21 +202,29 @@ namespace DotStd
             12, // Years
         };
 
+        /// <summary>
+        /// Is a DayOfWeek in the DaysOfWeek mask?
+        /// </summary>
+        /// <param name="dowBits"></param>
+        /// <param name="dayOfWeek"></param>
+        /// <returns></returns>
         public static bool IsDowSet(DaysOfWeek dowBits, DayOfWeek dayOfWeek)
         {
-            // Is a DayOfWeek in the DaysOfWeek mask?
             return (((int)dowBits) & (1 << ((int)dayOfWeek))) != 0;
         }
 
+        /// <summary>
+        /// Get the next date / time in the sequence after now.
+        /// ASSUME times are GMT and have no DST weirdness.
+        /// </summary>
+        /// <param name="now"></param>
+        /// <param name="start">anchor date. Was the last official time. for calculation of relative times, time of day, etc. kExtremeMax = never before</param>
+        /// <param name="unitId"></param>
+        /// <param name="interval">quantity of unitId</param>
+        /// <param name="dowBits">only on these days of the week.</param>
+        /// <returns>kExtremeMax = never again.</returns>
         public static DateTime GetNextRecur(DateTime now, DateTime start, TimeUnitId unitId, int interval = 1, DaysOfWeek dowBits = DaysOfWeek.Any)
         {
-            // Get the next date / time in the sequence after now.
-            // start = anchor date. Was the last official time. for calculation of relative times, time of day, etc. kExtremeMax = never before
-            // interval = quantity of TimeUnitId
-            // dowBits = only on these days of the week.
-            // RETURN: kExtremeMax = never again.
-            // ASSUME times are GMT and have no DST weirdness.
-
             if (DateUtil.IsExtremeDate(start))
                 return DateUtil.kExtremeMax;        // never start
             if (now < start)    // not until start date.
@@ -265,17 +285,24 @@ namespace DotStd
             return dtNext;
         }
 
+        /// <summary>
+        /// Describe the schedule recur as a string.
+        /// </summary>
+        /// <param name="now"></param>
+        /// <returns></returns>
         public DateTime GetNextRecur(DateTime now)
         {
-            // Describe the schedule recur as a string.
             return GetNextRecur(now, this.StartTime, this.RecurUnitId, this.RecurInterval, this.DowBits);
         }
 
+        /// <summary>
+        /// Get list of dates that recur in this range. (inclusive)
+        /// </summary>
+        /// <param name="dtr"></param>
+        /// <param name="nMax"></param>
+        /// <returns></returns>
         public List<DateTime> GetRecursInRange(DateRange dtr, int nMax = 128)
         {
-            // Get list of dates that recur in this range. (inclusive)
-            // interval = quantity of TimeUnitId
-
             var ret = new List<DateTime>();
             DateTime now = dtr.Start;
             DateTime dtPrev = DateUtil.kExtremeMin;

@@ -4,9 +4,11 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// like System.Progress<float> or System.IProgress<T> but has 2 params.
+    /// </summary>
     public class Progress2 
     {
-        // like System.Progress<float> or System.IProgress<T> but has 2 params.
         public long Current { get; private set; }     // how much of Size is done? updated by worker. ALWAYS <= Size
         public long Total { get; private set; }         // arbitrary estimated total size.
 

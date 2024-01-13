@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
@@ -12,12 +13,12 @@ namespace DotStd
     {
         Unknown = 0,        // ODBC Connection ? maybe InMemory provider.
         SqlServer = 1,  // Microsoft,  MsSQL, M$
-        MySQL = 2,      // Or Aurora.
+        MySQL = 2,      // Or Aurora. 
         Oracle = 3,
         SQLite = 4,
 
         // PostgreSQL
-        // Mongo ?
+        // Mongo ? Maria ?
     }
 
     /// <summary>
@@ -29,8 +30,22 @@ namespace DotStd
         Ext,        // similar to Hybrid but externally defined. e.g. Geo_*,
         Hybrid1,     // Contains some fixed values and can have new values added. ids can never change. never deleted.
         Hybrid2,     // Tables that have circular deps on Hybrid1
-        Demo,       // Fully dynamic
+        Demo,       // Fully dynamic but pre-populated with demo data.
         Dynamic,    // Fully dynamic. No initial data expected.
+    }
+
+    /// <summary>
+    /// Define meta data for column/field. AKA AppField
+    /// </summary>
+    public class DbColumnDef
+    {
+        public string _Name;            // The columns entity/symbolic camel case name that will be used by EF entities. 
+        public Type _Type;      // Data type for field/column. from EF/Db. Converter.IsNullableType() ? Type.GetTypeCode
+
+        public DbColumnDef(string name, Type type)
+        {
+            _Name = name; _Type = type;
+        }
     }
 
     /// <summary>
@@ -39,7 +54,7 @@ namespace DotStd
     /// The fields can have FK relationships to other tables.
     /// might be defined in AppTable/app_table table and reference AppField/app_field.
     /// assume singular naming for tables.
-    /// This can be related to LambdaExpression? GetPropertyExp(string name)
+    /// This can be related to LambdaExpression? GetOrderByExp(string name)
     /// </summary>
     public class DbTableDef
     {
@@ -48,28 +63,46 @@ namespace DotStd
         public string TableName;       // The db table name. snake case. used by MySQL.
         public string Name;      // The entity/symbolic camel case name that will be used by EF entities. can be derived from TableName
 
-        public DbTableType Type;       // What is the nature of the data in this table ? Const vs Dynamic?
-        public List<string>? ColNames;       // list of my columns/fields from AppField/app_field. [0] must be PK, enum this from EF object meta ?
+        public DbTableType TableType;       // What is the nature of the data in this table ? Const vs Dynamic?
+        public List<DbColumnDef>? Columns;  // list of my columns/fields from DbColumnDef/AppField/app_field. [0] must be PK, enum from EF object meta via UpdateColNames()?
 
         public DbTableDef()
         {
-            // EF/Serializable contruct.
+            // EF/Serializable construct.
             TableName = default!;
             Name = default!;
-        }
+            // TableType = ?;
+      }
 
         public DbTableDef(string tableName, DbTableType tt)
         {
             TableName = tableName;
             Name = GetEntityName(tableName);
-            Type = tt;
+            TableType = tt;
         }
 
+        /// <summary>
+        /// resolve the list of column names with the names reflected from the EF object.
+        /// </summary>
+        public void UpdateColumnsAs(Type t)
+        {
+            // ASSUME first prop is PK.
+            Columns = new List<DbColumnDef>();
+            var props = t.GetProperties();
+            foreach (var prop in props)
+            {
+                Columns.Add(new DbColumnDef(prop.Name, prop.PropertyType));
+            }
+        }
+
+        /// <summary>
+        /// assume this column/field is ignored by its name?
+        /// Prefix the col header name with "Ignored_" to ignore it.
+        /// </summary>
+        /// <param name="colName"></param>
+        /// <returns></returns>
         public static bool IsColIgnored(string colName)
         {
-            // assume this column/field is ignored by its name?
-            // Prefix the col header name with "Ignored_" to ignore it.
-
             return colName.StartsWith("Ignored_") || colName.StartsWith("Ignore_");
         }
 
@@ -95,7 +128,7 @@ namespace DotStd
         /// </summary>
         /// <param name="entityName"></param>
         /// <returns></returns>
-        public static string GetTableName(string entityName)
+        public static string GetDbTableName(string entityName)
         {
             var sb = new StringBuilder();
             int i = 0;

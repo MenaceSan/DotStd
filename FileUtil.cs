@@ -16,7 +16,7 @@ namespace DotStd
     public enum MimeId
     {
         [Description(@"application/octet-stream")]  // System.Net.Mime.MediaTypeNames.Application.Octet
-        bin = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ?
+        bin = 1,    // BIN (AKA BLANK) -> Unknown Binary blob ? default type.
 
         [Description(@"application/msword")]
         doc = 2,    // old binary format.
@@ -155,6 +155,7 @@ namespace DotStd
 
         public static bool IsKnownType(MimeId mimeId)
         {
+            // else just treat as a binary blob.
             return mimeId > DotStd.MimeId.bin;
         }
 
@@ -304,7 +305,7 @@ namespace DotStd
             if (ch == '.')                  // always assume interior dots are OK. Only DOS 8.3 would have trouble.
                 return true;
 
-            if (otherCharsAllowed.IndexOf(ch) >= 0)  // allow these safe chars. DOS + newer allowed chars. kFileNameDos or kFileNameNT
+            if (otherCharsAllowed.Contains(ch))  // allow these safe chars. DOS + newer allowed chars. kFileNameDos or kFileNameNT
                 return true;
 
             // e.g. DOS didn't support "\"*+,/:;<=>?\[]|" in a file name.
@@ -398,7 +399,7 @@ namespace DotStd
                         break;
 
                     sb.Append(kEncoder);    // encode char as %XX
-                    SerializeUtil.ToHexChar(sb, b);
+                    SerializeUtil.ToHexChars(sb, b);
                     continue;
                 }
 

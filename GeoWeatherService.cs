@@ -7,17 +7,31 @@ namespace DotStd
     /// Get Weather at a location (or near it)
     /// ConfigInfoBase.kApps + "OpenWeatherMap"
     /// </summary>
-    public class GeoWeatherService : GeoLocation
+    public class GeoWeatherService : ExternalService
     {
-        public async Task<string> GetWeatherJson(string apiKey)
-        {
-            // Get a JSON blob for the weather near some Location.
-            // 401 = unauthorized. https://home.openweathermap.org/api_keys
-            const string baseUrl = "http://api.openweathermap.org/data/2.5/weather";
+        string ApiKey;
 
+        public override string Name => "Open Weather";
+        public override string BaseURL => "http://api.openweathermap.org/data/2.5/weather";
+        public override string Icon => "<i class='fas fa-sync-alt'></i>";
+
+        public GeoWeatherService(string apiKey)
+        {
+            ApiKey = apiKey;
+        }
+
+        /// <summary>
+        /// Get a JSON blob for the weather near some Location.
+        /// 401 = unauthorized. https://home.openweathermap.org/api_keys
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <returns></returns>
+        public async Task<string> GetWeatherJson(GeoLocation loc)
+        {
+            UpdateTry();
             using (var client = new HttpClient())
             {
-                string url1 = $"{baseUrl}?mode=json&units=imperial&lat={this.Latitude}&lon={this.Longitude}&APPID={apiKey}";
+                string url1 = $"{BaseURL}?mode=json&units=imperial&lat={loc.Latitude}&lon={loc.Longitude}&APPID={ApiKey}";
                 string ret = await client.GetStringAsync(url1);
                 return ret;
             }

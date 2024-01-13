@@ -6,31 +6,33 @@ using System.Text.RegularExpressions;
 
 namespace DotStd
 {
+    /// <summary>
+    /// classify the clients device. is Mobile device type? for Push Notification. for PushSharp
+    /// used by user_device.DeviceTypeId
+    /// </summary>
     public enum DeviceTypeId
     {
-        // classify the clients device. is Mobile device type? for Push Notification. for PushSharp
-        // used by user_device.DeviceTypeId
-
         Unknown = 0,
 
         iOS = 1,            // Apple iOS // APN
-        Android = 2,        // Google Android  // FireBase ?
+        Android = 2,        // Google Android / ChromeOS  // FireBase ? 
         Amazon = 3,         // Amazon-fireos
-        Windows10 = 4,      // UWP apps. Windows 10.
+        Windows10 = 4,      // UWP apps. >= Windows 10.
         Mac = 5,            // Xamarin for Mac OS.
 
-        // Blackberry?
+        // Blackberry? ChromeOS
         // Assume a laptop/desktop/tablet format?
 
         MSIE_Old = 15,        // https://stackoverflow.com/questions/10964966/detect-ie-version-prior-to-v9-in-javascript
     }
 
+    /// <summary>
+    /// Helper for URLs always use "/" as path separators.
+    /// similar to System.Uri or System.UriBuilder
+    /// in Core use: WebUtility.UrlEncode() (was FormUrlEncodedContent)
+    /// </summary>
     public static class UrlUtil
     {
-        // Helper for URLs always use "/" as path separators.
-        // similar to System.Uri or System.UriBuilder
-        // in Core use: WebUtility.UrlEncode() (was FormUrlEncodedContent)
-
         public const string kHttps = "https://";
         public const string kHttp = "http://";
         public const string kSep = "/";
@@ -52,24 +54,31 @@ namespace DotStd
             return null;
         }
 
+        /// <summary>
+        /// is Http* Scheme ?
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public static bool IsHttpX(string url)
         {
-            // is Http* Scheme ?
-            return GetProtocol(null) != null;
+            return GetProtocol(url) != null;
         }
+        /// <summary>
+        /// is Https Scheme ?
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public static bool IsHttpSecure(string url)
         {
-            // is Https Scheme ?
             return url.StartsWith(kHttps);
         }
-        public static bool IsLocalAddr(string? url)
+        public static bool IsLocalAddr([NotNullWhen(false)] string? url)
         {
             // Local or external link ?
             if (url == null || url.Length < 2)
                 return true;
             return url[0] == '/' && url[1] != '/';
         }
-
 
         public static string MakeHttpX(string url, bool bSetHttps)
         {
@@ -101,31 +110,42 @@ namespace DotStd
             return url;
         }
 
-        static readonly Lazy<Regex> _regexURL = new Lazy<Regex>(() => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$"));
+        static readonly Lazy<Regex> _regexURL = new(() => new Regex(@"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$"));
 
+        /// <summary>
+        /// Stricter version of URL validation
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public static bool IsValidURL([NotNullWhen(true)] string? url)
         {
-            // Stricter version of URL validation
             if (string.IsNullOrWhiteSpace(url))
                 return false;
             return _regexURL.Value.IsMatch(url);
         }
 
-        static readonly Lazy<Regex> _regexURL2 = new Lazy<Regex>(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));
+        static readonly Lazy<Regex> _regexURL2 = new(() => new Regex(@"^^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&%\$#_=]*)?$"));
 
+        /// <summary>
+        /// More forgiving version of URL
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public static bool IsValidURL2([NotNullWhen(true)] string? url)
         {
-            // More forgiving version of URL
             if (string.IsNullOrWhiteSpace(url))
                 return false;
             return _regexURL2.Value.IsMatch(url);
         }
 
+        /// <summary>
+        /// Like Path.Combine() but for URLs. CombineUrl. Ignore nulls.
+        /// Does not add an end or start /
+        /// </summary>
+        /// <param name="array"></param>
+        /// <returns></returns>
         public static string Combine(params string?[] array)
         {
-            // Like Path.Combine() but for URLs. CombineUrl. Ignore nulls.
-            // Does not add an end or start /
-
             var sb = new StringBuilder();
             int i = 0;
             bool endSep = false; // last entry ends with sep?
@@ -142,7 +162,7 @@ namespace DotStd
                 }
                 else if (i > 0 && !endSep && !startSep)
                 {
-                    sb.Append(kSep);
+                    sb.Append(kSepChar);
                     sb.Append(a);
                 }
                 else
@@ -157,10 +177,14 @@ namespace DotStd
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Extract just the filename from the URL. No dir, domain name, Clip args after '?' or '#'
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         [return: NotNullIfNotNull("url")]
         public static string? GetFileName(string? url)
         {
-            // Extract just the filename from the URL. No dir, domain name, Clip args after '?' or '#'
             if (url == null)
                 return null;
 
@@ -177,19 +201,28 @@ namespace DotStd
             return url;
         }
 
+        /// <summary>
+        /// Replace the file name in the url.
+        /// Get the dir for the URL.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="nameNew"></param>
+        /// <returns></returns>
         public static string ReplaceFile(string url, string nameNew)
         {
-            // Replace the file name in the url.
-            // Get the dir for the URL.
             string nameOld = GetFileName(url);
             string dir = url.Substring(0, url.Length - nameOld.Length);
             return dir + nameNew;
         }
 
+        /// <summary>
+        /// Get the host name for the URL.
+        /// strip http:// and get "addr:port". strip "/dir?args"
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public static string GetHostName(string url)
         {
-            // Get the host name for the URL.
-            // strip http:// and get "addr:port". strip "/dir?args"
             string? proto = GetProtocol(url);
             if (proto != null)
                 url = url.Substring(proto.Length);
@@ -202,14 +235,16 @@ namespace DotStd
             return url;
         }
 
+        /// <summary>
+        /// build a local URL link with "Query" args. sPage can be empty.
+        /// ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode() already called.
+        /// FormUrlEncodedContent already called.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public static string MakeQ(string url, params string[] args)
         {
-            // build a local URL link with "Query" args. sPage can be empty.
-            // ASSUME Args are already properly encoded! System.Net.WebUtility.UrlEncode() already called.
-            // FormUrlEncodedContent already called.
-
-            if (url == null)
-                url = "";
             int i = 0;
             foreach (string x in args)
             {
@@ -230,15 +265,15 @@ namespace DotStd
         public static string MakeQ2(string url, params string[] args)
         {
             // build a local encoded URL link with paired "Query" args. sPage can be empty.
-            if (url == null)
-                url = "";
+ 
             string sep = kArg;
             for (int i = 0; i < args.Length; i += 2)
             {
-                if (string.IsNullOrWhiteSpace(args[i + 1]))
+                string val = args[i + 1];
+                if (string.IsNullOrWhiteSpace(val))
                     continue;
                 url += sep;
-                url += args[i] + "=" + WebUtility.UrlEncode(args[i + 1]);
+                url += args[i] + "=" + WebUtility.UrlEncode(val);
                 sep = kArgSep;
             }
             return url;

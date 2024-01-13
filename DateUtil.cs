@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DotStd
@@ -32,48 +33,65 @@ namespace DotStd
     /// </summary>
     public static class DateUtil
     {
-        public static readonly DateTime kExtremeMin = new DateTime(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
-        // public static readonly DateTime kExtremeMin2 = new DateTime(1800, 1, 1); // MySQL doesn't like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
+        public static readonly DateTime kExtremeMax = new(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's. TODO MORE INFO ?
+        public static readonly DateTime kExtremeMin = new(1800, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive min date that can be held by most db's. BUT NOT MS SQL smalldate
+        // public static readonly DateTime kExtremeMin2 = new(1800, 1, 1); // MySQL doesn't like the UTC stuff ?? null !!! "Unable to cast object of type 'System.String' to type 'System.DateTime'."
 
-        public static readonly DateTime kUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);     // JavaScript epoch.
-        public static readonly DateTime kExtremeMax = new DateTime(2179, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);  // reasonably inclusive max date that can be held by most db's.  
+        public static readonly DateTime kUnixEpoch = new(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);     // JavaScript epoch.
 
         public const int kHoursInWeek = 168;        // (7*24)
         public const int kMinutesInDay = 3600;      // 24*60 // Modulus for day time.
 
-        public const string kShortDate = "yyyy-MM-dd";  // default short data format ALA JavaScript, ISO Date. NOT ToShortDateString()/ToString("d") which are cultural.
-        public const string kShortDate2 = "MM/dd/yyyy"; // Weird format to be avoided.
+        public const string kISO = "yyyy-MM-dd hh:mm:ss";    // date and time. ISO 8601
+        public const string kISODate = "yyyy-MM-dd";  // default short data format ALA JavaScript, ISO Date. NOT ToShortDateString()/ToString("d") which are cultural.
+        public const string kShortDate2 = "MM/dd/yyyy"; // Weird format to be avoided. US local?
 
+        /// <summary>
+        /// Is this a probably useless date? 
+        /// NOTE: DateTime is not nullable so use this acts like null.
+        /// e.g. Year <= 1
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         public static bool IsExtremeDate(DateTime dt)
         {
-            // Is this probably a useless date? NOTE: DateTime is not nullable so use this as null.
-            // e.g. Year <= 1
             return dt <= kExtremeMin || dt >= kExtremeMax;
         }
+        /// <summary>
+        /// Is this a probably useless date? or null.
+        /// </summary>
         public static bool IsExtremeDate([NotNullWhen(false)] DateTime? dt)
         {
             if (dt == null)
                 return true;
             return IsExtremeDate(dt.Value);
         }
-   
+
+        /// <summary>
+        /// JavaScript time stamp is milliseconds past kUnixEpoch
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns>milliseconds</returns>
         public static double ToJavaTime(DateTime dt)
         {
-            // JavaScript time stamp is milliseconds past kUnixEpoch
             if (IsExtremeDate(dt))
                 return 0;
             return (dt - kUnixEpoch).TotalMilliseconds;
         }
+
+        /// <summary>
+        /// JavaScript time stamp is milliseconds past epoch. NOT seconds like Unix time.
+        /// </summary>
+        /// <param name="javaTimeStamp"></param>
+        /// <returns>UTC time.</returns>
         public static DateTime FromJavaTime(double javaTimeStamp)
         {
-            // JavaScript time stamp is milliseconds past epoch. NOT seconds like Unix time.
-            // Return UTC time.
             return kUnixEpoch.AddMilliseconds(javaTimeStamp);
         }
 
         /// <summary>
-        /// a translatable approximate span.
         /// get a string for a rough amount of time ago or ahead.
+        /// get a translatable approximate span.
         /// var ts = (yourDate - TimeNow.Utc);
         /// </summary>
         /// <param name="ts"></param>
@@ -198,12 +216,14 @@ namespace DotStd
             return string.Format(txt, arg);
         }
 
+        /// <summary>
+        /// Describe How much time in mSec. 
+        /// e.g. var watch = System.Diagnostics.Stopwatch.StartNew(); STUFF(); watch.Stop(); TimeUtil.TimeMsecStr(watch.ElapsedMilliseconds);
+        /// </summary>
+        /// <param name="mSec"></param>
+        /// <returns></returns>
         public static string TimeMsecStr(long mSec)
         {
-            // How much time in mSec.
-            // the code that you want to measure comes here
-            // var watch = System.Diagnostics.Stopwatch.StartNew(); STUFF(); watch.Stop(); TimeUtil.TimeMsecStr(watch.ElapsedMilliseconds);
-
             if (mSec < 1000)
             {
                 return mSec.ToString() + " ms";
@@ -211,10 +231,13 @@ namespace DotStd
             return (((decimal)mSec) / 1000m).ToString() + " s"; 
         }
 
+        /// <summary>
+        /// modulus/wrap to force into valid range. 0 to 6 day of week.
+        /// </summary>
+        /// <param name="dow"></param>
+        /// <returns></returns>
         public static DayOfWeek ModDOW(DayOfWeek dow)
         {
-            // modulus/wrap to force into valid range. 0 to 6 day of week.
-
             int d = (int)dow;
             if (d > 6)
             {
@@ -228,11 +251,15 @@ namespace DotStd
             return (System.DayOfWeek)d;
         }
 
+        /// <summary>
+        /// Get DateTime for previous dow (day of week) inclusive of current day.
+        /// Related to similar to cultureInfo.DateTimeFormat.FirstDayOfWeek
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="dow"></param>
+        /// <returns></returns>
         public static DateTime GetDateOfWeekDayPrev(DateTime dt, DayOfWeek dow)
         {
-            // Get DateTime for previous dow (day of week) inclusive of current day.
-            // Related to similar to cultureInfo.DateTimeFormat.FirstDayOfWeek
-
             int diff = dt.DayOfWeek - dow;
             if (diff < 0)   // DayOfWeek.Sunday = 0
             {
@@ -242,18 +269,27 @@ namespace DotStd
             return dt.Date.AddDays(-diff);  // go back. always 0 or negative.
         }
 
+        /// <summary>
+        /// Get previous dow (day of week) NOT including dt.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="dow"></param>
+        /// <returns></returns>
         public static DateTime GetDateOfWeekDayPrevX(DateTime dt, DayOfWeek dow)
         {
-            // Get previous dow (day of week) NOT including dt.
             return GetDateOfWeekDayPrev(dt.AddDays(-1), dow);
         }
 
+        /// <summary>
+        /// Get DateTime for next dow (day of week) inclusive of current day.
+        /// like GetDateOfWeekDayPrev but get next week.
+        /// Related to similar to cultureInfo.DateTimeFormat.FirstDayOfWeek
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="dow"></param>
+        /// <returns></returns>
         public static DateTime GetDateOfWeekDayNext(DateTime dt, DayOfWeek dow)
         {
-            // Get DateTime for next dow (day of week) inclusive of current day.
-            // like GetDateOfWeekDayPrev but get next week.
-            // Related to similar to cultureInfo.DateTimeFormat.FirstDayOfWeek
-
             int diff = dow - dt.DayOfWeek;
             if (diff < 0)   // DayOfWeek.Sunday = 0
             {
@@ -263,9 +299,13 @@ namespace DotStd
             return dt.Date.AddDays(diff);  // go forward.
         }
 
+        /// <summary>
+        /// Get DoW from English string as Enum.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static DayOfWeek GetDOW(string s)    // NOT USED
         {
-            // Get DoW from English string as Enum.
             if (s != null)
             {
                 switch (s.ToLower())
@@ -345,10 +385,10 @@ namespace DotStd
 
         /// <summary>
         /// Convert (0 based) minutes in the day to a military (or AM/PM) time string.
-        /// if (minutes > DateUtil.kMinutesInDay) then just wrap.
+        /// if (minutes > DateUtil.kMinutesInDay) then just wrap to next day.
         /// </summary>
         /// <param name="minutesInDay">(0 based) minutes in the day</param>
-        /// <param name="ampm"></param>
+        /// <param name="ampm">Culture?</param>
         /// <param name="space"></param>
         /// <returns></returns>
         public static string GetTimeStr(int minutesInDay, bool ampm = false, bool space = true)
@@ -375,6 +415,28 @@ namespace DotStd
         public static string GetTimeStr(TimeSpan ts, bool ampm = false, bool space = true)
         {
             return GetTimeStr((int)ts.TotalMinutes, ampm, space);
+        }
+
+        /// <summary>
+        /// format DateTime as a string.
+        /// ASSUME timeZone is already accounted for ???
+        /// </summary>
+        /// <param name="dt">DateTime</param>
+        /// <param name="format">"M/d/yyyy" or default = 'yyyy-MM-dd' (for ISO 8601)</param>
+        /// <param name="culture">Use format from culture for fancy string formatting.</param>
+        /// <param name="def">use this if its a bad DateTime.</param>
+        /// <returns></returns>
+        public static string GetDtStr(DateTime dt, string? format=null, IFormatProvider? culture = null, string? def = null)
+        {
+            if (def == null)
+                def = string.Empty;
+            if (dt.IsExtremeDate())    // Const.dateExtremeMin
+                return def;     // null or "" ??
+            if (format == null)
+                format = DateUtil.kISO;       // "yyyy-MM-dd" = ISO
+            if (culture != null)
+                return dt.ToString(format, culture);
+            return dt.ToString(format);
         }
     }
 }

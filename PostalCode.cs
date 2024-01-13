@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace DotStd
 {
+    /// <summary>
+    /// A Postal code decodes to this. for use with GeoLocation.
+    /// Poco - don't collide with the EF version of this. Use "PostalCode1" name.
+    /// https://gis.stackexchange.com/questions/53918/determining-which-us-zipcodes-map-to-more-than-one-state-or-more-than-one-city
+    /// </summary>
     [Serializable]
     public class PostalCode1
     {
-        // A Postal code decodes to this. for use with GeoLocation.
-        // Poco - don't collide with the EF version of this. Use "PostalCode1" name.
-        // https://gis.stackexchange.com/questions/53918/determining-which-us-zipcodes-map-to-more-than-one-state-or-more-than-one-city
-
         public const int kMaxLen = 32;   // there are no countries that use PostalCode > 32 (i'm pretty sure)
 
         public string? PostalCode { get; set; }  // AKA Zip Code/ZipCode can have multiple possible cities (Not PK)!
@@ -218,7 +219,7 @@ namespace DotStd
         }
     }
 
-    [DataContract]
+    [DataContract]  // Serializable
     public class PostalCodeZT
     {
         // Poco for ZT REST service
@@ -227,32 +228,37 @@ namespace DotStd
         [DataMember] public string? city { get; set; }    // ALSTON
     }
 
-    public class PostalCodeFinder
+    /// <summary>
+    /// Call Web Service to look up a Postal code. Maybe call IsValidPostalCode() first ?
+    /// if a Postal code is not in my local cache i can look it up here.
+    /// compliments GeoLocation
+    /// https://stackoverflow.com/questions/7129313/zip-code-lookup-api
+    /// https://www.melissa.com/lookups/ZipCityPhone.asp?InData=02134
+    /// </summary>
+    public class PostalCodeFinder // : ExternalService
     {
-        //! Call Web Service to look up a Postal code. Maybe call IsValidPostalCode() first ?
-        //! if a Postal code is not in my local cache i can look it up here.
-        //! compliments GeoLocation
-        // https://stackoverflow.com/questions/7129313/zip-code-lookup-api
-        // https://www.melissa.com/lookups/ZipCityPhone.asp?InData=02134
-
         public string? _sResponse;  // Raw response.
         public PostalCode1? _z;        // parsed m_sResponse.
 
+        /// <summary>
+        /// async call to get the string response to a HTTP query.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         private static async Task<string> RequestStringAsync(string url)
         {
-            // async call to get the string response to a HTTP query.
-
-            using (var client = new HttpClient())
-            {
-                return await client.GetStringAsync(url);
-            }
+            using var client = new HttpClient();
+            return await client.GetStringAsync(url);
         }
 
+        /// <summary>
+        /// TODO: Ask USPS about the Postal code.
+        /// USPS (need to be sending mail)
+        /// </summary>
+        /// <param name="sPostalCode"></param>
+        /// <returns></returns>
         public async Task QueryUSPS(string sPostalCode)
         {
-            // TODO
-            // Ask USPS about the Postal code.
-            // USPS (need to be sending mail)
             string urlServer = "http://production.shippingapis.com/ShippingAPI.dll";  // Test
             const string sUserID = "771LMGHO5723";
             string sReq = $"{urlServer}?API=CityStateLookup&XML=<CityStateLookupRequest%20USERID=\"{sUserID}\"><ZipCode ID=\"0\"><Zip5>{sPostalCode}</Zip5></ZipCode></CityStateLookupRequest>";
@@ -261,10 +267,13 @@ namespace DotStd
             _z = new PostalCode1 { PostalCode = sPostalCode };
         }
 
+        /// <summary>
+        /// TODO: Ask WSX about the Postal code. 
+        /// </summary>
+        /// <param name="sPostalCode"></param>
+        /// <returns></returns>
         public async Task QueryWSX_JUNK(string sPostalCode)
         {
-            // TODO
-            // Ask WSX about the Postal code.
             // http://webservicex.net/uszip.asmx?op=GetInfoByZIP (out of disk space)
             string sReq = "http://webservicex.net/uszip.asmx/GetInfoByZIP?USZip=" + sPostalCode;
             _sResponse = await RequestStringAsync(sReq);
@@ -272,21 +281,23 @@ namespace DotStd
             _z = new PostalCode1 { PostalCode = sPostalCode };
         }
 
+        /// <summary>
+        /// Ask ZT about the Postal code. Working in 2017.
+        /// http://ziptasticapi.com
+        /// e.g. sPostalCode = "90210"; // http://ziptasticapi.com/90210
+        /// may get 503 error intermittently?
+        /// </summary>
+        /// <param name="sPostalCode"></param>
+        /// <returns></returns>
         public async Task QueryZT(string sPostalCode)
         {
-            // Ask ZT about the Postal code. Working in 2017.
-            // http://ziptasticapi.com
-            // e.g. sPostalCode = "90210"; // http://ziptasticapi.com/90210
-            // may get 503 error intermittently?
-
             string sReq = "http://ziptasticapi.com/" + sPostalCode;
             _sResponse = await RequestStringAsync(sReq);
 
             // populate m_z from JSON
             // Newtonsoft.Json.JsonConvert.PopulateObject(m_sResponse,m_z);
             var xs = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PostalCodeZT));
-            var x = xs.ReadObject(_sResponse.ToMemoryStream()) as PostalCodeZT;
-            if (x == null)
+            if (xs.ReadObject(_sResponse.ToMemoryStream()) is not PostalCodeZT x)
             {
                 return;
             }

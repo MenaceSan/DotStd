@@ -17,9 +17,15 @@ namespace DotStd
     {
         public const char kMinus2 = '−';      // Weird alternate char sometimes used as minus. '-'
 
-        private static void ThrowConvertException()
+        /// <summary>
+        /// like o.GetType() but is decided at compile time and ignores null.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="inputObject"></param>
+        /// <returns></returns>
+        public static Type GetCompileTimeType<T>(this T inputObject)
         {
-            // Put a breakpoint or debug code here to catch this.
+            return typeof(T);
         }
 
         /// <summary>
@@ -70,27 +76,42 @@ namespace DotStd
             return defVal;
         }
 
+        /// <summary>
+        /// convert object? to a string. don't return null.
+        /// should never throw. (safer than o.ToString())
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="nullStr">default value</param>
+        /// <returns></returns>
         public static string ToString(object? o, string nullStr)
         {
-            // object to a string. don't return null.
-            // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return nullStr;    // NEVER null. use ToStringN() for that.
             return o.ToString() ?? nullStr;
         }
+
+        /// <summary>
+        /// Convert object? to a safe (non null) string. 
+        /// should never throw. (safer than o.ToString())
+        /// </summary>
+        /// <param name="o"></param>
+        /// <returns></returns>
         public static string ToString(object? o)
         {
-            // object to a string. don't return null.
-            // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return string.Empty;    // NEVER null. use ToStringN() for that.
-            return o.ToString() ?? string.Empty; 
+            return o.ToString() ?? string.Empty;
         }
 
+        /// <summary>
+        /// convert object? to a nullable string. strings are always nullable.
+        /// should never throw. (safer than o.ToString())
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="whitenull"></param>
+        /// <returns></returns>
         public static string? ToStringN(object? o, bool whitenull = true)
         {
-            // object to a nullable string. strings are always nullable.
-            // should never throw. (safer than o.ToString())
             if (ValidState.IsNull(o))
                 return null;
             string? s = o.ToString();
@@ -99,13 +120,17 @@ namespace DotStd
             return s;
         }
 
+        /// <summary>
+        /// un-box object? to int. handle null and DBNull to defVal.
+        /// should never throw.
+        /// defVal = 0
+        /// @note strings with extra junk at end fail. "01FA". The conversion fails because the string cannot contain hexadecimal digits; 
+        /// </summary>
+        /// <param name="o">object?</param>
+        /// <param name="defVal">0</param>
+        /// <returns></returns>
         public static int ToInt(object? o, int defVal = 0)
         {
-            // un-box to int. handle null and DBNull.
-            // should never throw.
-            // defVal = 0
-            // @note strings with extra junk at end fail. "01FA". The conversion fails because the string cannot contain hexadecimal digits; 
-
             if (ValidState.IsNull(o))
                 return defVal;
 
@@ -125,8 +150,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return defVal;
 
-            int val;
-            if (!int.TryParse(s, out val))
+            if (!int.TryParse(s, out int val))
                 return defVal;
 
             return val;
@@ -199,8 +223,7 @@ namespace DotStd
             if (string.IsNullOrWhiteSpace(s))
                 return DateTime.MinValue;
 
-            DateTime val;
-            if (!DateTime.TryParse(s, out val))
+            if (!DateTime.TryParse(s, out DateTime val))
                 return DateTime.MinValue;
             return val;
         }
@@ -309,21 +332,41 @@ namespace DotStd
             return id;
         }
 
-        public static int ToIntRound(int value, int roundTo)
+        /// <summary>
+        /// Round some int to nearest multiple of roundTo
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="roundTo"></param>
+        /// <returns></returns>
+        public static int RoundTo(int value, int roundTo)
         {
-            // Round some int to nearest multiple of roundTo
             var remainder = value % roundTo;
-            var result = remainder < roundTo - remainder
-                ? (value - remainder) //round down
-                : (value + (roundTo - remainder)); //round up
+            var r2 = roundTo - remainder;
+            var result = remainder < r2
+                ? (value - remainder) // round down
+                : (value + r2); // round up
+            return result;
+        }
+        public static long RoundTo(long value, long roundTo)
+        {
+            var remainder = value % roundTo;
+            var r2 = roundTo - remainder;
+            var result = remainder < r2
+                ? (value - remainder) // round down
+                : (value + r2); // round up
             return result;
         }
 
         public static bool IsNullableType(Type t)
         {
             // TypeCode.String is an odd case.
-            return t.IsGenericType &&
-              t.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+            // like (Nullable.GetUnderlyingType(t) != null) but works with real generics.
+            if (t.IsGenericType)
+            {
+                if ( t.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
+                    return true;
+            } 
+            return false;
         }
 
         static object? GetSingle(IEnumerable a)
@@ -354,8 +397,7 @@ namespace DotStd
 
             if (typeCodeFrom == TypeCode.Object)    // NOT string. for 'StringValues'
             {
-                IEnumerable? array = value as IEnumerable;
-                if (array != null)
+                if (value is IEnumerable array)
                 {
                     value = GetSingle(array);
                     if (value == null)  // Cant handle this.

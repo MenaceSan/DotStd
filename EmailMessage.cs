@@ -22,7 +22,7 @@ namespace DotStd
             _message = new MailMessage { From = new MailAddress(sMailFromAddr, sMailFromName), IsBodyHtml = isBodyHtml };
         }
 
-        public virtual bool isValidMessage()
+        public virtual bool IsValidMessage()
         {
             // Is this message valid?
             // allow override of this
@@ -49,10 +49,13 @@ namespace DotStd
             set { _message.Body = value; }
         }
 
+        /// <summary>
+        /// add to a list of destination addresses.
+        /// Don't allow dupes.
+        /// </summary>
+        /// <param name="a"></param>
         public void AddMailTo(MailAddress a)
         {
-            // add to a list of destination addresses.
-            // Don't allow dupes.
             if (a == null)
                 return;
             foreach (var x in _message.To)
@@ -62,11 +65,15 @@ namespace DotStd
             }
             _message.To.Add(a);
         }
+
+        /// <summary>
+        /// add a list of addresses separated by ; new MailAddress(ToEmail, ToName)
+        /// NOTE: May throw System.FormatException {"The specified string is not in the form required for an e-mail address."}
+        /// NOTE: "Tom Smith <tsmith@contoso.com>" is also valid format.
+        /// </summary>
+        /// <param name="sMailToX"></param>
         public void AddMailTo(string sMailToX)
         {
-            // can be list of addresses separated by ; new MailAddress(ToEmail, ToName)
-            // NOTE: May throw System.FormatException {"The specified string is not in the form required for an e-mail address."}
-            // NOTE: "Tom Smith <tsmith@contoso.com>" is also valid format.
             if (string.IsNullOrWhiteSpace(sMailToX))
                 return;
 

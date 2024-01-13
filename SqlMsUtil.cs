@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Enumerate days of the week for M$ SQL server.
+    /// like Microsoft.VisualBasic.FirstDayOfWeek (where Sunday=1,Saturday=7)
+    /// like MySQL DAYOFWEEK()
+    /// NOT the same as .NET System.DayOfWeek (where Sunday=0,Saturday=6) 
+    /// NOT JavaScript where Sunday is 0, Monday is 1,
+    /// </summary>
     public enum SQLDay
     {
-        // M$ SQL server days of week.
-        // like Microsoft.VisualBasic.FirstDayOfWeek (where Sunday=1,Saturday=7)
-        // like MySQL DAYOFWEEK()
-        // NOT the same as .NET System.DayOfWeek (where Sunday=0,Saturday=6) 
-        // NOT JavaScript where Sunday is 0, Monday is 1,
-
         Sunday = 1,
         Monday = 2,
         Tuesday = 3,
@@ -19,18 +21,22 @@ namespace DotStd
         Saturday = 7,
     }
 
+    /// <summary>
+    /// SQL features specific to M$ SQL
+    /// Like SqlConnectionStringBuilder
+    /// NOTE: DateTime.MinValue = "1/1/0001 12:00:00 AM", SqlDateTime.MinValue = DateTime(1753, 1, 1)
+    /// </summary>
     public static class SqlMsUtil
     {
-        // SQL features specific to M$ SQL
-        // Like SqlConnectionStringBuilder
-        // NOTE: DateTime.MinValue = "1/1/0001 12:00:00 AM", SqlDateTime.MinValue = DateTime(1753, 1, 1)
-        public static readonly DateTime kSmallDateTimeMin = new DateTime(1900, 01, 01, 00, 00, 00);    // "1/1/1900 12:00:00 AM"
-        public static readonly DateTime kSmallDateTimeMax = new DateTime(2079, 06, 06, 23, 59, 00);
+        public static readonly DateTime kSmallDateTimeMin = new(1900, 01, 01, 00, 00, 00);    // "1/1/1900 12:00:00 AM"
+        public static readonly DateTime kSmallDateTimeMax = new(2079, 06, 06, 23, 59, 00);
 
+        /// <summary>
+        /// M$ SQL error codes we should look for. SqlClient.SqlException.Number
+        /// http://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlexception.number.aspx
+        /// </summary>
         public enum SQLExcepNum
         {
-            // M$ SQL error codes we should look for. SqlClient.SqlException.Number
-            // http://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlexception.number.aspx
             ServerNotFound = 17,        // k_ErrServerNotFound
             DBNetworkError = 53,        // k_ErrDBNetworkError
             DBNetworkInstError = 258,   // A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - The wait operation timed out.)
@@ -40,24 +46,32 @@ namespace DotStd
             InvalidLogin = 18456,       // k_ErrInvalidLogin
         }
 
+        /// <summary>
+        /// Is <= value for SqlDateTime?
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         public static bool IsMinValue(DateTime dt)
         {
-            // Is <= value for SqlDateTime?
             if (dt <= kSmallDateTimeMin)
                 return true;
             return false;
         }
 
+        /// <summary>
+        /// Can the SQL db store this date as smalldatetime ?
+        /// minimum SQL server smalldatetime value, maximum SQL server smalldatetime value
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static bool IsValidSqlSmallDateTime(DateTime t)
         {
-            // Cant the SQL db store this date as smalldatetime ?
-            // minimum SQL server smalldatetime value, maximum SQL server smalldatetime value
             if (t < kSmallDateTimeMin || t > kSmallDateTimeMax)
                 return false;
             return true;
         }
 
-        public static bool IsValidSqlSmallDateTime(DateTime? t)
+        public static bool IsValidSqlSmallDateTime([NotNullWhen(true)] DateTime? t)
         {
             if (!t.HasValue)
                 return false;
@@ -91,9 +105,13 @@ namespace DotStd
             return ToValidSqlSmallDateTime(t.Value);
         }
 
+        /// <summary>
+        /// Cant the SQL db store this date as datetime?
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static bool IsValidSqlDateTime(DateTime t)
         {
-            // Cant the SQL db store this date as datetime?
             try
             {
                 if (t == DateTime.MinValue) // same as default(DateTime)
@@ -106,17 +124,21 @@ namespace DotStd
                 return false;
             }
         }
-        public static bool IsValidSqlDateTime(DateTime? t)
+        public static bool IsValidSqlDateTime([NotNullWhen(true)] DateTime? t)
         {
             if (!t.HasValue)
                 return false;
             return IsValidSqlDateTime(t.Value);
         }
 
+        /// <summary>
+        /// Get the equiv .NET CLR data type for the named SQL data type.
+        /// http://msdn.microsoft.com/en-us/library/bb386947%28v=vs.110%29.aspx
+        /// </summary>
+        /// <param name="sSQLDataType"></param>
+        /// <returns></returns>
         public static Type? GetDataType(string? sSQLDataType)
         {
-            // Get the equiv .NET CLR data type for the named SQL data type.
-            // http://msdn.microsoft.com/en-us/library/bb386947%28v=vs.110%29.aspx
             switch (sSQLDataType)
             {
                 case null:

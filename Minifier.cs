@@ -18,9 +18,13 @@ namespace DotStd
         public const string kExtJs = ".js";
         public const string kExtCss = ".css";
 
+        /// <summary>
+        /// Does this seem to be the name of a minified file name?
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
         public static bool IsMinName(string n)
         {
-            // Does this seem to be the name of a minified file name?
             if (n == null)
                 return false;
             return n.Contains(kMin) || n.Contains(kMin2);
@@ -41,9 +45,14 @@ namespace DotStd
 
         const string kCommentClose = "*/";
 
+        /// <summary>
+        /// create a minified version of a file. CSS, JS or HTML.
+        /// </summary>
+        /// <param name="srcPath"></param>
+        /// <param name="dstMinPath"></param>
+        /// <returns></returns>
         public static async Task<bool> CreateMinified(string srcPath, string dstMinPath)
         {
-            // create a minified version of a file. CSS, JS or HTML.
             try
             {
                 var contents = await FileUtil.ReadAllLinesAsync(srcPath);
@@ -106,7 +115,7 @@ namespace DotStd
             }
             catch (Exception ex)
             {
-                LoggerUtil.DebugException("CreateMinified", ex);
+                LoggerUtil.DebugError("CreateMinified", ex);
                 return false;
             }
         }

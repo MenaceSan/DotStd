@@ -5,14 +5,16 @@ using System.Text;
 
 namespace DotStd
 {
+    /// <summary>
+    /// Helper functions for formatting HTML.
+    /// compliment Encode, Decode
+    /// In some ways HTML can be treated like XML except for some exceptions. (some non closed tags, literals, some encoding)
+    /// Use WebUtility.HtmlEncode() to encode a string to proper HTML. 
+    /// NOTE: FormUrlEncodedContent is for URL args. NOT the same.
+    /// NOTE: Use select2 for option lists with icons.
+    /// </summary>
     public static class HTMLUtil
     {
-        // Helper functions for formatting HTML.
-        // compliment Encode, Decode
-        // In some ways HTML can be treated like XML except for some exceptions. (some non closed tags, literals, some encoding)
-        // Use WebUtility.HtmlEncode() to encode a string to proper HTML. Though FormUrlEncodedContent is for URL args.
-        // NOTE: Use select2 for option lists with icons.
-
         public const string kNBSP = "&nbsp;";   // HTML non breaking space
         public const string kGT = "&gt;";   //  
         public const string kLT = "&lt;";   // 
@@ -137,6 +139,5 @@ namespace DotStd
             sb.Append("</ul>");
             return sb.ToString();
         }
-
     }
 }

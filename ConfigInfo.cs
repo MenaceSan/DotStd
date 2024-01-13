@@ -44,6 +44,11 @@ namespace DotStd
             _EnvironMode = environmentName;
         }
 
+        /// <summary>
+        /// Get property from _Configuration
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public virtual object? GetPropertyValue(string name)
         {
             // sName = "Sec:child" IPropertyGetter
@@ -81,9 +86,9 @@ namespace DotStd
 
         // EnvironMode = Is this app running in Dev, Test or Prod mode ? 
         // Equiv to IHostingEnvironment.EnvironmentName
-        public readonly string EnvironMode;    // What kAppsEnvironMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
+        public readonly string EnvironMode = DotStd.EnvironMode.DEV.ToString();    // What kAppsEnvironMode does this app run in ? "Prod","Test","Dev", "Dev2", "Dev3"
 
-        private readonly IPropertyGetter _ConfigSource;   // Get my config info from here. e.g. ConfigInfoCore
+        private readonly IPropertyGetter _ConfigSource;   // Get my config info from here. Some file? e.g. ConfigInfoCore
 
         public string? ConnectionStringDef { get; protected set; }      // Primary/default db connection string. If i need one.
  
@@ -91,8 +96,6 @@ namespace DotStd
         {
             // Prefix match EnvironMode.
             // match EnvironMode but allow extension. e.g. Dev1 is the same as Dev
-            if (EnvironMode == null)
-                return false;
             return EnvironMode.ToUpper().StartsWith(environMode.ToString());
         }
         public bool IsEnvironMode(string environMode)

@@ -71,11 +71,15 @@ namespace DotStd
             return GetCardTypeFromNumber2(GetClean(cardNum));
         }
 
+        /// <summary>
+        /// Does this card number look legit?
+        /// Luhn Algorithm Adapted from code available on Wikipedia at
+        /// http://en.wikipedia.org/wiki/Luhn_algorithm
+        /// </summary>
+        /// <param name="cardNum"></param>
+        /// <returns></returns>
         public static bool IsValidLuhn2(string cardNum)
         {
-            // Luhn Algorithm Adapted from code available on Wikipedia at
-            // http://en.wikipedia.org/wiki/Luhn_algorithm
-
             // Assume clean cardNum.
             int i = cardNum.Length - 1;
             if (i < 0)
@@ -163,13 +167,15 @@ namespace DotStd
             return IsValidLuhn2(cardNum);
         }
 
+        /// <summary>
+        /// Return a bogus CC number that passes Luhn and format tests for a given CreditCardTypeId
+        /// Src: https://www.paypal.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm
+        /// http://www.geekswithblogs.net/sdorman
+        /// </summary>
+        /// <param name="cardType"></param>
+        /// <returns></returns>
         public static string GetCardTestNumber(CreditCardTypeId cardType)
         {
-            // Return a bogus CC number that passes Luhn and format tests for a given CreditCardTypeId
-
-            // Src: https://www.paypal.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm
-            // Credit: Scott Dorman, http://www.geekswithblogs.net/sdorman
-
             // According to PayPal, the valid test numbers that should be used
             // for testing card transactions are:
             // Credit Card Type              Credit Card Number
@@ -188,7 +194,7 @@ namespace DotStd
             switch (cardType)
             {
                 case CreditCardTypeId.Unk:
-                    return "?";
+                    return ValidState.kInvalidName;
                 case CreditCardTypeId.Visa:
                     return "4111 1111 1111 1111";
                 case CreditCardTypeId.MasterCard:

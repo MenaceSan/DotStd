@@ -78,8 +78,8 @@ namespace DotStd
         {
             // like HashAlgorithm.ComputeHash(Stream) but async
 
-            var buffer = new byte[8192];
-            int bytesRead = 0;
+            var buffer = new byte[32 * 1024]; // chunk
+            int bytesRead;
 
             // compute the hash on 8KiB blocks
             while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
@@ -153,13 +153,18 @@ namespace DotStd
             return _Hasher.ComputeHash(str.ToByteArray());
         }
 
+        /// <summary>
+        /// Make a crypto hash on string (passwords) SecureString
+        /// Compute a hash of (system secret password + password + ulong random salt + id of user). 
+        /// cant share lookup attacks across users or pre-compute. attacks are per user.
+        /// </summary>
+        /// <param name="password">The thing we want to be secret.</param>
+        /// <param name="systemsecret"></param>
+        /// <param name="salt"></param>
+        /// <param name="id">permanent code id</param>
+        /// <returns></returns>
         public byte[] GetHash(string password, string systemsecret, ulong salt, int id)
         {
-            // crypto hashes are on strings (passwords) SecureString
-            // Compute a hash of (system secret password + password + ulong random salt + id of user). 
-            // cant share lookup attacks across users or pre-compute.
-            // all attacks are per user.
-
             return GetHash(string.Concat(password, systemsecret, salt.ToString(), id));
         }
 
@@ -189,7 +194,7 @@ namespace DotStd
             _Hasher = hasher;
         }
 
-        public static HashAlgorithm GetMD5()
+        public static HashUtil GetMD5()
         {
             // faster. less secure. for low collision hashes.
             // used for new account sign up + user email.
@@ -197,24 +202,14 @@ namespace DotStd
             // Wrap a MD5 HashAlgorithm.
             // NIST recommends SHA-256 or better for passwords.
             // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-            return MD5.Create();
+            return new HashUtil(MD5.Create());
         }
-        public static HashAlgorithm GetSHA256()
-        {
-            // Secure hash. SHA256
-            //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
-            // NIST recommends SHA-256 or better for passwords.
-            // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
-            // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
-
-            return SHA256.Create();
-        }
-        public static HashAlgorithm GetSHA512()
+        public static HashUtil GetSHA512()
         {
             // secure enough for crypto. 
             // SHA512 = Return 512 bits. 64 bytes for a base64 string of ?? chars.
             // assume >= 64 bit random salt is added to this.
-            return SHA512.Create();
+            return new HashUtil(SHA512.Create());
         }
 
         public const string kMd5 = "md5";
@@ -228,11 +223,16 @@ namespace DotStd
 
             if (hashAlgName.StartsWith(kMd5))
             {
-                return GetMD5();
+                return MD5.Create();
             }
             else if (hashAlgName.StartsWith(kSha256))
             {
-                return GetSHA256();
+                // Secure hash. SHA256
+                //   The SHA256 hash of "Hello World!" is hex "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069".
+                // NIST recommends SHA-256 or better for passwords.
+                // SHA256 = Return 256 bits. 32 bytes for a base64 string of 44 chars.
+                // https://stackoverflow.com/questions/247304/what-data-type-to-use-for-hashed-password-field-and-what-length
+                return SHA256.Create();
             }
             else if (hashAlgName.StartsWith("sha384"))
             {
@@ -246,7 +246,7 @@ namespace DotStd
                 // Secure hash. "sha512-Wkxbeuy81yHqZNrMurMURCOCMzkJqaFYnvToublHiOGoVXQ2DS1lOUjKwstbe0GwELrRb9sicdV2y6GiAnVxuw=="
                 // SHA512 = Return 512 bits. 64 bytes for a base64 string of ??? chars.
 
-                return GetSHA512();
+                return SHA512.Create();
             }
 
             throw new ArgumentException("FindHasherByName invalid name");

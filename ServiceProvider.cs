@@ -5,14 +5,14 @@ using System.Diagnostics.CodeAnalysis;
 namespace DotStd
 {
     /// <summary>
-    /// global service provider. manage application singletons.
+    /// global (in app) service provider lookup. manage application singletons.
     /// We should use the default global DI provider instead of this! like app.ApplicationServices
     /// NOTE: This conflicts with Microsoft.Extensions.DependencyInjection.ServiceProvider
     /// TODO Get rid of all other uses of _Instance. singleton. Replace this with ASP or other versions of a DI/IServiceProvider.
     /// </summary>
     public class ServiceProvider : Singleton<IServiceProvider>, IServiceProvider
     {
-        private readonly Dictionary<int, object> _Services = new Dictionary<int, object>(); // Like IServiceCollection.
+        private readonly Dictionary<int, object> _Services = new(); // Like IServiceCollection.
 
         public void AddSingleton(Type t, object service)
         {

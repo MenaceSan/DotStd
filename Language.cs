@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace DotStd
 {
     /// <summary>
-    /// Id for Languages-Cultures that we care about. <html lang="en"> <html lang="en-US">
+    /// Id for Languages-Cultures that we most care about. '<html lang="en"> <html lang="en-US">'
     /// from Language db table ? CultureInfo Code.
     /// Description = Native Name and font (English Name)
     /// similar to the Windows concept of CultureInfo.
@@ -19,8 +19,8 @@ namespace DotStd
 
         proper = 0,     // non-translatable proper name.
 
-        [Description("Default")]    // default langauge.
-        native = 1,     // The native/neutral language of the app, whatever that might be. probably english.
+        [Description("Default")]    // default language.
+        native = 1,     // The native/neutral language of the app, whatever that might be. probably English.
 
         [Description("English")]    // English 
         en = 3,        // Default American English. .NET LanguageId =  1033 = 0x409 = 'en-US' // deployed with ASP
@@ -117,7 +117,7 @@ namespace DotStd
         public string GetDescription()
         {
             if (String.IsNullOrWhiteSpace(Name))    // should not happen!
-                return "?";
+                return ValidState.kInvalidName;
             if (String.IsNullOrWhiteSpace(NativeName))
                 return Name;
             return string.Concat(NativeName, " (", Name, ")");
@@ -156,11 +156,14 @@ namespace DotStd
             return LanguageId.native;
         }
 
-        public static LanguageId GetAcceptLang(string acceptLang)
+        /// <summary>
+        /// Get the best value from the "Accept-Language" format string.
+        /// HTTP Accept-Language tag e.g. "en-US,en;q=0.9"
+        /// </summary>
+        /// <param name="acceptLang"></param>
+        /// <returns></returns>
+        public static LanguageId GetAcceptLang(string? acceptLang)
         {
-            // Get the best value from the "Accept-Language" format string.
-            // HTTP Accept-Language tag e.g. "en-US,en;q=0.9"
-
             if (string.IsNullOrWhiteSpace(acceptLang))
                 return LanguageId.native;
 
@@ -188,13 +191,16 @@ namespace DotStd
             return LanguageId.native;
         }
 
+        /// <summary>
+        /// Get close equiv .NET CultureInfo for the LanguageId.
+        /// describes how to sort strings, show decimals and show date time for a language/culture. like RequestCulture.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public static System.Globalization.CultureInfo GetCulture(LanguageId id)
         {
-            // Get equiv .NET CultureInfo for the LanguageId.
-            // how to sort strings, show decimals and show date time for a langauge/culture. like RequestCulture.
             if (id < LanguageId.en || id >= LanguageId.test)
                 id = LanguageId.en;
-
             return new System.Globalization.CultureInfo(id.ToString());
         }
     }
