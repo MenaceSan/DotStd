@@ -356,7 +356,7 @@ namespace DotStd
         public T? Get(string? keyArg)
         {
             // Find the object in the cache if possible. id is a unique string.
-            if (keyArg == null)       // shortcut null check.
+            if (string.IsNullOrEmpty(keyArg))       // shortcut null check.
                 return null;
             string cacheKey = MakeKey(keyArg);
             object? o = CacheData.Get(cacheKey);

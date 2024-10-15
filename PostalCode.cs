@@ -238,7 +238,7 @@ namespace DotStd
     public class PostalCodeFinder // : ExternalService
     {
         public string? _sResponse;  // Raw response.
-        public PostalCode1? _z;        // parsed m_sResponse.
+        public PostalCode1? _z;        // parsed _sResponse.
 
         /// <summary>
         /// async call to get the string response to a HTTP query.
@@ -295,7 +295,7 @@ namespace DotStd
             _sResponse = await RequestStringAsync(sReq);
 
             // populate m_z from JSON
-            // Newtonsoft.Json.JsonConvert.PopulateObject(m_sResponse,m_z);
+            // Newtonsoft.Json.JsonConvert.PopulateObject(_sResponse,m_z);
             var xs = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PostalCodeZT));
             if (xs.ReadObject(_sResponse.ToMemoryStream()) is not PostalCodeZT x)
             {

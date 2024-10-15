@@ -117,13 +117,13 @@ namespace DotStd
         {
             //! What access do we want to give to this sPropName? for current user/form.
             int i = GetPropIndex(memberName);
-            if (i >= 0) // modify existing?
+            if (i >= 0)
             {
-                _aProps[i].Level = nLevel;
+                _aProps[i].Level = nLevel;  // modify existing?
             }
-            else // insert
+            else
             {
-                _aProps.Add(new ViewProperty(memberName, nLevel));
+                _aProps.Add(new ViewProperty(memberName, nLevel));  // insert
                 if (_aOrigValues != null)
                 {
                     // store current value.

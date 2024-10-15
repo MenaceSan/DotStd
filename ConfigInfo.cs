@@ -7,7 +7,7 @@ namespace DotStd
     /// <summary>
     /// What type of deployment Environment is this ? AKA EnvironmentName.
     /// Can have sub categories. Postfix by number for sub type.
-    /// Assume upper case. 
+    /// Assume upper case. Allow other values as string.
     /// Similar to .NET Core IHostingEnvironment.IsDevelopment or IHostingEnvironment.EnvironmentName
     /// </summary>
     public enum EnvironMode
@@ -28,7 +28,7 @@ namespace DotStd
     {
         public readonly Microsoft.Extensions.Configuration.IConfiguration _Configuration;       // .NET Core extension for JSON config.
 
-        private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT => EnvironmentName
+        private readonly string _EnvironMode;   // ONLY set via ASPNETCORE_ENVIRONMENT => EnvironmentName. Corresponds to enum EnvironMode
 
         public ConfigInfoCore(Microsoft.Extensions.Configuration.IConfiguration config, string environmentName)
         {

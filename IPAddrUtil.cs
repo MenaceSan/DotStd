@@ -194,17 +194,16 @@ namespace DotStd
         /// </summary>
         /// <param name="addr"></param>
         /// <returns></returns>
-        public static bool IsPrivate(IPAddress addr)
+        public static bool IsPrivate(IPAddress? addr)
         {
+            if (addr == null) return true;
             if (addr.AddressFamily == AddressFamily.InterNetwork)
             {
                 byte[] ip = addr.GetAddressBytes();
                 if (ip[0] == 10 ||
                     (ip[0] == 192 && ip[1] == 168) ||
                     (ip[0] == 172 && (ip[1] >= 16 && ip[1] <= 31)))
-                {
                     return true;
-                }
             }
             else if (addr.AddressFamily == AddressFamily.InterNetworkV6)
             {

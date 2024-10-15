@@ -460,8 +460,7 @@ namespace DotStd
             // to "C:\Users\<account>\AppData\Local\VirtualStore\Program Files\DirName\config.ini  (Where Windows actually put it)
 
             string progFiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);    // can get moved to VirtualStoreRoot
-            if (!filePath.Contains(progFiles))    // only stuff in the ProgramFiles folder is part of the virtual store.
-                return null;
+            if (!filePath.Contains(progFiles)) return null;   // only stuff in the ProgramFiles folder is part of the virtual store.
 
             string appData = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string virtualStore = Path.Combine(appData, kVirtualStore);   // M$ has a localized version of "VirtualStore" !?

@@ -3,7 +3,7 @@
   <Import Project="$(ProjectDir)..\Version.targets" Condition="exists('$(ProjectDir)..\Version.targets')" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>DotStd</RootNamespace>
     <AssemblyName>DotStd</AssemblyName>
     <Version>1.1.6</Version>
@@ -21,8 +21,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>

@@ -68,7 +68,7 @@ namespace DotStd
             LastSuccess = LastTry = TimeNow.Utc;
         }
         /// <summary>
-        /// It failed. check for StringUtil._NoErrorMsg ?
+        /// It failed. Maybe just the call and not the service itself. check for StringUtil._NoErrorMsg ?
         /// </summary>
         /// <param name="errorMsg"></param>
         public void UpdateFailure(string errorMsg)

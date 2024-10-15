@@ -25,7 +25,7 @@ namespace DotStd
         public class Node
         {
             public readonly int _Ttl;    // count from 1
-            public IPStatus _Status = IPStatus.Unknown;
+            public IPStatus _Status = IPStatus.Unknown; // Success = 0
             public IPAddress _ReplyAddress = IPAddress.None;
             public long _ElapsedMilliseconds;
 
@@ -37,7 +37,7 @@ namespace DotStd
 
             public bool IsValidReplyAddress
             {
-                // the _ReplyAddress looks like it might be valid ?
+                // the _ReplyAddress looks like it might be valid ? filter known bad addresses.
                 get
                 {
                     if (_ReplyAddress == IPAddress.None || _ReplyAddress == IPAddress.IPv6None || _ReplyAddress == IPAddress.Any)
@@ -46,7 +46,7 @@ namespace DotStd
                         return false;
                     if (_ReplyAddress.GetAddressBytes().All(b => b == 0)) // InterNetwork and 0
                         return false;
-                    if (IPAddress.IsLoopback(_ReplyAddress))
+                    if (IPAddress.IsLoopback(_ReplyAddress))    // not a real address.
                         return false;
                     return true;
                 }

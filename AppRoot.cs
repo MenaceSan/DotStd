@@ -74,7 +74,7 @@ namespace DotStd
             }
             else
             {
-                AppVersion = VersionUtil.ToVersionInt(ver);
+                AppVersion = VersionUtil.ToVersion32(ver); // Can be compared with SchemaVersion for any db.
                 AppRevision = ver.Revision.ToString();
             }
         }

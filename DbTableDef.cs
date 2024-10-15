@@ -23,6 +23,7 @@ namespace DotStd
 
     /// <summary>
     /// What is the nature of the data in this table ?
+    /// TODO Add type for non sharded data that is globally shared ?
     /// </summary>
     public enum DbTableType
     {
@@ -72,7 +73,7 @@ namespace DotStd
             TableName = default!;
             Name = default!;
             // TableType = ?;
-      }
+        }
 
         public DbTableDef(string tableName, DbTableType tt)
         {
@@ -264,7 +265,7 @@ namespace DotStd
     /// </summary>
     public class DbTableDefs
     {
-        public readonly Dictionary<string, DbTableDef> Tables = new Dictionary<string, DbTableDef>();
+        public readonly Dictionary<string, DbTableDef> Tables = new();
 
         /// <summary>
         /// Get a table by table name. (NOT entity name)
@@ -280,13 +281,11 @@ namespace DotStd
 
         public void SetTable(DbTableDef table)
         {
-            Tables[table.TableName] = table;
+            Tables[table.TableName] = table;    // overwrite existing table.
         }
-
         public void AddTable(DbTableDef table)
         {
-            ValidState.AssertTrue(!Tables.ContainsKey(table.TableName));
-            Tables.Add(table.TableName, table);
+            Tables[table.TableName] = table;    // add new table.
         }
     }
 }

@@ -637,14 +637,14 @@ namespace DotStd
         /// <param name="cdnAllFilePath"></param>
         /// <param name="outDir"></param>
         /// <returns></returns>
-        public async Task<int> InitCdnAsync(string cdnAllFilePath, string outDir)
+        public async Task<int> InitCdnAllAsync(string cdnAllFilePath, string outDir)
         {
             if (!System.IO.File.Exists(cdnAllFilePath))       // get my list from here.
                 return 0;
 
             int downloadCount = 0;
             int fileCount = 0;
-            XDocument doc = XDocument.Load(cdnAllFilePath);     // TODO: Use HTML agility pack to deal with proper HTML (Not XML) encoding??
+            XDocument doc = XDocument.Load(cdnAllFilePath);     // TODO: Use HTML agility pack to deal with proper HTML (Not XML) encoding?
 
             var tasks = new List<Task<CdnRet>>();   // allow background/parallel loading.
 

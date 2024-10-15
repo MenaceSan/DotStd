@@ -34,17 +34,17 @@ namespace DotStd
             return ver;
         }
 
-        public static int ToVersionInt(int major, int minor, int build)
+        public static int ToVersion32(int major, int minor, int build)
         {
             // Make a single version int from the standard 3 part version string.
             return major * 100000 + minor * 1000 + build;
         }
-        public static int ToVersionInt(System.Version v)
+        public static int ToVersion32(System.Version v)
         {
             // Make a single version int from the standard 3 part version string. leave off "Revision"
-            return ToVersionInt(v.Major, v.Minor, v.Build);
+            return ToVersion32(v.Major, v.Minor, v.Build);
         }
-        public static int ToVersionInt(string v)
+        public static int ToVersion32(string v)
         {
             // Make a single version int from the standard 3 part version string.
 
@@ -55,7 +55,7 @@ namespace DotStd
                 if (!int.TryParse(avs[i], out avi[i]))
                     break;
             }
-            return ToVersionInt(avi[0], avi[1], avi[2]);
+            return ToVersion32(avi[0], avi[1], avi[2]);
         }
     }
 }

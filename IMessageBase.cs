@@ -23,10 +23,7 @@ namespace DotStd
         MobilePhone = 4,    // Voice and text. Maybe confirmed? Use CarrierId
         SMS,            // Text only. 2 way. Maybe confirmed? Use CarrierId
 
-        Pager,          // beeper ? one way message. NOT USED?
-        Fax = 7,            // Does anyone still use this ? NOT USED?  
-
-        // Skype = 8,           // Skype id is just a number ?
+        // Skype = 8,           // Skype id is just a number?
 
         Email = 10,           // may actually be OpenID or other via known hostname?. 
 
@@ -82,14 +79,12 @@ namespace DotStd
             "fas fa-phone",         // ComTypeId.VoicePhone  
             "fas fa-mobile-alt",    // ComTypeId.MobilePhone
             "fas fa-sms",           // ComTypeId.SMS
-            "fas fa-pager",         // ComTypeId.Pager
-            "fas fa-fax",           // ComTypeId.Fax
         };
 
         public static string GetIcon(ComTypeId typeId)
         {
             int id = (int)typeId;
-            if (id >= 0 && id <= (int)ComTypeId.Fax)
+            if (id >= 0 && id <= (int)ComTypeId.SMS)
                 return kTypeIcons[id];
 
             switch (typeId)

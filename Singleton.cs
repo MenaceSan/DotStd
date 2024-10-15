@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace DotStd
 {
     /// <summary>
-    /// Manage a singleton of a type. Allow late creation. NOT Auto LazyLoad
+    /// Manage a singleton of a type. Allow late creation. NOT the same as Auto LazyLoad
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class Singleton<T>
@@ -45,6 +45,13 @@ namespace DotStd
         public static T Instance()
         {            
             return ValidState.GetNotNull(_Instance, nameof(_Instance)); ;
+        }
+
+        [MemberNotNull(nameof(_Instance))]
+        public static T Instance(Func<T> creator)
+        {
+            if (_Instance == null) { _Instance = creator(); }   // NOT thread safe !!
+            return Instance();
         }
 
         public static T? GetInstance()
